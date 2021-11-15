@@ -21,10 +21,7 @@ import { IThreadBundledRelationship, MatrixEvent } from "./event";
 import { Direction, EventTimeline } from "./event-timeline";
 import { EventTimelineSet, EventTimelineSetHandlerMap } from './event-timeline-set';
 import { Room } from './room';
-import { TypedEventEmitter } from "./typed-event-emitter";
-import { RoomState } from "./room-state";
-import { ServerControlledNamespacedValue } from "../NamespacedValue";
-import { logger } from "../logger";
+import { BaseModel } from "./base-model";
 
 export enum ThreadEvent {
     New = "Thread.new",
@@ -52,9 +49,11 @@ interface IThreadOpts {
 /**
  * @experimental
  */
-export class Thread extends TypedEventEmitter<EmittedEvents, EventHandlerMap> {
-    public static hasServerSideSupport: boolean;
-
+export class Thread extends BaseModel<ThreadEvent> {
+    /**
+     * A reference to the event ID at the top of the thread
+     */
+    private root: string;
     /**
      * A reference to all the events ID at the bottom of the threads
      */
@@ -336,79 +335,4 @@ export class Thread extends TypedEventEmitter<EmittedEvents, EventHandlerMap> {
     public has(eventId: string): boolean {
         return this.timelineSet.findEventById(eventId) instanceof MatrixEvent;
     }
-
-    public get hasCurrentUserParticipated(): boolean {
-        return this._currentUserParticipated;
-    }
-
-    public get liveTimeline(): EventTimeline {
-        return this.timelineSet.getLiveTimeline();
-    }
-
-    public async fetchEvents(opts: IRelationsRequestOpts = { limit: 20 }): Promise<{
-        originalEvent: MatrixEvent;
-        events: MatrixEvent[];
-        nextBatch?: string;
-        prevBatch?: string;
-    }> {
-        let {
-            originalEvent,
-            events,
-            prevBatch,
-            nextBatch,
-        } = await this.client.relations(
-            this.room.roomId,
-            this.id,
-            THREAD_RELATION_TYPE.name,
-            null,
-            opts,
-        );
-
-        // When there's no nextBatch returned with a `from` request we have reached
-        // the end of the thread, and therefore want to return an empty one
-        if (!opts.to && !nextBatch) {
-            events = [...events, originalEvent];
-        }
-
-        await this.fetchEditsWhereNeeded(...events);
-
-        await Promise.all(events.map(event => {
-            this.setEventMetadata(event);
-            return this.client.decryptEventIfNeeded(event);
-        }));
-
-        const prependEvents = !opts.direction || opts.direction === Direction.Backward;
-
-        this.timelineSet.addEventsToTimeline(
-            events,
-            prependEvents,
-            this.liveTimeline,
-            prependEvents ? nextBatch : prevBatch,
-        );
-
-        return {
-            originalEvent,
-            events,
-            prevBatch,
-            nextBatch,
-        };
-    }
-}
-
-export const FILTER_RELATED_BY_SENDERS = new ServerControlledNamespacedValue(
-    "related_by_senders",
-    "io.element.relation_senders",
-);
-export const FILTER_RELATED_BY_REL_TYPES = new ServerControlledNamespacedValue(
-    "related_by_rel_types",
-    "io.element.relation_types",
-);
-export const THREAD_RELATION_TYPE = new ServerControlledNamespacedValue(
-    "m.thread",
-    "io.element.thread",
-);
-
-export enum ThreadFilterType {
-    "My",
-    "All"
 }
