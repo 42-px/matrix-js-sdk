@@ -1,8 +1,7 @@
-/// <reference types="node" />
-import { EventEmitter } from "events";
 import { MatrixClient } from "../matrix";
 import { MatrixEvent } from "./event";
 import { Room } from './room';
+import { TypedEventEmitter } from "./typed-event-emitter";
 export declare enum ThreadEvent {
     New = "Thread.new",
     Ready = "Thread.ready",
@@ -11,7 +10,7 @@ export declare enum ThreadEvent {
 /**
  * @experimental
  */
-export declare class Thread extends EventEmitter {
+export declare class Thread extends TypedEventEmitter<ThreadEvent> {
     readonly room: Room;
     readonly client: MatrixClient;
     /**
@@ -22,7 +21,9 @@ export declare class Thread extends EventEmitter {
      * A reference to all the events ID at the bottom of the threads
      */
     readonly timelineSet: any;
+    private _currentUserParticipated;
     constructor(events: MatrixEvent[], room: Room, client: MatrixClient);
+    onEcho: (event: MatrixEvent) => void;
     /**
      * Add an event to the thread and updates
      * the tail/root references if needed
@@ -35,9 +36,9 @@ export declare class Thread extends EventEmitter {
      */
     findEventById(eventId: string): any;
     /**
-     * Determines thread's ready status
+     * Return last reply to the thread
      */
-    get ready(): boolean;
+    get lastReply(): MatrixEvent;
     /**
      * The thread ID, which is the same as the root event ID
      */
@@ -54,20 +55,12 @@ export declare class Thread extends EventEmitter {
      */
     get length(): number;
     /**
-     * A set of mxid participating to the thread
-     */
-    get participants(): Set<string>;
-    /**
      * A getter for the last event added to the thread
      */
     get replyToEvent(): MatrixEvent;
     get events(): MatrixEvent[];
     merge(thread: Thread): void;
     has(eventId: string): boolean;
-    on(event: ThreadEvent, listener: (...args: any[]) => void): this;
-    once(event: ThreadEvent, listener: (...args: any[]) => void): this;
-    off(event: ThreadEvent, listener: (...args: any[]) => void): this;
-    addListener(event: ThreadEvent, listener: (...args: any[]) => void): this;
-    removeListener(event: ThreadEvent, listener: (...args: any[]) => void): this;
+    get hasCurrentUserParticipated(): boolean;
 }
 //# sourceMappingURL=thread.d.ts.map

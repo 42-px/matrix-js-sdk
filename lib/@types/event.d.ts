@@ -78,7 +78,8 @@ export declare enum MsgType {
     File = "m.file",
     Audio = "m.audio",
     Location = "m.location",
-    Video = "m.video"
+    Video = "m.video",
+    KeyVerificationRequest = "m.key.verification.request"
 }
 export declare const RoomCreateTypeField = "type";
 export declare enum RoomType {

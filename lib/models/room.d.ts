@@ -190,7 +190,7 @@ export declare class Room extends EventEmitter {
      *
      * @throws If <code>opts.pendingEventOrdering</code> was not 'detached'
      */
-    getPendingEvents(): MatrixEvent[];
+    getPendingEvents(thread?: Thread): MatrixEvent[];
     /**
      * Removes a pending event for this room
      *

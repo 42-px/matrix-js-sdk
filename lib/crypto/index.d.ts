@@ -6,7 +6,7 @@ import { DeviceInfoMap, DeviceList } from "./DeviceList";
 import { DeviceInfo } from "./deviceinfo";
 import { CrossSigningInfo, DeviceTrustLevel, UserTrustLevel } from './CrossSigning';
 import { SecretStorage, SecretStorageKeyTuple, ISecretRequest, SecretStorageKeyObject } from './SecretStorage';
-import { IAddSecretStorageKeyOpts, IImportRoomKeysOpts, ISecretStorageKeyInfo } from "./api";
+import { IAddSecretStorageKeyOpts, ICreateSecretStorageOpts, IImportRoomKeysOpts, ISecretStorageKeyInfo } from "./api";
 import { VerificationRequest } from "./verification/request/VerificationRequest";
 import { InRoomRequests } from "./verification/request/InRoomChannel";
 import { DehydrationManager } from './dehydration';
@@ -36,16 +36,6 @@ interface IInitOpts {
 export interface IBootstrapCrossSigningOpts {
     setupNewCrossSigning?: boolean;
     authUploadDeviceSigningKeys?(makeRequest: (authData: any) => {}): Promise<void>;
-}
-interface IBootstrapSecretStorageOpts {
-    keyBackupInfo?: any;
-    setupNewKeyBackup?: boolean;
-    setupNewSecretStorage?: boolean;
-    createSecretStorageKey?(): Promise<{
-        keyInfo?: any;
-        privateKey?: Uint8Array;
-    }>;
-    getKeyBackupPassphrase?(): Promise<Uint8Array | null>;
 }
 interface IRoomKey {
     room_id: string;
@@ -298,7 +288,7 @@ export declare class Crypto extends EventEmitter {
      *     {Promise} A promise which resolves to key creation data for
      *     SecretStorage#addKey: an object with `passphrase` etc fields.
      */
-    bootstrapSecretStorage({ createSecretStorageKey, keyBackupInfo, setupNewKeyBackup, setupNewSecretStorage, getKeyBackupPassphrase, }?: IBootstrapSecretStorageOpts): Promise<void>;
+    bootstrapSecretStorage({ createSecretStorageKey, keyBackupInfo, setupNewKeyBackup, setupNewSecretStorage, getKeyBackupPassphrase, }?: ICreateSecretStorageOpts): Promise<void>;
     addSecretStorageKey(algorithm: string, opts: IAddSecretStorageKeyOpts, keyID: string): Promise<SecretStorageKeyObject>;
     hasSecretStorageKey(keyID: string): Promise<boolean>;
     getSecretStorageKey(keyID?: string): Promise<SecretStorageKeyTuple>;
@@ -640,12 +630,13 @@ export declare class Crypto extends EventEmitter {
      * the given users.
      *
      * @param {string[]} users list of user ids
+     * @param {boolean} force If true, force a new Olm session to be created. Default false.
      *
      * @return {Promise} resolves once the sessions are complete, to
      *    an Object mapping from userId to deviceId to
      *    {@link module:crypto~OlmSessionResult}
      */
-    ensureOlmSessionsForUsers(users: string[]): Promise<Record<string, Record<string, olmlib.IOlmSessionResult>>>;
+    ensureOlmSessionsForUsers(users: string[], force?: boolean): Promise<Record<string, Record<string, olmlib.IOlmSessionResult>>>;
     /**
      * Get a list containing all of the room keys
      *
@@ -660,7 +651,7 @@ export declare class Crypto extends EventEmitter {
      * @param {Function} opts.progressCallback called with an object which has a stage param
      * @return {Promise} a promise which resolves once the keys have been imported
      */
-    importRoomKeys(keys: IMegolmSessionData[], opts?: IImportRoomKeysOpts): Promise<any>;
+    importRoomKeys(keys: IMegolmSessionData[], opts?: IImportRoomKeysOpts): Promise<void>;
     /**
      * Counts the number of end to end session keys that are waiting to be backed up
      * @returns {Promise<number>} Resolves to the number of sessions requiring backup

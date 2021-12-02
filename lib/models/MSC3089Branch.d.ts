@@ -1,7 +1,9 @@
+/// <reference types="node" />
 import { MatrixClient } from "../client";
 import { IEncryptedFile } from "../@types/event";
 import { IContent, MatrixEvent } from "./event";
 import { MSC3089TreeSpace } from "./MSC3089TreeSpace";
+import type { ReadStream } from "fs";
 /**
  * Represents a [MSC3089](https://github.com/matrix-org/matrix-doc/pull/3089) branch - a reference
  * to a file (leaf) in the tree. Note that this is UNSTABLE and subject to breaking changes
@@ -66,14 +68,14 @@ export declare class MSC3089Branch {
      */
     getFileEvent(): Promise<MatrixEvent>;
     /**
-     * Creates a new version of this file.
+     * Creates a new version of this file with contents in a type that is compatible with MatrixClient.uploadContent().
      * @param {string} name The name of the file.
-     * @param {ArrayBuffer} encryptedContents The encrypted contents.
+     * @param {File | String | Buffer | ReadStream | Blob} encryptedContents The encrypted contents.
      * @param {Partial<IEncryptedFile>} info The encrypted file information.
      * @param {IContent} additionalContent Optional event content fields to include in the message.
      * @returns {Promise<void>} Resolves when uploaded.
      */
-    createNewVersion(name: string, encryptedContents: ArrayBuffer, info: Partial<IEncryptedFile>, additionalContent?: IContent): Promise<void>;
+    createNewVersion(name: string, encryptedContents: File | String | Buffer | ReadStream | Blob, info: Partial<IEncryptedFile>, additionalContent?: IContent): Promise<void>;
     /**
      * Gets the file's version history, starting at this file.
      * @returns {Promise<MSC3089Branch[]>} Resolves to the file's version history, with the

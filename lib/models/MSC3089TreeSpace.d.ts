@@ -1,9 +1,11 @@
+/// <reference types="node" />
 import { MatrixClient } from "../client";
 import { IEncryptedFile } from "../@types/event";
 import { Room } from "./room";
 import { IContent } from "./event";
 import { MSC3089Branch } from "./MSC3089Branch";
 import { ISendEventResponse } from "../@types/requests";
+import type { ReadStream } from "fs";
 /**
  * The recommended defaults for a tree space's power levels. Note that this
  * is UNSTABLE and subject to breaking changes without notice.
@@ -135,13 +137,14 @@ export declare class MSC3089TreeSpace {
     setOrder(index: number): Promise<void>;
     /**
      * Creates (uploads) a new file to this tree. The file must have already been encrypted for the room.
+     * The file contents are in a type that is compatible with MatrixClient.uploadContent().
      * @param {string} name The name of the file.
-     * @param {ArrayBuffer} encryptedContents The encrypted contents.
+     * @param {File | String | Buffer | ReadStream | Blob} encryptedContents The encrypted contents.
      * @param {Partial<IEncryptedFile>} info The encrypted file information.
      * @param {IContent} additionalContent Optional event content fields to include in the message.
      * @returns {Promise<ISendEventResponse>} Resolves to the file event's sent response.
      */
-    createFile(name: string, encryptedContents: ArrayBuffer, info: Partial<IEncryptedFile>, additionalContent?: IContent): Promise<ISendEventResponse>;
+    createFile(name: string, encryptedContents: File | String | Buffer | ReadStream | Blob, info: Partial<IEncryptedFile>, additionalContent?: IContent): Promise<ISendEventResponse>;
     /**
      * Retrieves a file from the tree.
      * @param {string} fileEventId The event ID of the file.

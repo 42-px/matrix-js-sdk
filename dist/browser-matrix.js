@@ -8603,7 +8603,7 @@ module.exports={
   "㈑": "(라)",
   "㈄": "(ᄆ)",
   "㈒": "(마)",
-  "���": "(ᄇ)",
+  "㈅": "(ᄇ)",
   "㈓": "(바)",
   "㈆": "(ᄉ)",
   "㈔": "(사)",
@@ -15356,6 +15356,7 @@ var MsgType;
     MsgType["Audio"] = "m.audio";
     MsgType["Location"] = "m.location";
     MsgType["Video"] = "m.video";
+    MsgType["KeyVerificationRequest"] = "m.key.verification.request";
 })(MsgType = exports.MsgType || (exports.MsgType = {}));
 exports.RoomCreateTypeField = "type";
 var RoomType;
@@ -15412,7 +15413,7 @@ exports.UNSTABLE_MSC3089_BRANCH = new NamespacedValue_1.UnstableValue("m.branch"
  */
 exports.UNSTABLE_ELEMENT_FUNCTIONAL_USERS = new NamespacedValue_1.UnstableValue("io.element.functional_members", "io.element.functional_members");
 
-},{"../NamespacedValue":62}],60:[function(require,module,exports){
+},{"../NamespacedValue":63}],60:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -15489,6 +15490,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
+/* eslint-enable camelcase */
+
+},{}],62:[function(require,module,exports){
+"use strict";
+/*
+Copyright 2021 The Matrix.org Foundation C.I.C.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.SearchOrderBy = void 0;
 var GroupKey;
 (function (GroupKey) {
@@ -15502,7 +15523,7 @@ var SearchOrderBy;
 })(SearchOrderBy = exports.SearchOrderBy || (exports.SearchOrderBy = {}));
 /* eslint-enable camelcase */
 
-},{}],62:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -15595,7 +15616,7 @@ class UnstableValue extends NamespacedValue {
 }
 exports.UnstableValue = UnstableValue;
 
-},{}],63:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015, 2016 OpenMarket Ltd
@@ -15646,7 +15667,7 @@ class ReEmitter {
 }
 exports.ReEmitter = ReEmitter;
 
-},{}],64:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 New Vector Ltd
@@ -16071,7 +16092,7 @@ AutoDiscovery.PROMPT = AutoDiscoveryAction.PROMPT;
  */
 AutoDiscovery.SUCCESS = AutoDiscoveryAction.SUCCESS;
 
-},{"./logger":108,"./matrix":109,"url":56}],65:[function(require,module,exports){
+},{"./logger":109,"./matrix":110,"url":56}],66:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 
@@ -16156,7 +16177,7 @@ global.matrixcs = matrixcs;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./matrix":109,"@babel/runtime/helpers/interopRequireDefault":9,"@babel/runtime/helpers/typeof":14,"browser-request":20,"qs":41}],66:[function(require,module,exports){
+},{"./matrix":110,"@babel/runtime/helpers/interopRequireDefault":9,"@babel/runtime/helpers/typeof":14,"browser-request":20,"qs":41}],67:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -16268,6 +16289,11 @@ var CrossSigningKeyType;
     CrossSigningKeyType["UserSigningKey"] = "user_signing_key";
 })(CrossSigningKeyType || (CrossSigningKeyType = {}));
 /* eslint-enable camelcase */
+// We're using this constant for methods overloading and inspect whether a variable
+// contains an eventId or not. This was required to ensure backwards compatibility
+// of methods for threads
+// Probably not the most graceful solution but does a good enough job for now
+const EVENT_ID_PREFIX = "$";
 /**
  * Represents a Matrix Client. Only directly construct this if you want to use
  * custom modules. Normally, {@link createClient} should be used
@@ -18059,7 +18085,6 @@ class MatrixClient extends events_1.EventEmitter {
      * @return {Promise<object>} Status of restoration with `total` and `imported`
      * key counts.
      */
-    // TODO: Types
     restoreKeyBackupWithPassword(password, targetRoomId, targetSessionId, backupInfo, opts) {
         return __awaiter(this, void 0, void 0, function* () {
             const privKey = yield (0, key_passphrase_1.keyFromAuthData)(backupInfo.auth_data, password);
@@ -18079,7 +18104,6 @@ class MatrixClient extends events_1.EventEmitter {
      * @return {Promise<object>} Status of restoration with `total` and `imported`
      * key counts.
      */
-    // TODO: Types
     restoreKeyBackupWithSecretStorage(backupInfo, targetRoomId, targetSessionId, opts) {
         return __awaiter(this, void 0, void 0, function* () {
             const storedKey = yield this.getSecret("m.megolm_backup.v1");
@@ -18108,12 +18132,10 @@ class MatrixClient extends events_1.EventEmitter {
      * @return {Promise<object>} Status of restoration with `total` and `imported`
      * key counts.
      */
-    // TODO: Types
     restoreKeyBackupWithRecoveryKey(recoveryKey, targetRoomId, targetSessionId, backupInfo, opts) {
         const privKey = (0, recoverykey_1.decodeRecoveryKey)(recoveryKey);
         return this.restoreKeyBackup(privKey, targetRoomId, targetSessionId, backupInfo, opts);
     }
-    // TODO: Types
     restoreKeyBackupWithCache(targetRoomId, targetSessionId, backupInfo, opts) {
         return __awaiter(this, void 0, void 0, function* () {
             const privKey = yield this.crypto.getSessionBackupPrivateKey();
@@ -18155,8 +18177,8 @@ class MatrixClient extends events_1.EventEmitter {
                 }
                 const res = yield this.http.authedRequest(undefined, "GET", path.path, path.queryData, undefined, { prefix: http_api_1.PREFIX_UNSTABLE });
                 if (res.rooms) {
-                    // TODO: Types
-                    for (const [roomId, roomData] of Object.entries(res.rooms)) {
+                    const rooms = res.rooms;
+                    for (const [roomId, roomData] of Object.entries(rooms)) {
                         if (!roomData.sessions)
                             continue;
                         totalKeyCount += Object.keys(roomData.sessions).length;
@@ -18168,8 +18190,9 @@ class MatrixClient extends events_1.EventEmitter {
                     }
                 }
                 else if (res.sessions) {
-                    totalKeyCount = Object.keys(res.sessions).length;
-                    keys = yield algorithm.decryptSessions(res.sessions);
+                    const sessions = res.sessions;
+                    totalKeyCount = Object.keys(sessions).length;
+                    keys = yield algorithm.decryptSessions(sessions);
                     for (const k of keys) {
                         k.room_id = targetRoomId;
                     }
@@ -18623,27 +18646,26 @@ class MatrixClient extends events_1.EventEmitter {
         });
         return this.http.authedRequest(callback, "PUT", path, undefined, content);
     }
-    /**
-     * @param {string} roomId
-     * @param {string} eventType
-     * @param {Object} content
-     * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: to an empty object {}
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     */
-    sendEvent(roomId, eventType, content, txnId, callback) {
-        return this.sendCompleteEvent(roomId, { type: eventType, content }, txnId, callback);
+    sendEvent(roomId, threadId, eventType, content, txnId, callback) {
+        if (!(threadId === null || threadId === void 0 ? void 0 : threadId.startsWith(EVENT_ID_PREFIX)) && threadId !== null) {
+            callback = txnId;
+            txnId = content;
+            content = eventType;
+            eventType = threadId;
+            threadId = null;
+        }
+        return this.sendCompleteEvent(roomId, threadId, { type: eventType, content }, txnId, callback);
     }
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {object} eventObject An object with the partial structure of an event, to which event_id, user_id, room_id and origin_server_ts will be added.
      * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    sendCompleteEvent(roomId, eventObject, txnId, callback) {
+    sendCompleteEvent(roomId, threadId, eventObject, txnId, callback) {
         if (utils.isFunction(txnId)) {
             callback = txnId; // convert for legacy
             txnId = undefined;
@@ -18662,6 +18684,10 @@ class MatrixClient extends events_1.EventEmitter {
             origin_server_ts: new Date().getTime(),
         }));
         const room = this.getRoom(roomId);
+        const thread = room === null || room === void 0 ? void 0 : room.threads.get(threadId);
+        if (thread) {
+            localEvent.setThread(thread);
+        }
         // if this is a relation or redaction of an event
         // that hasn't been sent yet (e.g. with a local id starting with a ~)
         // then listen for the remote echo of that event so that by the time
@@ -18843,88 +18869,73 @@ class MatrixClient extends events_1.EventEmitter {
             return res;
         });
     }
-    /**
-     * @param {string} roomId
-     * @param {string} eventId
-     * @param {string} [txnId]  transaction id. One will be made up if not
-     *    supplied.
-     * @param {object|module:client.callback} cbOrOpts
-     *    Options to pass on, may contain `reason`.
-     *    Can be callback for backwards compatibility.
-     * @return {Promise} Resolves: TODO
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     */
-    redactEvent(roomId, eventId, txnId, cbOrOpts) {
+    redactEvent(roomId, threadId, eventId, txnId, cbOrOpts) {
+        if (!eventId || eventId.startsWith(EVENT_ID_PREFIX)) {
+            cbOrOpts = txnId;
+            txnId = eventId;
+            eventId = threadId;
+            threadId = null;
+        }
         const opts = typeof (cbOrOpts) === 'object' ? cbOrOpts : {};
         const reason = opts.reason;
         const callback = typeof (cbOrOpts) === 'function' ? cbOrOpts : undefined;
-        return this.sendCompleteEvent(roomId, {
+        return this.sendCompleteEvent(roomId, threadId, {
             type: event_2.EventType.RoomRedaction,
             content: { reason: reason },
             redacts: eventId,
         }, txnId, callback);
     }
-    /**
-     * @param {string} roomId
-     * @param {Object} content
-     * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: to an ISendEventResponse object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     */
-    sendMessage(roomId, content, txnId, callback) {
+    sendMessage(roomId, threadId, content, txnId, callback) {
+        if (typeof threadId !== "string" && threadId !== null) {
+            callback = txnId;
+            txnId = content;
+            content = threadId;
+            threadId = null;
+        }
         if (utils.isFunction(txnId)) {
             callback = txnId; // for legacy
             txnId = undefined;
         }
-        return this.sendEvent(roomId, event_2.EventType.RoomMessage, content, txnId, callback);
+        return this.sendEvent(roomId, threadId, event_2.EventType.RoomMessage, content, txnId, callback);
     }
-    /**
-     * @param {string} roomId
-     * @param {string} body
-     * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: to an empty object {}
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     */
-    sendTextMessage(roomId, body, txnId, callback) {
+    sendTextMessage(roomId, threadId, body, txnId, callback) {
+        if (!(threadId === null || threadId === void 0 ? void 0 : threadId.startsWith(EVENT_ID_PREFIX)) && threadId !== null) {
+            callback = txnId;
+            txnId = body;
+            body = threadId;
+            threadId = null;
+        }
         const content = ContentHelpers.makeTextMessage(body);
-        return this.sendMessage(roomId, content, txnId, callback);
+        return this.sendMessage(roomId, threadId, content, txnId, callback);
     }
-    /**
-     * @param {string} roomId
-     * @param {string} body
-     * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: to a ISendEventResponse object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     */
-    sendNotice(roomId, body, txnId, callback) {
+    sendNotice(roomId, threadId, body, txnId, callback) {
+        if (!(threadId === null || threadId === void 0 ? void 0 : threadId.startsWith(EVENT_ID_PREFIX)) && threadId !== null) {
+            callback = txnId;
+            txnId = body;
+            body = threadId;
+            threadId = null;
+        }
         const content = ContentHelpers.makeNotice(body);
-        return this.sendMessage(roomId, content, txnId, callback);
+        return this.sendMessage(roomId, threadId, content, txnId, callback);
     }
-    /**
-     * @param {string} roomId
-     * @param {string} body
-     * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: to a ISendEventResponse object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     */
-    sendEmoteMessage(roomId, body, txnId, callback) {
+    sendEmoteMessage(roomId, threadId, body, txnId, callback) {
+        if (!(threadId === null || threadId === void 0 ? void 0 : threadId.startsWith(EVENT_ID_PREFIX)) && threadId !== null) {
+            callback = txnId;
+            txnId = body;
+            body = threadId;
+            threadId = null;
+        }
         const content = ContentHelpers.makeEmoteMessage(body);
-        return this.sendMessage(roomId, content, txnId, callback);
+        return this.sendMessage(roomId, threadId, content, txnId, callback);
     }
-    /**
-     * @param {string} roomId
-     * @param {string} url
-     * @param {Object} info
-     * @param {string} text
-     * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: to a ISendEventResponse object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     */
-    sendImageMessage(roomId, url, info, text = "Image", callback) {
+    sendImageMessage(roomId, threadId, url, info, text = "Image", callback) {
+        if (!(threadId === null || threadId === void 0 ? void 0 : threadId.startsWith(EVENT_ID_PREFIX)) && threadId !== null) {
+            callback = text;
+            text = info || "Image";
+            info = url;
+            url = threadId;
+            threadId = null;
+        }
         if (utils.isFunction(text)) {
             callback = text; // legacy
             text = undefined;
@@ -18935,18 +18946,16 @@ class MatrixClient extends events_1.EventEmitter {
             info: info,
             body: text,
         };
-        return this.sendMessage(roomId, content, undefined, callback);
+        return this.sendMessage(roomId, threadId, content, undefined, callback);
     }
-    /**
-     * @param {string} roomId
-     * @param {string} url
-     * @param {Object} info
-     * @param {string} text
-     * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: to a ISendEventResponse object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     */
-    sendStickerMessage(roomId, url, info, text = "Sticker", callback) {
+    sendStickerMessage(roomId, threadId, url, info, text = "Sticker", callback) {
+        if (!(threadId === null || threadId === void 0 ? void 0 : threadId.startsWith(EVENT_ID_PREFIX)) && threadId !== null) {
+            callback = text;
+            text = info || "Sticker";
+            info = url;
+            url = threadId;
+            threadId = null;
+        }
         if (utils.isFunction(text)) {
             callback = text; // legacy
             text = undefined;
@@ -18956,43 +18965,37 @@ class MatrixClient extends events_1.EventEmitter {
             info: info,
             body: text,
         };
-        return this.sendEvent(roomId, event_2.EventType.Sticker, content, undefined, callback);
+        return this.sendEvent(roomId, threadId, event_2.EventType.Sticker, content, undefined, callback);
     }
-    /**
-     * @param {string} roomId
-     * @param {string} body
-     * @param {string} htmlBody
-     * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: to a ISendEventResponse object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     */
-    sendHtmlMessage(roomId, body, htmlBody, callback) {
+    sendHtmlMessage(roomId, threadId, body, htmlBody, callback) {
+        if (!(threadId === null || threadId === void 0 ? void 0 : threadId.startsWith(EVENT_ID_PREFIX)) && threadId !== null) {
+            callback = htmlBody;
+            htmlBody = body;
+            body = threadId;
+            threadId = null;
+        }
         const content = ContentHelpers.makeHtmlMessage(body, htmlBody);
-        return this.sendMessage(roomId, content, undefined, callback);
+        return this.sendMessage(roomId, threadId, content, undefined, callback);
     }
-    /**
-     * @param {string} roomId
-     * @param {string} body
-     * @param {string} htmlBody
-     * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: to a ISendEventResponse object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     */
-    sendHtmlNotice(roomId, body, htmlBody, callback) {
+    sendHtmlNotice(roomId, threadId, body, htmlBody, callback) {
+        if (!(threadId === null || threadId === void 0 ? void 0 : threadId.startsWith(EVENT_ID_PREFIX)) && threadId !== null) {
+            callback = htmlBody;
+            htmlBody = body;
+            body = threadId;
+            threadId = null;
+        }
         const content = ContentHelpers.makeHtmlNotice(body, htmlBody);
-        return this.sendMessage(roomId, content, undefined, callback);
+        return this.sendMessage(roomId, threadId, content, undefined, callback);
     }
-    /**
-     * @param {string} roomId
-     * @param {string} body
-     * @param {string} htmlBody
-     * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: to a ISendEventResponse object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     */
-    sendHtmlEmote(roomId, body, htmlBody, callback) {
+    sendHtmlEmote(roomId, threadId, body, htmlBody, callback) {
+        if (!(threadId === null || threadId === void 0 ? void 0 : threadId.startsWith(EVENT_ID_PREFIX)) && threadId !== null) {
+            callback = htmlBody;
+            htmlBody = body;
+            body = threadId;
+            threadId = null;
+        }
         const content = ContentHelpers.makeHtmlEmote(body, htmlBody);
-        return this.sendMessage(roomId, content, undefined, callback);
+        return this.sendMessage(roomId, threadId, content, undefined, callback);
     }
     /**
      * Send a receipt.
@@ -19618,7 +19621,9 @@ class MatrixClient extends events_1.EventEmitter {
                     const stateEvents = res.state.map(this.getEventMapper());
                     room.currentState.setUnknownStateEvents(stateEvents);
                 }
-                room.addEventsToTimeline(matrixEvents, true, room.getLiveTimeline());
+                const [timelineEvents, threadedEvents] = this.partitionThreadedEvents(matrixEvents);
+                room.addEventsToTimeline(timelineEvents, true, room.getLiveTimeline());
+                this.processThreadEvents(room, threadedEvents);
                 room.oldState.paginationToken = res.end;
                 if (res.chunk.length === 0) {
                     room.oldState.paginationToken = null;
@@ -19712,7 +19717,9 @@ class MatrixClient extends events_1.EventEmitter {
                 const stateEvents = res.state.map(this.getEventMapper());
                 timeline.getState(event_timeline_1.EventTimeline.BACKWARDS).setUnknownStateEvents(stateEvents);
             }
-            timelineSet.addEventsToTimeline(matrixEvents, true, timeline, res.start);
+            const [timelineEvents, threadedEvents] = this.partitionThreadedEvents(matrixEvents);
+            timelineSet.addEventsToTimeline(timelineEvents, true, timeline, res.start);
+            this.processThreadEvents(timelineSet.room, threadedEvents);
             // there is no guarantee that the event ended up in "timeline" (we
             // might have switched to a neighbouring timeline) - so check the
             // room's index again. On the other hand, there's no guarantee the
@@ -19820,8 +19827,10 @@ class MatrixClient extends events_1.EventEmitter {
                     event.event.room_id = notification.room_id; // XXX: gutwrenching
                     matrixEvents[i] = event;
                 }
-                eventTimeline.getTimelineSet()
-                    .addEventsToTimeline(matrixEvents, backwards, eventTimeline, token);
+                const [timelineEvents, threadedEvents] = this.partitionThreadedEvents(matrixEvents);
+                const timelineSet = eventTimeline.getTimelineSet();
+                timelineSet.addEventsToTimeline(timelineEvents, backwards, eventTimeline, token);
+                this.processThreadEvents(timelineSet.room, threadedEvents);
                 // if we've hit the end of the timeline, we need to stop trying to
                 // paginate. We need to keep the 'forwards' token though, to make sure
                 // we can recover from gappy syncs.
@@ -19848,8 +19857,10 @@ class MatrixClient extends events_1.EventEmitter {
                 }
                 const token = res.end;
                 const matrixEvents = res.chunk.map(this.getEventMapper());
+                const [timelineEvents, threadedEvents] = this.partitionThreadedEvents(matrixEvents);
                 eventTimeline.getTimelineSet()
-                    .addEventsToTimeline(matrixEvents, backwards, eventTimeline, token);
+                    .addEventsToTimeline(timelineEvents, backwards, eventTimeline, token);
+                this.processThreadEvents(room, threadedEvents);
                 // if we've hit the end of the timeline, we need to stop trying to
                 // paginate. We need to keep the 'forwards' token though, to make sure
                 // we can recover from gappy syncs.
@@ -20833,7 +20844,9 @@ class MatrixClient extends events_1.EventEmitter {
             if (fetchedEventType === event_2.EventType.RoomMessageEncrypted) {
                 const allEvents = originalEvent ? events.concat(originalEvent) : events;
                 yield Promise.all(allEvents.map(e => {
-                    return new Promise(resolve => e.once("Event.decrypted", resolve));
+                    if (e.isEncrypted()) {
+                        return new Promise(resolve => e.once("Event.decrypted", resolve));
+                    }
                 }));
                 events = events.filter(e => e.getType() === eventType);
             }
@@ -22943,6 +22956,59 @@ class MatrixClient extends events_1.EventEmitter {
             });
         });
     }
+    partitionThreadedEvents(events) {
+        // Indices to the events array, for readibility
+        const ROOM = 0;
+        const THREAD = 1;
+        const threadRoots = new Set();
+        if (this.supportsExperimentalThreads()) {
+            return events.reduce((memo, event) => {
+                const room = this.getRoom(event.getRoomId());
+                // An event should live in the thread timeline if
+                // - It's a reply in thread event
+                // - It's related to a reply in thread event
+                let shouldLiveInThreadTimeline = event.isThreadRelation;
+                if (shouldLiveInThreadTimeline) {
+                    threadRoots.add(event.relationEventId);
+                }
+                else {
+                    const parentEventId = event.parentEventId;
+                    const parentEvent = (room === null || room === void 0 ? void 0 : room.findEventById(parentEventId)) || events.find((mxEv) => {
+                        return mxEv.getId() === parentEventId;
+                    });
+                    shouldLiveInThreadTimeline = parentEvent === null || parentEvent === void 0 ? void 0 : parentEvent.isThreadRelation;
+                    // Copy all the reactions and annotations to the root event
+                    // to the thread timeline. They will end up living in both
+                    // timelines at the same time
+                    const targetingThreadRoot = (parentEvent === null || parentEvent === void 0 ? void 0 : parentEvent.isThreadRoot) || threadRoots.has(event.relationEventId);
+                    if (targetingThreadRoot && !event.isThreadRelation && event.relationEventId) {
+                        memo[THREAD].push(event);
+                    }
+                }
+                const targetTimeline = shouldLiveInThreadTimeline ? THREAD : ROOM;
+                memo[targetTimeline].push(event);
+                return memo;
+            }, [[], []]);
+        }
+        else {
+            // When `experimentalThreadSupport` is disabled
+            // treat all events as timelineEvents
+            return [
+                events,
+                [],
+            ];
+        }
+    }
+    /**
+     * @experimental
+     */
+    processThreadEvents(room, threadedEvents) {
+        threadedEvents
+            .sort((a, b) => a.getTs() - b.getTs())
+            .forEach(event => {
+            room.addThreadedEvent(event);
+        });
+    }
 }
 exports.MatrixClient = MatrixClient;
 MatrixClient.RESTORE_BACKUP_ERROR_BAD_KEY = 'RESTORE_BACKUP_ERROR_BAD_KEY';
@@ -23270,7 +23336,7 @@ MatrixClient.RESTORE_BACKUP_ERROR_BAD_KEY = 'RESTORE_BACKUP_ERROR_BAD_KEY';
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./@types/PushRules":58,"./@types/event":59,"./@types/partials":60,"./@types/search":61,"./ReEmitter":63,"./autodiscovery":64,"./content-helpers":67,"./content-repo":68,"./crypto":85,"./crypto/RoomList":74,"./crypto/api":81,"./crypto/backup":82,"./crypto/dehydration":83,"./crypto/key_passphrase":86,"./crypto/olmlib":87,"./crypto/recoverykey":88,"./event-mapper":102,"./filter":104,"./http-api":105,"./logger":108,"./matrix":109,"./models/MSC3089TreeSpace":111,"./models/event":115,"./models/event-timeline":114,"./models/search-result":122,"./models/user":124,"./pushprocessor":125,"./randomstring":126,"./service-types":129,"./store/stub":135,"./sync":138,"./sync.api":137,"./utils":140,"./webrtc/call":141,"./webrtc/callEventHandler":142,"./webrtc/mediaHandler":145,"events":27}],67:[function(require,module,exports){
+},{"./@types/PushRules":58,"./@types/event":59,"./@types/partials":60,"./@types/search":62,"./ReEmitter":64,"./autodiscovery":65,"./content-helpers":68,"./content-repo":69,"./crypto":86,"./crypto/RoomList":75,"./crypto/api":82,"./crypto/backup":83,"./crypto/dehydration":84,"./crypto/key_passphrase":87,"./crypto/olmlib":88,"./crypto/recoverykey":89,"./event-mapper":103,"./filter":105,"./http-api":106,"./logger":109,"./matrix":110,"./models/MSC3089TreeSpace":112,"./models/event":116,"./models/event-timeline":115,"./models/search-result":123,"./models/user":126,"./pushprocessor":127,"./randomstring":128,"./service-types":131,"./store/stub":137,"./sync":140,"./sync.api":139,"./utils":142,"./webrtc/call":143,"./webrtc/callEventHandler":144,"./webrtc/mediaHandler":147,"events":27}],68:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 New Vector Ltd
@@ -23374,7 +23440,7 @@ function makeEmoteMessage(body) {
 }
 exports.makeEmoteMessage = makeEmoteMessage;
 
-},{"./@types/event":59}],68:[function(require,module,exports){
+},{"./@types/event":59}],69:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -23470,7 +23536,7 @@ function getHttpUriForMxc(baseUrl, mxc, width, height, resizeMethod, allowDirect
 }
 exports.getHttpUriForMxc = getHttpUriForMxc;
 
-},{"./utils":140}],69:[function(require,module,exports){
+},{"./utils":142}],70:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -23750,7 +23816,7 @@ class CrossSigningInfo extends events_1.EventEmitter {
                 return;
             }
             const privateKeys = {};
-            const keys = {}; // TODO types
+            const keys = {};
             let masterSigning;
             let masterPub;
             try {
@@ -24214,7 +24280,7 @@ exports.requestKeysDuringVerification = requestKeysDuringVerification;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../crypto/store/indexeddb-crypto-store":90,"../logger":108,"./aes":76,"./olmlib":87,"buffer":23,"events":27}],70:[function(require,module,exports){
+},{"../crypto/store/indexeddb-crypto-store":91,"../logger":109,"./aes":77,"./olmlib":88,"buffer":23,"events":27}],71:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -25093,7 +25159,7 @@ function storeDeviceKeys(olmDevice, userStore, deviceResult) {
     });
 }
 
-},{"../logger":108,"../utils":140,"./CrossSigning":69,"./deviceinfo":84,"./olmlib":87,"./store/indexeddb-crypto-store":90,"events":27}],71:[function(require,module,exports){
+},{"../logger":109,"../utils":142,"./CrossSigning":70,"./deviceinfo":85,"./olmlib":88,"./store/indexeddb-crypto-store":91,"events":27}],72:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -25442,7 +25508,7 @@ class SSSSCryptoCallbacks {
     }
 }
 
-},{"../http-api":105,"../logger":108,"../models/event":115,"./CrossSigning":69,"./store/indexeddb-crypto-store":90,"events":27}],72:[function(require,module,exports){
+},{"../http-api":106,"../logger":109,"../models/event":116,"./CrossSigning":70,"./store/indexeddb-crypto-store":91,"events":27}],73:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -26675,7 +26741,7 @@ function calculateWithheldMessage(withheld) {
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"../logger":108,"./algorithms":78,"./store/indexeddb-crypto-store":90}],73:[function(require,module,exports){
+},{"../logger":109,"./algorithms":79,"./store/indexeddb-crypto-store":91}],74:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -27097,7 +27163,7 @@ function stringifyRecipientList(recipients) {
         + ']';
 }
 
-},{"../@types/event":59,"../logger":108}],74:[function(require,module,exports){
+},{"../@types/event":59,"../logger":109}],75:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 - 2021 The Matrix.org Foundation C.I.C.
@@ -27165,7 +27231,7 @@ class RoomList {
 }
 exports.RoomList = RoomList;
 
-},{"./store/indexeddb-crypto-store":90}],75:[function(require,module,exports){
+},{"./store/indexeddb-crypto-store":91}],76:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2019 - 2021 The Matrix.org Foundation C.I.C.
@@ -27702,7 +27768,7 @@ class SecretStorage {
 }
 exports.SecretStorage = SecretStorage;
 
-},{"../logger":108,"../randomstring":126,"./aes":76,"./olmlib":87}],76:[function(require,module,exports){
+},{"../logger":109,"../randomstring":128,"./aes":77,"./olmlib":88}],77:[function(require,module,exports){
 (function (Buffer){(function (){
 "use strict";
 /*
@@ -27923,7 +27989,7 @@ exports.calculateKeyCheck = calculateKeyCheck;
 
 }).call(this)}).call(this,require("buffer").Buffer)
 
-},{"../utils":140,"./olmlib":87,"buffer":23}],77:[function(require,module,exports){
+},{"../utils":142,"./olmlib":88,"buffer":23}],78:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -28146,7 +28212,7 @@ function registerAlgorithm(algorithm, encryptor, decryptor) {
 }
 exports.registerAlgorithm = registerAlgorithm;
 
-},{}],78:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -28181,7 +28247,7 @@ require("./olm");
 require("./megolm");
 __exportStar(require("./base"), exports);
 
-},{"./base":77,"./megolm":79,"./olm":80}],79:[function(require,module,exports){
+},{"./base":78,"./megolm":80,"./olm":81}],80:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -29636,7 +29702,7 @@ const PROBLEM_DESCRIPTIONS = {
 };
 (0, base_1.registerAlgorithm)(olmlib.MEGOLM_ALGORITHM, MegolmEncryption, MegolmDecryption);
 
-},{"../../logger":108,"../OlmDevice":72,"../olmlib":87,"./base":77}],80:[function(require,module,exports){
+},{"../../logger":109,"../OlmDevice":73,"../olmlib":88,"./base":78}],81:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -29940,7 +30006,7 @@ class OlmDecryption extends base_1.DecryptionAlgorithm {
 }
 (0, base_1.registerAlgorithm)(olmlib.OLM_ALGORITHM, OlmEncryption, OlmDecryption);
 
-},{"../../logger":108,"../deviceinfo":84,"../olmlib":87,"./base":77}],81:[function(require,module,exports){
+},{"../../logger":109,"../deviceinfo":85,"../olmlib":88,"./base":78}],82:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -29967,7 +30033,7 @@ var CrossSigningKey;
     CrossSigningKey["UserSigning"] = "user_signing";
 })(CrossSigningKey = exports.CrossSigningKey || (exports.CrossSigningKey = {}));
 
-},{}],82:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -30646,7 +30712,7 @@ exports.DefaultAlgorithm = Curve25519;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"../NamespacedValue":62,"../client":66,"../logger":108,"../utils":140,"./aes":76,"./key_passphrase":86,"./olmlib":87,"./recoverykey":88,"./store/indexeddb-crypto-store":90}],83:[function(require,module,exports){
+},{"../NamespacedValue":63,"../client":67,"../logger":109,"../utils":142,"./aes":77,"./key_passphrase":87,"./olmlib":88,"./recoverykey":89,"./store/indexeddb-crypto-store":91}],84:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -30879,7 +30945,7 @@ exports.DehydrationManager = DehydrationManager;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../crypto/store/indexeddb-crypto-store":90,"../logger":108,"./aes":76,"./olmlib":87,"another-json":17,"buffer":23}],84:[function(require,module,exports){
+},{"../crypto/store/indexeddb-crypto-store":91,"../logger":109,"./aes":77,"./olmlib":88,"another-json":17,"buffer":23}],85:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -31036,7 +31102,7 @@ DeviceInfo.DeviceVerification = {
     BLOCKED: DeviceVerification.Blocked,
 };
 
-},{}],85:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -31721,7 +31787,6 @@ class Crypto extends events_1.EventEmitter {
             let newKeyId = null;
             // create a new SSSS key and set it as default
             const createSSSS = (opts, privateKey) => __awaiter(this, void 0, void 0, function* () {
-                opts = opts || {};
                 if (privateKey) {
                     opts.key = privateKey;
                 }
@@ -31796,7 +31861,7 @@ class Crypto extends events_1.EventEmitter {
                 // callback to prompt for the key
                 const backupKey = (yield this.getSessionBackupPrivateKey()) || (yield getKeyBackupPassphrase());
                 // create a new SSSS key and use the backup key as the new SSSS key
-                const opts = {}; // TODO types
+                const opts = {};
                 if (keyBackupInfo.auth_data.private_key_salt &&
                     keyBackupInfo.auth_data.private_key_iterations) {
                     // FIXME: ???
@@ -32108,8 +32173,7 @@ class Crypto extends events_1.EventEmitter {
      * @param {object} devices the user's devices.  Should be a map from device ID
      *     to device info
      */
-    checkForValidDeviceSignature(userId, key, // TODO types
-    devices) {
+    checkForValidDeviceSignature(userId, key, devices) {
         return __awaiter(this, void 0, void 0, function* () {
             const deviceIds = [];
             if (devices && key.signatures && key.signatures[userId]) {
@@ -33194,12 +33258,13 @@ class Crypto extends events_1.EventEmitter {
      * the given users.
      *
      * @param {string[]} users list of user ids
+     * @param {boolean} force If true, force a new Olm session to be created. Default false.
      *
      * @return {Promise} resolves once the sessions are complete, to
      *    an Object mapping from userId to deviceId to
      *    {@link module:crypto~OlmSessionResult}
      */
-    ensureOlmSessionsForUsers(users) {
+    ensureOlmSessionsForUsers(users, force) {
         const devicesByUser = {};
         for (let i = 0; i < users.length; ++i) {
             const userId = users[i];
@@ -33219,7 +33284,7 @@ class Crypto extends events_1.EventEmitter {
                 devicesByUser[userId].push(deviceInfo);
             }
         }
-        return olmlib.ensureOlmSessionsForDevices(this.olmDevice, this.baseApis, devicesByUser);
+        return olmlib.ensureOlmSessionsForDevices(this.olmDevice, this.baseApis, devicesByUser, force);
     }
     /**
      * Get a list containing all of the room keys
@@ -33278,7 +33343,7 @@ class Crypto extends events_1.EventEmitter {
                     updateProgress();
                 }
             });
-        }));
+        })).then();
     }
     /**
      * Counts the number of end to end session keys that are waiting to be backed up
@@ -34194,8 +34259,8 @@ class IncomingRoomKeyRequestCancellation {
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../ReEmitter":63,"../errors":101,"../logger":108,"../models/event":115,"./CrossSigning":69,"./DeviceList":70,"./EncryptionSetup":71,"./OlmDevice":72,"./OutgoingRoomKeyRequestManager":73,"./SecretStorage":75,"./aes":76,"./algorithms":78,"./backup":82,"./dehydration":83,"./deviceinfo":84,"./key_passphrase":86,"./olmlib":87,"./recoverykey":88,"./store/indexeddb-crypto-store":90,"./verification/IllegalMethod":95,"./verification/QRCode":96,"./verification/SAS":97,"./verification/request/InRoomChannel":98,"./verification/request/ToDeviceChannel":99,"./verification/request/VerificationRequest":100,"another-json":17,"buffer":23,"events":27}],86:[function(require,module,exports){
-(function (global){(function (){
+},{"../ReEmitter":64,"../errors":102,"../logger":109,"../models/event":116,"./CrossSigning":70,"./DeviceList":71,"./EncryptionSetup":72,"./OlmDevice":73,"./OutgoingRoomKeyRequestManager":74,"./SecretStorage":76,"./aes":77,"./algorithms":79,"./backup":83,"./dehydration":84,"./deviceinfo":85,"./key_passphrase":87,"./olmlib":88,"./recoverykey":89,"./store/indexeddb-crypto-store":91,"./verification/IllegalMethod":96,"./verification/QRCode":97,"./verification/SAS":98,"./verification/request/InRoomChannel":99,"./verification/request/ToDeviceChannel":100,"./verification/request/VerificationRequest":101,"another-json":17,"buffer":23,"events":27}],87:[function(require,module,exports){
+(function (global,Buffer){(function (){
 "use strict";
 /*
 Copyright 2018 - 2021 The Matrix.org Foundation C.I.C.
@@ -34224,6 +34289,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deriveKey = exports.keyFromPassphrase = exports.keyFromAuthData = void 0;
 const randomstring_1 = require("../randomstring");
+const utils_1 = require("../utils");
+const subtleCrypto = (typeof window !== "undefined" && window.crypto) ?
+    (window.crypto.subtle || window.crypto.webkitSubtle) : null;
 const DEFAULT_ITERATIONS = 500000;
 const DEFAULT_BITSIZE = 256;
 function keyFromAuthData(authData, password) {
@@ -34252,10 +34320,17 @@ function keyFromPassphrase(password) {
 exports.keyFromPassphrase = keyFromPassphrase;
 function deriveKey(password, salt, iterations, numBits = DEFAULT_BITSIZE) {
     return __awaiter(this, void 0, void 0, function* () {
+        return subtleCrypto
+            ? deriveKeyBrowser(password, salt, iterations, numBits)
+            : deriveKeyNode(password, salt, iterations, numBits);
+    });
+}
+exports.deriveKey = deriveKey;
+function deriveKeyBrowser(password, salt, iterations, numBits) {
+    return __awaiter(this, void 0, void 0, function* () {
         const subtleCrypto = global.crypto.subtle;
         const TextEncoder = global.TextEncoder;
         if (!subtleCrypto || !TextEncoder) {
-            // TODO: Implement this for node
             throw new Error("Password-based backup is not avaiable on this platform");
         }
         const key = yield subtleCrypto.importKey('raw', new TextEncoder().encode(password), { name: 'PBKDF2' }, false, ['deriveBits']);
@@ -34268,11 +34343,19 @@ function deriveKey(password, salt, iterations, numBits = DEFAULT_BITSIZE) {
         return new Uint8Array(keybits);
     });
 }
-exports.deriveKey = deriveKey;
+function deriveKeyNode(password, salt, iterations, numBits) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const crypto = (0, utils_1.getCrypto)();
+        if (!crypto) {
+            throw new Error("No usable crypto implementation");
+        }
+        return crypto.pbkdf2Sync(password, Buffer.from(salt, 'binary'), iterations, numBits, 'sha512');
+    });
+}
 
-}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../randomstring":126}],87:[function(require,module,exports){
+},{"../randomstring":128,"../utils":142,"buffer":23}],88:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -34801,7 +34884,7 @@ exports.decodeBase64 = decodeBase64;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../logger":108,"../utils":140,"another-json":17,"buffer":23}],88:[function(require,module,exports){
+},{"../logger":109,"../utils":142,"another-json":17,"buffer":23}],89:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -34865,7 +34948,7 @@ exports.decodeRecoveryKey = decodeRecoveryKey;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"bs58":22,"buffer":23}],89:[function(require,module,exports){
+},{"bs58":22,"buffer":23}],90:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -35768,7 +35851,7 @@ function promiseifyTxn(txn) {
     });
 }
 
-},{"../../logger":108,"../../utils":140}],90:[function(require,module,exports){
+},{"../../logger":109,"../../utils":142}],91:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -36340,7 +36423,7 @@ IndexedDBCryptoStore.STORE_BACKUP = 'sessions_needing_backup';
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"../../errors":101,"../../indexeddb-helpers":106,"../../logger":108,"./indexeddb-crypto-store-backend":89,"./localStorage-crypto-store":91,"./memory-crypto-store":92}],91:[function(require,module,exports){
+},{"../../errors":102,"../../indexeddb-helpers":107,"../../logger":109,"./indexeddb-crypto-store-backend":90,"./localStorage-crypto-store":92,"./memory-crypto-store":93}],92:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -36669,7 +36752,7 @@ function setJsonItem(store, key, val) {
     store.setItem(key, JSON.stringify(val));
 }
 
-},{"../../logger":108,"./memory-crypto-store":92}],92:[function(require,module,exports){
+},{"../../logger":109,"./memory-crypto-store":93}],93:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -37107,7 +37190,7 @@ class MemoryCryptoStore {
 }
 exports.MemoryCryptoStore = MemoryCryptoStore;
 
-},{"../../logger":108,"../../utils":140}],93:[function(require,module,exports){
+},{"../../logger":109,"../../utils":142}],94:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 New Vector Ltd
@@ -37439,7 +37522,7 @@ class VerificationBase extends events_1.EventEmitter {
 }
 exports.VerificationBase = VerificationBase;
 
-},{"../../logger":108,"../../models/event":115,"../CrossSigning":69,"../deviceinfo":84,"./Error":94,"events":27}],94:[function(require,module,exports){
+},{"../../logger":109,"../../models/event":116,"../CrossSigning":70,"../deviceinfo":85,"./Error":95,"events":27}],95:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 - 2021 The Matrix.org Foundation C.I.C.
@@ -37522,7 +37605,7 @@ function errorFromEvent(event) {
 }
 exports.errorFromEvent = errorFromEvent;
 
-},{"../../models/event":115}],95:[function(require,module,exports){
+},{"../../models/event":116}],96:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2020 The Matrix.org Foundation C.I.C.
@@ -37579,7 +37662,7 @@ class IllegalMethod extends Base_1.VerificationBase {
 }
 exports.IllegalMethod = IllegalMethod;
 
-},{"./Base":93}],96:[function(require,module,exports){
+},{"./Base":94}],97:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -37855,7 +37938,7 @@ exports.QRCodeData = QRCodeData;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../../logger":108,"../olmlib":87,"./Base":93,"./Error":94,"buffer":23}],97:[function(require,module,exports){
+},{"../../logger":109,"../olmlib":88,"./Base":94,"./Error":95,"buffer":23}],98:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -38326,7 +38409,7 @@ exports.SAS = SAS;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"../../logger":108,"./Base":93,"./Error":94,"another-json":17}],98:[function(require,module,exports){
+},{"../../logger":109,"./Base":94,"./Error":95,"another-json":17}],99:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 New Vector Ltd
@@ -38673,7 +38756,7 @@ class InRoomRequests {
 }
 exports.InRoomRequests = InRoomRequests;
 
-},{"../../../@types/event":59,"../../../logger":108,"./VerificationRequest":100}],99:[function(require,module,exports){
+},{"../../../@types/event":59,"../../../logger":109,"./VerificationRequest":101}],100:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 New Vector Ltd
@@ -39006,7 +39089,7 @@ class ToDeviceRequests {
 }
 exports.ToDeviceRequests = ToDeviceRequests;
 
-},{"../../../logger":108,"../../../models/event":115,"../../../randomstring":126,"../Error":94,"./VerificationRequest":100}],100:[function(require,module,exports){
+},{"../../../logger":109,"../../../models/event":116,"../../../randomstring":128,"../Error":95,"./VerificationRequest":101}],101:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 - 2021 The Matrix.org Foundation C.I.C.
@@ -39846,7 +39929,7 @@ class VerificationRequest extends events_1.EventEmitter {
 }
 exports.VerificationRequest = VerificationRequest;
 
-},{"../../../logger":108,"../Error":94,"../QRCode":96,"events":27}],101:[function(require,module,exports){
+},{"../../../logger":109,"../Error":95,"../QRCode":97,"events":27}],102:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
@@ -39933,7 +40016,7 @@ var KeySignatureUploadError = /*#__PURE__*/function (_Error) {
 
 exports.KeySignatureUploadError = KeySignatureUploadError;
 
-},{"@babel/runtime/helpers/classCallCheck":3,"@babel/runtime/helpers/getPrototypeOf":7,"@babel/runtime/helpers/inherits":8,"@babel/runtime/helpers/interopRequireDefault":9,"@babel/runtime/helpers/possibleConstructorReturn":12,"@babel/runtime/helpers/wrapNativeSuper":15}],102:[function(require,module,exports){
+},{"@babel/runtime/helpers/classCallCheck":3,"@babel/runtime/helpers/getPrototypeOf":7,"@babel/runtime/helpers/inherits":8,"@babel/runtime/helpers/interopRequireDefault":9,"@babel/runtime/helpers/possibleConstructorReturn":12,"@babel/runtime/helpers/wrapNativeSuper":15}],103:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -39977,7 +40060,7 @@ function eventMapperFor(client, options) {
 }
 exports.eventMapperFor = eventMapperFor;
 
-},{"./models/event":115}],103:[function(require,module,exports){
+},{"./models/event":116}],104:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -40111,7 +40194,7 @@ class FilterComponent {
 }
 exports.FilterComponent = FilterComponent;
 
-},{}],104:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 Matrix.org Foundation C.I.C.
@@ -40294,7 +40377,7 @@ Filter.LAZY_LOADING_MESSAGES_FILTER = {
     lazy_load_members: true,
 };
 
-},{"./filter-component":103}],105:[function(require,module,exports){
+},{"./filter-component":104}],106:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 
@@ -41395,7 +41478,7 @@ function _retryNetworkOperation() {
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./logger":108,"./realtime-callbacks":127,"./utils":140,"@babel/runtime/helpers/asyncToGenerator":2,"@babel/runtime/helpers/classCallCheck":3,"@babel/runtime/helpers/createClass":5,"@babel/runtime/helpers/defineProperty":6,"@babel/runtime/helpers/getPrototypeOf":7,"@babel/runtime/helpers/inherits":8,"@babel/runtime/helpers/interopRequireDefault":9,"@babel/runtime/helpers/possibleConstructorReturn":12,"@babel/runtime/helpers/typeof":14,"@babel/runtime/helpers/wrapNativeSuper":15,"@babel/runtime/regenerator":16,"content-type":26}],106:[function(require,module,exports){
+},{"./logger":109,"./realtime-callbacks":129,"./utils":142,"@babel/runtime/helpers/asyncToGenerator":2,"@babel/runtime/helpers/classCallCheck":3,"@babel/runtime/helpers/createClass":5,"@babel/runtime/helpers/defineProperty":6,"@babel/runtime/helpers/getPrototypeOf":7,"@babel/runtime/helpers/inherits":8,"@babel/runtime/helpers/interopRequireDefault":9,"@babel/runtime/helpers/possibleConstructorReturn":12,"@babel/runtime/helpers/typeof":14,"@babel/runtime/helpers/wrapNativeSuper":15,"@babel/runtime/regenerator":16,"content-type":26}],107:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2019 New Vector Ltd
@@ -41450,7 +41533,7 @@ function exists(indexedDB, dbName) {
 }
 exports.exists = exists;
 
-},{}],107:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 OpenMarket Ltd
@@ -41515,6 +41598,7 @@ var AuthType;
     AuthType["Sso"] = "m.login.sso";
     AuthType["SsoUnstable"] = "org.matrix.login.sso";
     AuthType["Dummy"] = "m.login.dummy";
+    AuthType["RegistrationToken"] = "org.matrix.msc3231.login.registration_token";
 })(AuthType = exports.AuthType || (exports.AuthType = {}));
 class NoAuthFlowFoundError extends Error {
     // eslint-disable-next-line @typescript-eslint/naming-convention, camelcase
@@ -41861,6 +41945,7 @@ class InteractiveAuth {
                 catch (e) {
                     this.attemptAuthDeferred.reject(e);
                     this.attemptAuthDeferred = null;
+                    return;
                 }
                 if (!this.emailSid &&
                     !this.requestingEmailToken &&
@@ -42009,7 +42094,7 @@ class InteractiveAuth {
 }
 exports.InteractiveAuth = InteractiveAuth;
 
-},{"./logger":108,"./utils":140}],108:[function(require,module,exports){
+},{"./logger":109,"./utils":142}],109:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 André Jaenisch
@@ -42093,7 +42178,7 @@ function getPrefixedLogger(prefix) {
     return prefixLogger;
 }
 
-},{"loglevel":35}],109:[function(require,module,exports){
+},{"loglevel":35}],110:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -42162,6 +42247,11 @@ __exportStar(require("./store/indexeddb"), exports);
 __exportStar(require("./store/session/webstorage"), exports);
 __exportStar(require("./crypto/store/memory-crypto-store"), exports);
 __exportStar(require("./crypto/store/indexeddb-crypto-store"), exports);
+__exportStar(require("./@types/event"), exports);
+__exportStar(require("./@types/PushRules"), exports);
+__exportStar(require("./@types/requests"), exports);
+__exportStar(require("./@types/search"), exports);
+__exportStar(require("./models/room-summary"), exports);
 __exportStar(require("./content-repo"), exports);
 exports.ContentHelpers = __importStar(require("./content-helpers"));
 var call_1 = require("./webrtc/call");
@@ -42288,7 +42378,7 @@ exports.createClient = createClient;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./autodiscovery":64,"./client":66,"./content-helpers":67,"./content-repo":68,"./crypto/store/indexeddb-crypto-store":90,"./crypto/store/memory-crypto-store":92,"./errors":101,"./filter":104,"./http-api":105,"./interactive-auth":107,"./models/event":115,"./models/event-timeline":114,"./models/event-timeline-set":113,"./models/group":116,"./models/room":121,"./models/room-member":118,"./models/room-state":119,"./models/user":124,"./scheduler":128,"./service-types":129,"./store/indexeddb":132,"./store/memory":133,"./store/session/webstorage":134,"./sync-accumulator":136,"./timeline-window":139,"./webrtc/call":141}],110:[function(require,module,exports){
+},{"./@types/PushRules":58,"./@types/event":59,"./@types/requests":61,"./@types/search":62,"./autodiscovery":65,"./client":67,"./content-helpers":68,"./content-repo":69,"./crypto/store/indexeddb-crypto-store":91,"./crypto/store/memory-crypto-store":93,"./errors":102,"./filter":105,"./http-api":106,"./interactive-auth":108,"./models/event":116,"./models/event-timeline":115,"./models/event-timeline-set":114,"./models/group":117,"./models/room":122,"./models/room-member":119,"./models/room-state":120,"./models/room-summary":121,"./models/user":126,"./scheduler":130,"./service-types":131,"./store/indexeddb":134,"./store/memory":135,"./store/session/webstorage":136,"./sync-accumulator":138,"./timeline-window":141,"./webrtc/call":143}],111:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -42429,9 +42519,9 @@ class MSC3089Branch {
         });
     }
     /**
-     * Creates a new version of this file.
+     * Creates a new version of this file with contents in a type that is compatible with MatrixClient.uploadContent().
      * @param {string} name The name of the file.
-     * @param {ArrayBuffer} encryptedContents The encrypted contents.
+     * @param {File | String | Buffer | ReadStream | Blob} encryptedContents The encrypted contents.
      * @param {Partial<IEncryptedFile>} info The encrypted file information.
      * @param {IContent} additionalContent Optional event content fields to include in the message.
      * @returns {Promise<void>} Resolves when uploaded.
@@ -42492,7 +42582,7 @@ class MSC3089Branch {
 }
 exports.MSC3089Branch = MSC3089Branch;
 
-},{"../@types/event":59}],111:[function(require,module,exports){
+},{"../@types/event":59}],112:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -42935,17 +43025,19 @@ class MSC3089TreeSpace {
     }
     /**
      * Creates (uploads) a new file to this tree. The file must have already been encrypted for the room.
+     * The file contents are in a type that is compatible with MatrixClient.uploadContent().
      * @param {string} name The name of the file.
-     * @param {ArrayBuffer} encryptedContents The encrypted contents.
+     * @param {File | String | Buffer | ReadStream | Blob} encryptedContents The encrypted contents.
      * @param {Partial<IEncryptedFile>} info The encrypted file information.
      * @param {IContent} additionalContent Optional event content fields to include in the message.
      * @returns {Promise<ISendEventResponse>} Resolves to the file event's sent response.
      */
     createFile(name, encryptedContents, info, additionalContent) {
         return __awaiter(this, void 0, void 0, function* () {
-            const mxc = yield this.client.uploadContent(new Blob([encryptedContents]), {
+            const mxc = yield this.client.uploadContent(encryptedContents, {
                 includeFilename: false,
                 onlyContentUri: true,
+                rawResponse: false, // make this explicit otherwise behaviour is different on browser vs NodeJS
             });
             info.url = mxc;
             const fileContent = {
@@ -42997,7 +43089,7 @@ class MSC3089TreeSpace {
 }
 exports.MSC3089TreeSpace = MSC3089TreeSpace;
 
-},{"../@types/event":59,"../crypto/algorithms/megolm":79,"../logger":108,"../utils":140,"./MSC3089Branch":110,"p-retry":37}],112:[function(require,module,exports){
+},{"../@types/event":59,"../crypto/algorithms/megolm":80,"../logger":109,"../utils":142,"./MSC3089Branch":111,"p-retry":37}],113:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -43111,7 +43203,7 @@ class EventContext {
 }
 exports.EventContext = EventContext;
 
-},{"./event-timeline":114}],113:[function(require,module,exports){
+},{"./event-timeline":115}],114:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -43238,15 +43330,16 @@ class EventTimelineSet extends events_1.EventEmitter {
      *
      * @throws If <code>opts.pendingEventOrdering</code> was not 'detached'
      */
-    getPendingEvents() {
+    getPendingEvents(thread) {
         if (!this.room || !this.displayPendingEvents) {
             return [];
         }
+        const pendingEvents = this.room.getPendingEvents(thread);
         if (this.filter) {
-            return this.filter.filterRoomTimeline(this.room.getPendingEvents());
+            return this.filter.filterRoomTimeline(pendingEvents);
         }
         else {
-            return this.room.getPendingEvents();
+            return pendingEvents;
         }
     }
     /**
@@ -43870,7 +43963,7 @@ exports.EventTimelineSet = EventTimelineSet;
  * @param {boolean} resetAllTimelines True if all timelines were reset.
  */
 
-},{"../logger":108,"./event":115,"./event-timeline":114,"./relations":117,"events":27}],114:[function(require,module,exports){
+},{"../logger":109,"./event":116,"./event-timeline":115,"./relations":118,"events":27}],115:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -44262,7 +44355,7 @@ EventTimeline.BACKWARDS = Direction.Backward;
  */
 EventTimeline.FORWARDS = Direction.Forward;
 
-},{"../@types/event":59,"./room-state":119}],115:[function(require,module,exports){
+},{"../@types/event":59,"./room-state":120}],116:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -44579,19 +44672,22 @@ class MatrixEvent extends events_1.EventEmitter {
      * @experimental
      */
     get isThreadRoot() {
+        // TODO, change the inner working of this getter for it to use the
+        // bundled relationship return on the event, view MSC3440
         const thread = this.getThread();
         return (thread === null || thread === void 0 ? void 0 : thread.id) === this.getId();
     }
     get parentEventId() {
-        var _a;
-        const relations = this.getWireContent()["m.relates_to"];
-        return ((_a = relations === null || relations === void 0 ? void 0 : relations["m.in_reply_to"]) === null || _a === void 0 ? void 0 : _a["event_id"])
-            || (relations === null || relations === void 0 ? void 0 : relations.event_id);
+        return this.replyEventId || this.relationEventId;
     }
     get replyEventId() {
         var _a;
         const relations = this.getWireContent()["m.relates_to"];
         return (_a = relations === null || relations === void 0 ? void 0 : relations["m.in_reply_to"]) === null || _a === void 0 ? void 0 : _a["event_id"];
+    }
+    get relationEventId() {
+        var _a, _b;
+        return (_b = (_a = this.getWireContent()) === null || _a === void 0 ? void 0 : _a["m.relates_to"]) === null || _b === void 0 ? void 0 : _b.event_id;
     }
     /**
      * Get the previous event content JSON. This will only return something for
@@ -45461,7 +45557,7 @@ const REDACT_KEEP_CONTENT_MAP = {
  *    error occurred.
  */
 
-},{"../@types/event":59,"../ReEmitter":63,"../logger":108,"../utils":140,"./thread":123,"events":27}],116:[function(require,module,exports){
+},{"../@types/event":59,"../ReEmitter":64,"../logger":109,"../utils":142,"./thread":124,"events":27}],117:[function(require,module,exports){
 "use strict";
 
 var _typeof = require("@babel/runtime/helpers/typeof");
@@ -45572,7 +45668,7 @@ Group.prototype.setInviter = function (inviter) {
  * });
  */
 
-},{"../utils":140,"@babel/runtime/helpers/typeof":14,"events":27}],117:[function(require,module,exports){
+},{"../utils":142,"@babel/runtime/helpers/typeof":14,"events":27}],118:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2019, 2021 The Matrix.org Foundation C.I.C.
@@ -45929,7 +46025,7 @@ class Relations extends events_1.EventEmitter {
 }
 exports.Relations = Relations;
 
-},{"../@types/event":59,"../logger":108,"./event":115,"events":27}],118:[function(require,module,exports){
+},{"../@types/event":59,"../logger":109,"./event":116,"events":27}],119:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -46316,7 +46412,7 @@ function calculateDisplayName(selfUserId, displayName, roomState, disambiguate) 
  * });
  */
 
-},{"../content-repo":68,"../utils":140,"events":27}],119:[function(require,module,exports){
+},{"../content-repo":69,"../utils":142,"events":27}],120:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -47096,7 +47192,7 @@ exports.RoomState = RoomState;
  * });
  */
 
-},{"../@types/event":59,"../@types/partials":60,"../logger":108,"../utils":140,"./room-member":118,"events":27}],120:[function(require,module,exports){
+},{"../@types/event":59,"../@types/partials":60,"../logger":109,"../utils":142,"./room-member":119,"events":27}],121:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -47135,7 +47231,7 @@ class RoomSummary {
 }
 exports.RoomSummary = RoomSummary;
 
-},{}],121:[function(require,module,exports){
+},{}],122:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -47327,17 +47423,13 @@ class Room extends events_1.EventEmitter {
         this.setMaxListeners(100);
         this.reEmitter = new ReEmitter_1.ReEmitter(this);
         opts.pendingEventOrdering = opts.pendingEventOrdering || client_1.PendingEventOrdering.Chronological;
-        if (["chronological", "detached"].indexOf(opts.pendingEventOrdering) === -1) {
-            throw new Error("opts.pendingEventOrdering MUST be either 'chronological' or " +
-                "'detached'. Got: '" + opts.pendingEventOrdering + "'");
-        }
         this.name = roomId;
         // all our per-room timeline sets. the first one is the unfiltered ones;
         // the subsequent ones are the filtered ones in no particular order.
         this.timelineSets = [new event_timeline_set_1.EventTimelineSet(this, opts)];
         this.reEmitter.reEmit(this.getUnfilteredTimelineSet(), ["Room.timeline", "Room.timelineReset"]);
         this.fixUpLegacyTimelineFields();
-        if (this.opts.pendingEventOrdering == "detached") {
+        if (this.opts.pendingEventOrdering === client_1.PendingEventOrdering.Detached) {
             this.pendingEventList = [];
             const serializedPendingEventList = client.sessionStore.store.getItem(pendingEventsKey(this.roomId));
             if (serializedPendingEventList) {
@@ -47531,12 +47623,14 @@ class Room extends events_1.EventEmitter {
      *
      * @throws If <code>opts.pendingEventOrdering</code> was not 'detached'
      */
-    getPendingEvents() {
-        if (this.opts.pendingEventOrdering !== "detached") {
+    getPendingEvents(thread) {
+        if (this.opts.pendingEventOrdering !== client_1.PendingEventOrdering.Detached) {
             throw new Error("Cannot call getPendingEvents with pendingEventOrdering == " +
                 this.opts.pendingEventOrdering);
         }
-        return this.pendingEventList;
+        return this.pendingEventList.filter(event => {
+            return !thread || thread.id === event.threadRootId;
+        });
     }
     /**
      * Removes a pending event for this room
@@ -47545,7 +47639,7 @@ class Room extends events_1.EventEmitter {
      * @return {boolean} True if an element was removed.
      */
     removePendingEvent(eventId) {
-        if (this.opts.pendingEventOrdering !== "detached") {
+        if (this.opts.pendingEventOrdering !== client_1.PendingEventOrdering.Detached) {
             throw new Error("Cannot call removePendingEvent with pendingEventOrdering == " +
                 this.opts.pendingEventOrdering);
         }
@@ -47563,7 +47657,7 @@ class Room extends events_1.EventEmitter {
      * @return {boolean}
      */
     hasPendingEvent(eventId) {
-        if (this.opts.pendingEventOrdering !== "detached") {
+        if (this.opts.pendingEventOrdering !== client_1.PendingEventOrdering.Detached) {
             return false;
         }
         return this.pendingEventList.some(event => event.getId() === eventId);
@@ -47575,7 +47669,7 @@ class Room extends events_1.EventEmitter {
      * @return {MatrixEvent}
      */
     getPendingEvent(eventId) {
-        if (this.opts.pendingEventOrdering !== "detached") {
+        if (this.opts.pendingEventOrdering !== client_1.PendingEventOrdering.Detached) {
             return null;
         }
         return this.pendingEventList.find(event => event.getId() === eventId);
@@ -47902,7 +47996,14 @@ class Room extends events_1.EventEmitter {
      * the given event, or null if unknown
      */
     getTimelineForEvent(eventId) {
-        return this.getUnfilteredTimelineSet().getTimelineForEvent(eventId);
+        const event = this.findEventById(eventId);
+        const thread = this.findThreadForEvent(event);
+        if (thread) {
+            return thread.timelineSet.getLiveTimeline();
+        }
+        else {
+            return this.getUnfilteredTimelineSet().getTimelineForEvent(eventId);
+        }
     }
     /**
      * Add a new timeline to this room's unfiltered timeline set
@@ -48269,6 +48370,9 @@ class Room extends events_1.EventEmitter {
         if (event.isThreadRelation) {
             return this.threads.get(event.threadRootId);
         }
+        else if (event.isThreadRoot) {
+            return this.threads.get(event.getId());
+        }
         else {
             const parentEvent = this.findEventById(event.parentEventId);
             return this.findThreadForEvent(parentEvent);
@@ -48298,6 +48402,14 @@ class Room extends events_1.EventEmitter {
                 this.threads.set(thread.id, thread);
                 this.reEmitter.reEmit(thread, [thread_1.ThreadEvent.Update, thread_1.ThreadEvent.Ready]);
                 this.emit(thread_1.ThreadEvent.New, thread);
+            }
+            if (event.getUnsigned().transaction_id) {
+                const existingEvent = this.txnToEvent[event.getUnsigned().transaction_id];
+                if (existingEvent) {
+                    // remote echo of an event we sent earlier
+                    this.handleRemoteEcho(event, existingEvent);
+                    return;
+                }
             }
             this.emit(thread_1.ThreadEvent.Update, thread);
         });
@@ -48382,13 +48494,6 @@ class Room extends events_1.EventEmitter {
      * unique transaction id.
      */
     addPendingEvent(event, txnId) {
-        var _a;
-        // TODO: Enable "pending events" for threads
-        // There's a fair few things to update to make them work with Threads
-        // Will get back to it when the plan is to build a more polished UI ready for production
-        if (((_a = this.client) === null || _a === void 0 ? void 0 : _a.supportsExperimentalThreads()) && event.threadRootId) {
-            return;
-        }
         if (event.status !== event_1.EventStatus.SENDING && event.status !== event_1.EventStatus.NOT_SENT) {
             throw new Error("addPendingEvent called on an event with status " +
                 event.status);
@@ -48402,7 +48507,8 @@ class Room extends events_1.EventEmitter {
         // on the unfiltered timelineSet.
         event_timeline_1.EventTimeline.setEventMetadata(event, this.getLiveTimeline().getState(event_timeline_1.EventTimeline.FORWARDS), false);
         this.txnToEvent[txnId] = event;
-        if (this.opts.pendingEventOrdering == "detached") {
+        const thread = this.threads.get(event.threadRootId);
+        if (this.opts.pendingEventOrdering === client_1.PendingEventOrdering.Detached && !thread) {
             if (this.pendingEventList.some((e) => e.status === event_1.EventStatus.NOT_SENT)) {
                 logger_1.logger.warn("Setting event as NOT_SENT due to messages in the same state");
                 event.setStatus(event_1.EventStatus.NOT_SENT);
@@ -48420,7 +48526,7 @@ class Room extends events_1.EventEmitter {
                 let redactedEvent = this.pendingEventList &&
                     this.pendingEventList.find(e => e.getId() === redactId);
                 if (!redactedEvent) {
-                    redactedEvent = this.getUnfilteredTimelineSet().findEventById(redactId);
+                    redactedEvent = this.findEventById(redactId);
                 }
                 if (redactedEvent) {
                     redactedEvent.markLocallyRedacted(event);
@@ -48429,15 +48535,20 @@ class Room extends events_1.EventEmitter {
             }
         }
         else {
-            for (let i = 0; i < this.timelineSets.length; i++) {
-                const timelineSet = this.timelineSets[i];
-                if (timelineSet.getFilter()) {
-                    if (timelineSet.getFilter().filterRoomTimeline([event]).length) {
+            if (thread) {
+                thread.timelineSet.addEventToTimeline(event, thread.timelineSet.getLiveTimeline(), false);
+            }
+            else {
+                for (let i = 0; i < this.timelineSets.length; i++) {
+                    const timelineSet = this.timelineSets[i];
+                    if (timelineSet.getFilter()) {
+                        if (timelineSet.getFilter().filterRoomTimeline([event]).length) {
+                            timelineSet.addEventToTimeline(event, timelineSet.getLiveTimeline(), false);
+                        }
+                    }
+                    else {
                         timelineSet.addEventToTimeline(event, timelineSet.getLiveTimeline(), false);
                     }
-                }
-                else {
-                    timelineSet.addEventToTimeline(event, timelineSet.getLiveTimeline(), false);
                 }
             }
         }
@@ -48486,17 +48597,23 @@ class Room extends events_1.EventEmitter {
      * @param {module:models/event.MatrixEvent} event the relation event that needs to be aggregated.
      */
     aggregateNonLiveRelation(event) {
-        // TODO: We should consider whether this means it would be a better
-        // design to lift the relations handling up to the room instead.
-        for (let i = 0; i < this.timelineSets.length; i++) {
-            const timelineSet = this.timelineSets[i];
-            if (timelineSet.getFilter()) {
-                if (timelineSet.getFilter().filterRoomTimeline([event]).length) {
+        const thread = this.findThreadForEvent(event);
+        if (thread) {
+            thread.timelineSet.aggregateRelations(event);
+        }
+        else {
+            // TODO: We should consider whether this means it would be a better
+            // design to lift the relations handling up to the room instead.
+            for (let i = 0; i < this.timelineSets.length; i++) {
+                const timelineSet = this.timelineSets[i];
+                if (timelineSet.getFilter()) {
+                    if (timelineSet.getFilter().filterRoomTimeline([event]).length) {
+                        timelineSet.aggregateRelations(event);
+                    }
+                }
+                else {
                     timelineSet.aggregateRelations(event);
                 }
-            }
-            else {
-                timelineSet.aggregateRelations(event);
             }
         }
     }
@@ -48529,10 +48646,16 @@ class Room extends events_1.EventEmitter {
         // replace the event source (this will preserve the plaintext payload if
         // any, which is good, because we don't want to try decoding it again).
         localEvent.handleRemoteEcho(remoteEvent.event);
-        for (let i = 0; i < this.timelineSets.length; i++) {
-            const timelineSet = this.timelineSets[i];
-            // if it's already in the timeline, update the timeline map. If it's not, add it.
-            timelineSet.handleRemoteEcho(localEvent, oldEventId, newEventId);
+        const thread = this.threads.get(remoteEvent.threadRootId);
+        if (thread) {
+            thread.timelineSet.handleRemoteEcho(localEvent, oldEventId, newEventId);
+        }
+        else {
+            for (let i = 0; i < this.timelineSets.length; i++) {
+                const timelineSet = this.timelineSets[i];
+                // if it's already in the timeline, update the timeline map. If it's not, add it.
+                timelineSet.handleRemoteEcho(localEvent, oldEventId, newEventId);
+            }
         }
         this.emit("Room.localEchoUpdated", localEvent, this, oldEventId, oldStatus);
     }
@@ -48558,7 +48681,7 @@ class Room extends events_1.EventEmitter {
         }
         // SENT races against /sync, so we have to special-case it.
         if (newStatus == event_1.EventStatus.SENT) {
-            const timeline = this.getUnfilteredTimelineSet().eventIdToTimeline(newEventId);
+            const timeline = this.getTimelineForEvent(newEventId);
             if (timeline) {
                 // we've already received the event via the event stream.
                 // nothing more to do here.
@@ -48580,11 +48703,17 @@ class Room extends events_1.EventEmitter {
         if (newStatus == event_1.EventStatus.SENT) {
             // update the event id
             event.replaceLocalEventId(newEventId);
-            // if the event was already in the timeline (which will be the case if
-            // opts.pendingEventOrdering==chronological), we need to update the
-            // timeline map.
-            for (let i = 0; i < this.timelineSets.length; i++) {
-                this.timelineSets[i].replaceEventId(oldEventId, newEventId);
+            const thread = this.findThreadForEvent(event);
+            if (thread) {
+                thread.timelineSet.replaceEventId(oldEventId, newEventId);
+            }
+            else {
+                // if the event was already in the timeline (which will be the case if
+                // opts.pendingEventOrdering==chronological), we need to update the
+                // timeline map.
+                for (let i = 0; i < this.timelineSets.length; i++) {
+                    this.timelineSets[i].replaceEventId(oldEventId, newEventId);
+                }
             }
         }
         else if (newStatus == event_1.EventStatus.CANCELLED) {
@@ -48659,7 +48788,7 @@ class Room extends events_1.EventEmitter {
             // types X Y Z to the timeline".
             this.addLiveEvent(events[i], duplicateStrategy, fromCache);
             const thread = this.threads.get(events[i].getId());
-            if (thread && !thread.ready) {
+            if (thread) {
                 thread.addEvent(events[i], true);
             }
         }
@@ -49274,7 +49403,7 @@ function memberNamesToRoomName(names, count = (names.length + 1)) {
  * @param {string} prevMembership The previous membership value
  */
 
-},{"../@types/event":59,"../ReEmitter":63,"../client":66,"../content-repo":68,"../logger":108,"../utils":140,"./event":115,"./event-timeline":114,"./event-timeline-set":113,"./room-member":118,"./room-summary":120,"./thread":123,"events":27}],122:[function(require,module,exports){
+},{"../@types/event":59,"../ReEmitter":64,"../client":67,"../content-repo":69,"../logger":109,"../utils":142,"./event":116,"./event-timeline":115,"./event-timeline-set":114,"./room-member":119,"./room-summary":121,"./thread":124,"events":27}],123:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -49332,7 +49461,7 @@ class SearchResult {
 }
 exports.SearchResult = SearchResult;
 
-},{"./event-context":112}],123:[function(require,module,exports){
+},{"./event-context":113}],124:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -49360,10 +49489,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Thread = exports.ThreadEvent = void 0;
-const events_1 = require("events");
 const event_1 = require("./event");
 const event_timeline_1 = require("./event-timeline");
 const event_timeline_set_1 = require("./event-timeline-set");
+const typed_event_emitter_1 = require("./typed-event-emitter");
 var ThreadEvent;
 (function (ThreadEvent) {
     ThreadEvent["New"] = "Thread.new";
@@ -49373,20 +49502,28 @@ var ThreadEvent;
 /**
  * @experimental
  */
-class Thread extends events_1.EventEmitter {
+class Thread extends typed_event_emitter_1.TypedEventEmitter {
     constructor(events = [], room, client) {
         super();
         this.room = room;
         this.client = client;
+        this._currentUserParticipated = false;
+        this.onEcho = (event) => {
+            if (this.timelineSet.eventIdToTimeline(event.getId())) {
+                this.emit(ThreadEvent.Update, this);
+            }
+        };
         if (events.length === 0) {
             throw new Error("Can't create an empty thread");
         }
         this.timelineSet = new event_timeline_set_1.EventTimelineSet(this.room, {
             unstableClientRelationAggregation: true,
             timelineSupport: true,
-            pendingEvents: false,
+            pendingEvents: true,
         });
         events.forEach(event => this.addEvent(event));
+        room.on("Room.localEchoUpdated", this.onEcho);
+        room.on("Room.timeline", this.onEcho);
     }
     /**
      * Add an event to the thread and updates
@@ -49414,9 +49551,10 @@ class Thread extends events_1.EventEmitter {
             const roomState = this.room.getLiveTimeline().getState(event_timeline_1.EventTimeline.FORWARDS);
             event.setThread(this);
             this.timelineSet.addEventToTimeline(event, this.timelineSet.getLiveTimeline(), toStartOfTimeline, false, roomState);
-            if (this.ready) {
-                this.client.decryptEventIfNeeded(event, {});
+            if (!this._currentUserParticipated && event.getSender() === this.client.getUserId()) {
+                this._currentUserParticipated = true;
             }
+            yield this.client.decryptEventIfNeeded(event, {});
             this.emit(ThreadEvent.Update, this);
         });
     }
@@ -49427,10 +49565,12 @@ class Thread extends events_1.EventEmitter {
         return this.timelineSet.findEventById(eventId);
     }
     /**
-     * Determines thread's ready status
+     * Return last reply to the thread
      */
-    get ready() {
-        return this.rootEvent !== undefined;
+    get lastReply() {
+        const threadReplies = this.events
+            .filter(event => event.isThreadRelation);
+        return threadReplies[threadReplies.length - 1];
     }
     /**
      * The thread ID, which is the same as the root event ID
@@ -49458,16 +49598,6 @@ class Thread extends events_1.EventEmitter {
             .length;
     }
     /**
-     * A set of mxid participating to the thread
-     */
-    get participants() {
-        const participants = new Set();
-        this.events.forEach(event => {
-            participants.add(event.getSender());
-        });
-        return participants;
-    }
-    /**
      * A getter for the last event added to the thread
      */
     get replyToEvent() {
@@ -49486,30 +49616,88 @@ class Thread extends events_1.EventEmitter {
     has(eventId) {
         return this.timelineSet.findEventById(eventId) instanceof event_1.MatrixEvent;
     }
-    on(event, listener) {
-        super.on(event, listener);
-        return this;
-    }
-    once(event, listener) {
-        super.once(event, listener);
-        return this;
-    }
-    off(event, listener) {
-        super.off(event, listener);
-        return this;
-    }
-    addListener(event, listener) {
-        super.addListener(event, listener);
-        return this;
-    }
-    removeListener(event, listener) {
-        super.removeListener(event, listener);
-        return this;
+    get hasCurrentUserParticipated() {
+        return this._currentUserParticipated;
     }
 }
 exports.Thread = Thread;
 
-},{"./event":115,"./event-timeline":114,"./event-timeline-set":113,"events":27}],124:[function(require,module,exports){
+},{"./event":116,"./event-timeline":115,"./event-timeline-set":114,"./typed-event-emitter":125}],125:[function(require,module,exports){
+"use strict";
+/*
+Copyright 2021 The Matrix.org Foundation C.I.C.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TypedEventEmitter = void 0;
+const events_1 = require("events");
+var EventEmitterEvents;
+(function (EventEmitterEvents) {
+    EventEmitterEvents["NewListener"] = "newListener";
+    EventEmitterEvents["RemoveListener"] = "removeListener";
+})(EventEmitterEvents || (EventEmitterEvents = {}));
+/**
+ * Typed Event Emitter class which can act as a Base Model for all our model
+ * and communication events.
+ * This makes it much easier for us to distinguish between events, as we now need
+ * to properly type this, so that our events are not stringly-based and prone
+ * to silly typos.
+ */
+class TypedEventEmitter extends events_1.EventEmitter {
+    addListener(event, listener) {
+        return super.addListener(event, listener);
+    }
+    emit(event, ...args) {
+        return super.emit(event, ...args);
+    }
+    eventNames() {
+        return super.eventNames();
+    }
+    listenerCount(event) {
+        return super.listenerCount(event);
+    }
+    listeners(event) {
+        return super.listeners(event);
+    }
+    off(event, listener) {
+        return super.off(event, listener);
+    }
+    on(event, listener) {
+        return super.on(event, listener);
+    }
+    once(event, listener) {
+        return super.once(event, listener);
+    }
+    prependListener(event, listener) {
+        return super.prependListener(event, listener);
+    }
+    prependOnceListener(event, listener) {
+        return super.prependOnceListener(event, listener);
+    }
+    removeAllListeners(event) {
+        return super.removeAllListeners(event);
+    }
+    removeListener(event, listener) {
+        return super.removeListener(event, listener);
+    }
+    rawListeners(event) {
+        return super.rawListeners(event);
+    }
+}
+exports.TypedEventEmitter = TypedEventEmitter;
+
+},{"events":27}],126:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -49760,7 +49948,7 @@ exports.User = User;
  * });
  */
 
-},{"events":27}],125:[function(require,module,exports){
+},{"events":27}],127:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -50197,7 +50385,7 @@ PushProcessor.cachedGlobToRegex = {}; // $glob: RegExp
  * noise.
  */
 
-},{"./@types/PushRules":58,"./logger":108,"./utils":140}],126:[function(require,module,exports){
+},{"./@types/PushRules":58,"./logger":109,"./utils":142}],128:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 New Vector Ltd
@@ -50240,7 +50428,7 @@ function randomStringFrom(len, chars) {
     return ret;
 }
 
-},{}],127:[function(require,module,exports){
+},{}],129:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -50425,7 +50613,7 @@ function binarySearch(array, func) {
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./logger":108}],128:[function(require,module,exports){
+},{"./logger":109}],130:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -50747,7 +50935,7 @@ function debuglog(...args) {
  * @return {Promise} Resolved/rejected depending on the outcome of the request.
  */
 
-},{"./@types/event":59,"./logger":108,"./utils":140}],129:[function(require,module,exports){
+},{"./@types/event":59,"./logger":109,"./utils":142}],131:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2019 - 2021 The Matrix.org Foundation C.I.C.
@@ -50772,7 +50960,7 @@ var SERVICE_TYPES;
     SERVICE_TYPES["IM"] = "SERVICE_TYPE_IM";
 })(SERVICE_TYPES = exports.SERVICE_TYPES || (exports.SERVICE_TYPES = {}));
 
-},{}],130:[function(require,module,exports){
+},{}],132:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -51292,7 +51480,7 @@ class LocalIndexedDBStoreBackend {
 }
 exports.LocalIndexedDBStoreBackend = LocalIndexedDBStoreBackend;
 
-},{"../indexeddb-helpers":106,"../logger":108,"../sync-accumulator":136,"../utils":140}],131:[function(require,module,exports){
+},{"../indexeddb-helpers":107,"../logger":109,"../sync-accumulator":138,"../utils":142}],133:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -51460,7 +51648,7 @@ class RemoteIndexedDBStoreBackend {
 }
 exports.RemoteIndexedDBStoreBackend = RemoteIndexedDBStoreBackend;
 
-},{"../logger":108,"../utils":140}],132:[function(require,module,exports){
+},{"../logger":109,"../utils":142}],134:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 Vector Creations Ltd
@@ -51755,7 +51943,7 @@ class IndexedDBStore extends memory_1.MemoryStore {
 }
 exports.IndexedDBStore = IndexedDBStore;
 
-},{"../logger":108,"../models/event":115,"../models/user":124,"./indexeddb-local-backend":130,"./indexeddb-remote-backend":131,"./memory":133,"events":27}],133:[function(require,module,exports){
+},{"../logger":109,"../models/event":116,"../models/user":126,"./indexeddb-local-backend":132,"./indexeddb-remote-backend":133,"./memory":135,"events":27}],135:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -52153,7 +52341,7 @@ class MemoryStore {
 }
 exports.MemoryStore = MemoryStore;
 
-},{"../models/user":124}],134:[function(require,module,exports){
+},{"../models/user":126}],136:[function(require,module,exports){
 "use strict";
 
 var _typeof = require("@babel/runtime/helpers/typeof");
@@ -52438,7 +52626,7 @@ function debuglog() {
   }
 }
 
-},{"../../logger":108,"../../utils":140,"@babel/runtime/helpers/typeof":14}],135:[function(require,module,exports){
+},{"../../logger":109,"../../utils":142,"@babel/runtime/helpers/typeof":14}],137:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -52687,7 +52875,7 @@ class StubStore {
 }
 exports.StubStore = StubStore;
 
-},{}],136:[function(require,module,exports){
+},{}],138:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -53220,7 +53408,7 @@ function setState(eventMap, event) {
     eventMap[event.type][event.state_key] = event;
 }
 
-},{"./logger":108,"./utils":140}],137:[function(require,module,exports){
+},{"./logger":109,"./utils":142}],139:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -53250,7 +53438,7 @@ var SyncState;
     SyncState["Reconnecting"] = "RECONNECTING";
 })(SyncState = exports.SyncState || (exports.SyncState = {}));
 
-},{}],138:[function(require,module,exports){
+},{}],140:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -53501,7 +53689,7 @@ class SyncApi {
                 }
                 leaveObj.timeline = leaveObj.timeline || {};
                 const events = this.mapSyncEventsFormat(leaveObj.timeline, room);
-                const [timelineEvents, threadedEvents] = this.partitionThreadedEvents(events);
+                const [timelineEvents, threadedEvents] = this.client.partitionThreadedEvents(events);
                 const stateEvents = this.mapSyncEventsFormat(leaveObj.state, room);
                 // set the back-pagination token. Do this *before* adding any
                 // events so that clients can start back-paginating.
@@ -53515,39 +53703,6 @@ class SyncApi {
             });
             return rooms;
         });
-    }
-    /**
-     * Split events between the ones that will end up in the main
-     * room timeline versus the one that need to be processed in a thread
-     * @experimental
-     */
-    partitionThreadedEvents(events) {
-        if (this.opts.experimentalThreadSupport) {
-            return events.reduce((memo, event) => {
-                const room = this.client.getRoom(event.getRoomId());
-                // An event should live in the thread timeline if
-                // - It's a reply in thread event
-                // - It's related to a reply in thread event
-                let shouldLiveInThreadTimeline = event.isThreadRelation;
-                if (!shouldLiveInThreadTimeline) {
-                    const parentEventId = event.parentEventId;
-                    const parentEvent = (room === null || room === void 0 ? void 0 : room.findEventById(parentEventId)) || events.find((mxEv) => {
-                        return mxEv.getId() === parentEventId;
-                    });
-                    shouldLiveInThreadTimeline = parentEvent === null || parentEvent === void 0 ? void 0 : parentEvent.isThreadRelation;
-                }
-                memo[shouldLiveInThreadTimeline ? 1 : 0].push(event);
-                return memo;
-            }, [[], []]);
-        }
-        else {
-            // When `experimentalThreadSupport` is disabled
-            // treat all events as timelineEvents
-            return [
-                events,
-                [],
-            ];
-        }
     }
     /**
      * Peek into a room. This will result in the room in question being synced so it
@@ -53730,6 +53885,7 @@ class SyncApi {
             // The logout already happened, we just need to stop.
             logger_1.logger.warn("Token no longer valid - assuming logout");
             this.stop();
+            this.updateSyncState(sync_api_1.SyncState.Error, { error });
             return true;
         }
         return false;
@@ -54420,7 +54576,7 @@ class SyncApi {
                         this.registerStateListeners(room);
                     }
                 }
-                const [timelineEvents, threadedEvents] = this.partitionThreadedEvents(events);
+                const [timelineEvents, threadedEvents] = this.client.partitionThreadedEvents(events);
                 this.processRoomEvents(room, stateEvents, timelineEvents, syncEventData.fromCache);
                 this.processThreadEvents(room, threadedEvents);
                 // set summary after processing events,
@@ -54477,7 +54633,7 @@ class SyncApi {
                 const stateEvents = this.mapSyncEventsFormat(leaveObj.state, room);
                 const events = this.mapSyncEventsFormat(leaveObj.timeline, room);
                 const accountDataEvents = this.mapSyncEventsFormat(leaveObj.account_data);
-                const [timelineEvents, threadedEvents] = this.partitionThreadedEvents(events);
+                const [timelineEvents, threadedEvents] = this.client.partitionThreadedEvents(events);
                 this.processRoomEvents(room, stateEvents, timelineEvents);
                 this.processThreadEvents(room, threadedEvents);
                 room.addAccountData(accountDataEvents);
@@ -54787,11 +54943,7 @@ class SyncApi {
      * @experimental
      */
     processThreadEvents(room, threadedEvents) {
-        threadedEvents
-            .sort((a, b) => a.getTs() - b.getTs())
-            .forEach(event => {
-            room.addThreadedEvent(event);
-        });
+        return this.client.processThreadEvents(room, threadedEvents);
     }
     // extractRelatedEvents(event: MatrixEvent, events: MatrixEvent[], relatedEvents: MatrixEvent[] = []): MatrixEvent[] {
     //     relatedEvents.push(event);
@@ -54857,7 +55009,7 @@ function createNewUser(client, userId) {
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./@types/event":59,"./client":66,"./errors":101,"./filter":104,"./logger":108,"./models/event-timeline":114,"./models/group":116,"./models/room":121,"./models/user":124,"./pushprocessor":125,"./sync-accumulator":136,"./sync.api":137,"./utils":140}],139:[function(require,module,exports){
+},{"./@types/event":59,"./client":67,"./errors":102,"./filter":105,"./logger":109,"./models/event-timeline":115,"./models/group":117,"./models/room":122,"./models/user":126,"./pushprocessor":127,"./sync-accumulator":138,"./sync.api":139,"./utils":142}],141:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -55323,7 +55475,7 @@ class TimelineIndex {
 }
 exports.TimelineIndex = TimelineIndex;
 
-},{"./logger":108,"./models/event-timeline":114}],140:[function(require,module,exports){
+},{"./logger":109,"./models/event-timeline":115}],142:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015, 2016 OpenMarket Ltd
@@ -56030,7 +56182,7 @@ function recursivelyAssign(target, source, ignoreNullish = false) {
 }
 exports.recursivelyAssign = recursivelyAssign;
 
-},{"p-retry":37,"unhomoglyph":55}],141:[function(require,module,exports){
+},{"p-retry":37,"unhomoglyph":55}],143:[function(require,module,exports){
 (function (process){(function (){
 "use strict";
 /*
@@ -56719,8 +56871,8 @@ class MatrixCall extends events_1.EventEmitter {
             this.pushLocalFeed(new callFeed_1.CallFeed({
                 client: this.client,
                 roomId: this.roomId,
-                audioMuted: stream.getAudioTracks().length === 0,
-                videoMuted: stream.getVideoTracks().length === 0,
+                audioMuted: false,
+                videoMuted: false,
                 userId,
                 stream,
                 purpose,
@@ -56926,8 +57078,8 @@ class MatrixCall extends events_1.EventEmitter {
                         userId: this.client.getUserId(),
                         stream,
                         purpose: callEventTypes_1.SDPStreamMetadataPurpose.Usermedia,
-                        audioMuted: stream.getAudioTracks().length === 0,
-                        videoMuted: stream.getVideoTracks().length === 0,
+                        audioMuted: false,
+                        videoMuted: false,
                     });
                     const feeds = [usermediaFeed];
                     if (this.localScreensharingFeed) {
@@ -57821,8 +57973,8 @@ class MatrixCall extends events_1.EventEmitter {
                     userId: this.client.getUserId(),
                     stream,
                     purpose: callEventTypes_1.SDPStreamMetadataPurpose.Usermedia,
-                    audioMuted: stream.getAudioTracks().length === 0,
-                    videoMuted: stream.getVideoTracks().length === 0,
+                    audioMuted: false,
+                    videoMuted: false,
                 });
                 yield this.placeCallWithCallFeeds([callFeed]);
             }
@@ -57996,7 +58148,7 @@ exports.createNewMatrixCall = createNewMatrixCall;
 
 }).call(this)}).call(this,require('_process'))
 
-},{"../@types/event":59,"../logger":108,"../randomstring":126,"../utils":140,"./callEventTypes":143,"./callFeed":144,"_process":38,"events":27}],142:[function(require,module,exports){
+},{"../@types/event":59,"../logger":109,"../randomstring":128,"../utils":142,"./callEventTypes":145,"./callFeed":146,"_process":38,"events":27}],144:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2020 The Matrix.org Foundation C.I.C.
@@ -58279,7 +58431,7 @@ class CallEventHandler {
 }
 exports.CallEventHandler = CallEventHandler;
 
-},{"../@types/event":59,"../logger":108,"./call":141}],143:[function(require,module,exports){
+},{"../@types/event":59,"../logger":109,"./call":143}],145:[function(require,module,exports){
 "use strict";
 // allow non-camelcase as these are events type that go onto the wire
 /* eslint-disable camelcase */
@@ -58294,7 +58446,7 @@ var SDPStreamMetadataPurpose;
 })(SDPStreamMetadataPurpose = exports.SDPStreamMetadataPurpose || (exports.SDPStreamMetadataPurpose = {}));
 /* eslint-enable camelcase */
 
-},{}],144:[function(require,module,exports){
+},{}],146:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 Šimon Brandner <simon.bra.ag@gmail.com>
@@ -58497,7 +58649,7 @@ class CallFeed extends events_1.default {
 }
 exports.CallFeed = CallFeed;
 
-},{"events":27}],145:[function(require,module,exports){
+},{"events":27}],147:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015, 2016 OpenMarket Ltd
@@ -58712,5 +58864,5 @@ class MediaHandler {
 }
 exports.MediaHandler = MediaHandler;
 
-},{"../logger":108}]},{},[65])
+},{"../logger":109}]},{},[66])
 //# sourceMappingURL=browser-matrix.js.map

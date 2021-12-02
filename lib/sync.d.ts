@@ -2,7 +2,6 @@ import { Room } from "./models/room";
 import { Group } from "./models/group";
 import { IStoredClientOpts, MatrixClient } from "./client";
 import { SyncState } from "./sync.api";
-import { MatrixEvent } from "./models/event";
 export interface ISyncStateData {
     error?: Error;
     oldSyncToken?: string;
@@ -65,12 +64,6 @@ export declare class SyncApi {
      * @return {Promise} Resolved when they've been added to the store.
      */
     syncLeftRooms(): Promise<any[]>;
-    /**
-     * Split events between the ones that will end up in the main
-     * room timeline versus the one that need to be processed in a thread
-     * @experimental
-     */
-    partitionThreadedEvents(events: MatrixEvent[]): [MatrixEvent[], MatrixEvent[]];
     /**
      * Peek into a room. This will result in the room in question being synced so it
      * is accessible via getRooms(). Live updates for the room will be provided.

@@ -29,7 +29,8 @@ export declare enum AuthType {
     Msisdn = "m.login.msisdn",
     Sso = "m.login.sso",
     SsoUnstable = "org.matrix.login.sso",
-    Dummy = "m.login.dummy"
+    Dummy = "m.login.dummy",
+    RegistrationToken = "org.matrix.msc3231.login.registration_token"
 }
 export interface IAuthDict {
     type?: string;

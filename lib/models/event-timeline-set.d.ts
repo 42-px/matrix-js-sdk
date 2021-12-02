@@ -10,6 +10,7 @@ import { Room } from "./room";
 import { Filter } from "../filter";
 import { EventType, RelationType } from "../@types/event";
 import { RoomState } from "./room-state";
+import { Thread } from "./thread";
 interface IOpts {
     timelineSupport?: boolean;
     filter?: Filter;
@@ -92,7 +93,7 @@ export declare class EventTimelineSet extends EventEmitter {
      *
      * @throws If <code>opts.pendingEventOrdering</code> was not 'detached'
      */
-    getPendingEvents(): MatrixEvent[];
+    getPendingEvents(thread?: Thread): MatrixEvent[];
     /**
      * Get the live timeline for this room.
      *

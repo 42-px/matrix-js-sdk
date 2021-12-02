@@ -224,6 +224,7 @@ export declare class MatrixEvent extends EventEmitter {
     get isThreadRoot(): boolean;
     get parentEventId(): string;
     get replyEventId(): string;
+    get relationEventId(): string;
     /**
      * Get the previous event content JSON. This will only return something for
      * state events which exist in the timeline.

@@ -26,7 +26,7 @@ import { IDehydratedDevice, IDehydratedDeviceKeyInfo, IDeviceKeys, IOneTimeKey }
 import { IKeyBackupInfo, IKeyBackupPrepareOpts, IKeyBackupRestoreOpts, IKeyBackupRestoreResult } from "./crypto/keybackup";
 import { IIdentityServerProvider } from "./@types/IIdentityServerProvider";
 import { MatrixScheduler } from "./scheduler";
-import { ICryptoCallbacks, IMinimalEvent, IRoomEvent, IStateEvent } from "./matrix";
+import { IAuthData, ICryptoCallbacks, IMinimalEvent, IRoomEvent, IStateEvent } from "./matrix";
 import { CrossSigningKey, IAddSecretStorageKeyOpts, ICreateSecretStorageOpts, IEncryptedEventInfo, IImportRoomKeysOpts, IRecoveryKey, ISecretStorageKeyInfo } from "./crypto/api";
 import { SyncState } from "./sync.api";
 import { EventTimelineSet } from "./models/event-timeline-set";
@@ -535,7 +535,7 @@ export declare class MatrixClient extends EventEmitter {
     protected fallbackICEServerAllowed: boolean;
     protected roomList: RoomList;
     protected syncApi: SyncApi;
-    pushRules: any;
+    pushRules: IPushRules;
     protected syncLeftRoomsPromise: Promise<Room[]>;
     protected syncedLeftRooms: boolean;
     protected clientOpts: IStoredClientOpts;
@@ -1618,19 +1618,22 @@ export declare class MatrixClient extends EventEmitter {
     setPowerLevel(roomId: string, userId: string, powerLevel: number, event: MatrixEvent, callback?: Callback): Promise<ISendEventResponse>;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {string} eventType
      * @param {Object} content
      * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    sendEvent(roomId: string, eventType: string, content: IContent, txnId?: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendEvent(roomId: string, eventType: string, content: IContent, txnId?: string, callback?: Callback): any;
+    sendEvent(roomId: string, threadId: string | null, eventType: string, content: IContent, txnId?: string, callback?: Callback): any;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {object} eventObject An object with the partial structure of an event, to which event_id, user_id, room_id and origin_server_ts will be added.
      * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
@@ -1663,94 +1666,112 @@ export declare class MatrixClient extends EventEmitter {
      *    supplied.
      * @param {object|module:client.callback} cbOrOpts
      *    Options to pass on, may contain `reason`.
-     *    Can be callback for backwards compatibility.
+     *    Can be callback for backwards compatibility. Deprecated
      * @return {Promise} Resolves: TODO
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    redactEvent(roomId: string, eventId: string, txnId?: string, cbOrOpts?: Callback | IRedactOpts): Promise<ISendEventResponse>;
+    redactEvent(roomId: string, eventId: string, txnId?: string | undefined, cbOrOpts?: Callback | IRedactOpts): any;
+    redactEvent(roomId: string, threadId: string | null, eventId: string, txnId?: string | undefined, cbOrOpts?: Callback | IRedactOpts): any;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {Object} content
      * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to an ISendEventResponse object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    sendMessage(roomId: string, content: IContent, txnId?: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendMessage(roomId: string, content: IContent, txnId?: string, callback?: Callback): any;
+    sendMessage(roomId: string, threadId: string | null, content: IContent, txnId?: string, callback?: Callback): any;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {string} body
      * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    sendTextMessage(roomId: string, body: string, txnId?: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendTextMessage(roomId: string, body: string, txnId?: string, callback?: Callback): any;
+    sendTextMessage(roomId: string, threadId: string | null, body: string, txnId?: string, callback?: Callback): any;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {string} body
      * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to a ISendEventResponse object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    sendNotice(roomId: string, body: string, txnId?: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendNotice(roomId: string, body: string, txnId?: string, callback?: Callback): any;
+    sendNotice(roomId: string, threadId: string | null, body: string, txnId?: string, callback?: Callback): any;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {string} body
      * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to a ISendEventResponse object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    sendEmoteMessage(roomId: string, body: string, txnId?: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendEmoteMessage(roomId: string, body: string, txnId?: string, callback?: Callback): any;
+    sendEmoteMessage(roomId: string, threadId: string | null, body: string, txnId?: string, callback?: Callback): any;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {string} url
      * @param {Object} info
      * @param {string} text
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to a ISendEventResponse object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    sendImageMessage(roomId: string, url: string, info?: IImageInfo, text?: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendImageMessage(roomId: string, url: string, info?: IImageInfo, text?: string, callback?: Callback): any;
+    sendImageMessage(roomId: string, threadId: string | null, url: string, info?: IImageInfo, text?: string, callback?: Callback): any;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {string} url
      * @param {Object} info
      * @param {string} text
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to a ISendEventResponse object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    sendStickerMessage(roomId: string, url: string, info?: IImageInfo, text?: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendStickerMessage(roomId: string, url: string, info?: IImageInfo, text?: string, callback?: Callback): any;
+    sendStickerMessage(roomId: string, threadId: string | null, url: string, info?: IImageInfo, text?: string, callback?: Callback): any;
+    /**
+     * @param {string} roomId
+     * @param {string} threadId
+     * @param {string} body
+     * @param {string} htmlBody
+     * @param {module:client.callback} callback Optional. Deprecated
+     * @return {Promise} Resolves: to a ISendEventResponse object
+     * @return {module:http-api.MatrixError} Rejects: with an error response.
+     */
+    sendHtmlMessage(roomId: string, body: string, htmlBody: string, callback?: Callback): any;
+    sendHtmlMessage(roomId: string, threadId: string | null, body: string, htmlBody: string, callback?: Callback): any;
     /**
      * @param {string} roomId
      * @param {string} body
      * @param {string} htmlBody
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to a ISendEventResponse object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    sendHtmlMessage(roomId: string, body: string, htmlBody: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendHtmlNotice(roomId: string, body: string, htmlBody: string, callback?: Callback): any;
+    sendHtmlNotice(roomId: string, threadId: string | null, body: string, htmlBody: string, callback?: Callback): any;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {string} body
      * @param {string} htmlBody
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to a ISendEventResponse object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    sendHtmlNotice(roomId: string, body: string, htmlBody: string, callback?: Callback): Promise<ISendEventResponse>;
-    /**
-     * @param {string} roomId
-     * @param {string} body
-     * @param {string} htmlBody
-     * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: to a ISendEventResponse object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     */
-    sendHtmlEmote(roomId: string, body: string, htmlBody: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendHtmlEmote(roomId: string, body: string, htmlBody: string, callback?: Callback): any;
+    sendHtmlEmote(roomId: string, threadId: string | null, body: string, htmlBody: string, callback?: Callback): any;
     /**
      * Send a receipt.
      * @param {Event} event The event being acknowledged
@@ -2744,7 +2765,7 @@ export declare class MatrixClient extends EventEmitter {
      * @return {Promise} Resolves: TODO
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    getStateEvent(roomId: string, eventType: string, stateKey: string, callback?: Callback): Promise<IStateEventWithRoomId>;
+    getStateEvent(roomId: string, eventType: string, stateKey: string, callback?: Callback): Promise<Record<string, any>>;
     /**
      * @param {string} roomId
      * @param {string} eventType
@@ -3243,7 +3264,7 @@ export declare class MatrixClient extends EventEmitter {
         changed: string[];
         left: string[];
     }>;
-    uploadDeviceSigningKeys(auth: any, keys?: CrossSigningKeys): Promise<{}>;
+    uploadDeviceSigningKeys(auth?: IAuthData, keys?: CrossSigningKeys): Promise<{}>;
     /**
      * Register with an identity server using the OpenID token from the user's
      * Homeserver, which can be retrieved via
@@ -3719,6 +3740,11 @@ export declare class MatrixClient extends EventEmitter {
      * @param {string[]?} via The list of servers which know about the room if only an ID was provided.
      */
     getRoomSummary(roomIdOrAlias: string, via?: string[]): Promise<IRoomSummary>;
+    partitionThreadedEvents(events: MatrixEvent[]): [MatrixEvent[], MatrixEvent[]];
+    /**
+     * @experimental
+     */
+    processThreadEvents(room: Room, threadedEvents: MatrixEvent[]): void;
 }
 export {};
 /**

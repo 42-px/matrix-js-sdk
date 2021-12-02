@@ -52,7 +52,7 @@ export declare class TimelineWindow {
      *
      * @return {Promise}
      */
-    load(initialEventId: string, initialWindowSize?: number): Promise<any>;
+    load(initialEventId?: string, initialWindowSize?: number): Promise<any>;
     /**
      * Get the TimelineIndex of the window in the given direction.
      *
