@@ -61,13 +61,11 @@ export class DehydrationManager {
     private key: Uint8Array;
     private keyInfo: {[props: string]: any};
     private deviceDisplayName: string;
-
     constructor(private readonly crypto: Crypto) {
         this.getDehydrationKeyFromCache();
     }
-
-    public getDehydrationKeyFromCache(): Promise<void> {
-        return this.crypto.cryptoStore.doTxn(
+    async getDehydrationKeyFromCache(): Promise<void> {
+        return await this.crypto.cryptoStore.doTxn(
             'readonly',
             [IndexedDBCryptoStore.STORE_ACCOUNT],
             (txn) => {
@@ -95,7 +93,7 @@ export class DehydrationManager {
     }
 
     /** set the key, and queue periodic dehydration to the server in the background */
-    public async setKeyAndQueueDehydration(
+    async setKeyAndQueueDehydration(
         key: Uint8Array, keyInfo: {[props: string]: any} = {},
         deviceDisplayName: string = undefined,
     ): Promise<void> {
@@ -106,7 +104,7 @@ export class DehydrationManager {
         }
     }
 
-    public async setKey(
+    async setKey(
         key: Uint8Array, keyInfo: {[props: string]: any} = {},
         deviceDisplayName: string = undefined,
     ): Promise<boolean> {
@@ -150,7 +148,7 @@ export class DehydrationManager {
     }
 
     /** returns the device id of the newly created dehydrated device */
-    public async dehydrateDevice(): Promise<string> {
+    async dehydrateDevice(): Promise<string> {
         if (this.inProgress) {
             logger.log("Dehydration already in progress -- not starting new dehydration");
             return;

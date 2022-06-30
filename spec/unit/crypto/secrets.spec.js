@@ -1,5 +1,5 @@
 /*
-Copyright 2019, 2022 The Matrix.org Foundation C.I.C.
+Copyright 2019 The Matrix.org Foundation C.I.C.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,18 +24,15 @@ import { encryptAES } from "../../../src/crypto/aes";
 import { resetCrossSigningKeys, createSecretStorageKey } from "./crypto-utils";
 import { logger } from '../../../src/logger';
 import * as utils from "../../../src/utils";
-import { ICreateClientOpts } from '../../../src/client';
-import { ISecretStorageKeyInfo } from '../../../src/crypto/api';
 
 try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const crypto = require('crypto');
     utils.setCrypto(crypto);
 } catch (err) {
     logger.log('nodejs was compiled without crypto support');
 }
 
-async function makeTestClient(userInfo: { userId: string, deviceId: string}, options: Partial<ICreateClientOpts> = {}) {
+async function makeTestClient(userInfo, options) {
     const client = (new TestClient(
         userInfo.userId, userInfo.deviceId, undefined, undefined, options,
     )).client;
@@ -49,7 +46,7 @@ async function makeTestClient(userInfo: { userId: string, deviceId: string}, opt
     await client.initCrypto();
 
     // No need to download keys for these tests
-    jest.spyOn(client.crypto, 'downloadKeys').mockResolvedValue({});
+    client.crypto.downloadKeys = async function() {};
 
     return client;
 }
@@ -57,7 +54,7 @@ async function makeTestClient(userInfo: { userId: string, deviceId: string}, opt
 // Wrapper around pkSign to return a signed object. pkSign returns the
 // signature, rather than the signed object.
 function sign(obj, key, userId) {
-    olmlib.pkSign(obj, key, userId, '');
+    olmlib.pkSign(obj, key, userId);
     return obj;
 }
 
@@ -87,7 +84,7 @@ describe("Secrets", function() {
             },
         };
 
-        const getKey = jest.fn().mockImplementation(async e => {
+        const getKey = jest.fn(e => {
             expect(Object.keys(e.keys)).toEqual(["abc"]);
             return ['abc', key];
         });
@@ -96,7 +93,7 @@ describe("Secrets", function() {
             { userId: "@alice:example.com", deviceId: "Osborne2" },
             {
                 cryptoCallbacks: {
-                    getCrossSigningKey: async t => signingKey,
+                    getCrossSigningKey: t => signingKey,
                     getSecretStorageKey: getKey,
                 },
             },
@@ -107,19 +104,17 @@ describe("Secrets", function() {
 
         const secretStorage = alice.crypto.secretStorage;
 
-        jest.spyOn(alice, 'setAccountData').mockImplementation(
-            async function(eventType, contents, callback) {
-                alice.store.storeAccountDataEvents([
-                    new MatrixEvent({
-                        type: eventType,
-                        content: contents,
-                    }),
-                ]);
-                if (callback) {
-                    callback(undefined, undefined);
-                }
-                return {};
-            });
+        alice.setAccountData = async function(eventType, contents, callback) {
+            alice.store.storeAccountDataEvents([
+                new MatrixEvent({
+                    type: eventType,
+                    content: contents,
+                }),
+            ]);
+            if (callback) {
+                callback();
+            }
+        };
 
         const keyAccountData = {
             algorithm: SECRET_STORAGE_ALGORITHM_V1_AES,
@@ -141,7 +136,6 @@ describe("Secrets", function() {
         expect(await secretStorage.get("foo")).toBe("bar");
 
         expect(getKey).toHaveBeenCalled();
-        alice.stopClient();
     });
 
     it("should throw if given a key that doesn't exist", async function() {
@@ -156,7 +150,6 @@ describe("Secrets", function() {
             expect(true).toBeFalsy();
         } catch (e) {
         }
-        alice.stopClient();
     });
 
     it("should refuse to encrypt with zero keys", async function() {
@@ -169,13 +162,12 @@ describe("Secrets", function() {
             expect(true).toBeFalsy();
         } catch (e) {
         }
-        alice.stopClient();
     });
 
     it("should encrypt with default key if keys is null", async function() {
         const key = new Uint8Array(16);
         for (let i = 0; i < 16; i++) key[i] = i;
-        const getKey = jest.fn().mockImplementation(async e => {
+        const getKey = jest.fn(e => {
             expect(Object.keys(e.keys)).toEqual([newKeyId]);
             return [newKeyId, key];
         });
@@ -198,12 +190,11 @@ describe("Secrets", function() {
                     content: contents,
                 }),
             ]);
-            return {};
         };
         resetCrossSigningKeys(alice);
 
         const { keyId: newKeyId } = await alice.addSecretStorageKey(
-            SECRET_STORAGE_ALGORITHM_V1_AES, { pubkey: undefined, key: undefined },
+            SECRET_STORAGE_ALGORITHM_V1_AES,
         );
         // we don't await on this because it waits for the event to come down the sync
         // which won't happen in the test setup
@@ -212,7 +203,6 @@ describe("Secrets", function() {
 
         const accountData = alice.getAccountData('foo');
         expect(accountData.getContent().encrypted).toBeTruthy();
-        alice.stopClient();
     });
 
     it("should refuse to encrypt if no keys given and no default key", async function() {
@@ -225,11 +215,10 @@ describe("Secrets", function() {
             expect(true).toBeFalsy();
         } catch (e) {
         }
-        alice.stopClient();
     });
 
     it("should request secrets from other clients", async function() {
-        const [[osborne2, vax], clearTestClientTimeouts] = await makeTestClients(
+        const [osborne2, vax] = await makeTestClients(
             [
                 { userId: "@alice:example.com", deviceId: "Osborne2" },
                 { userId: "@alice:example.com", deviceId: "VAX" },
@@ -284,9 +273,6 @@ describe("Secrets", function() {
         const secret = await request.promise;
 
         expect(secret).toBe("bar");
-        osborne2.stop();
-        vax.stop();
-        clearTestClientTimeouts();
     });
 
     describe("bootstrap", function() {
@@ -312,7 +298,7 @@ describe("Secrets", function() {
         it("bootstraps when no storage or cross-signing keys locally", async function() {
             const key = new Uint8Array(16);
             for (let i = 0; i < 16; i++) key[i] = i;
-            const getKey = jest.fn().mockImplementation(async e => {
+            const getKey = jest.fn(e => {
                 return [Object.keys(e.keys)[0], key];
             });
 
@@ -327,8 +313,8 @@ describe("Secrets", function() {
                     },
                 },
             );
-            bob.uploadDeviceSigningKeys = async () => ({});
-            bob.uploadKeySignatures = jest.fn().mockResolvedValue(undefined);
+            bob.uploadDeviceSigningKeys = async () => {};
+            bob.uploadKeySignatures = async () => {};
             bob.setAccountData = async function(eventType, contents, callback) {
                 const event = new MatrixEvent({
                     type: eventType,
@@ -338,11 +324,10 @@ describe("Secrets", function() {
                     event,
                 ]);
                 this.emit("accountData", event);
-                return {};
             };
 
             await bob.bootstrapCrossSigning({
-                authUploadDeviceSigningKeys: async func => { await func({}); },
+                authUploadDeviceSigningKeys: async func => await func({}),
             });
             await bob.bootstrapSecretStorage({
                 createSecretStorageKey,
@@ -355,7 +340,6 @@ describe("Secrets", function() {
             expect(await crossSigning.isStoredInSecretStorage(secretStorage))
                 .toBeTruthy();
             expect(await secretStorage.hasKey()).toBeTruthy();
-            bob.stopClient();
         });
 
         it("bootstraps when cross-signing keys in secret storage", async function() {
@@ -422,11 +406,10 @@ describe("Secrets", function() {
             expect(await crossSigning.isStoredInSecretStorage(secretStorage))
                 .toBeTruthy();
             expect(await secretStorage.hasKey()).toBeTruthy();
-            bob.stopClient();
         });
 
         it("adds passphrase checking if it's lacking", async function() {
-            let crossSigningKeys: Record<string, Uint8Array> = {
+            let crossSigningKeys = {
                 master: XSK,
                 user_signing: USK,
                 self_signing: SSK,
@@ -438,9 +421,9 @@ describe("Secrets", function() {
                 { userId: "@alice:example.com", deviceId: "Osborne2" },
                 {
                     cryptoCallbacks: {
-                        getCrossSigningKey: async t => crossSigningKeys[t],
+                        getCrossSigningKey: t => crossSigningKeys[t],
                         saveCrossSigningKeys: k => crossSigningKeys = k,
-                        getSecretStorageKey: async ({ keys }, name) => {
+                        getSecretStorageKey: ({ keys }, name) => {
                             for (const keyId of Object.keys(keys)) {
                                 if (secretStorageKeys[keyId]) {
                                     return [keyId, secretStorageKeys[keyId]];
@@ -496,8 +479,6 @@ describe("Secrets", function() {
                 }),
             ]);
             alice.crypto.deviceList.storeCrossSigningForUser("@alice:example.com", {
-                firstUse: false,
-                crossSigningVerifiedBefore: false,
                 keys: {
                     master: {
                         user_id: "@alice:example.com",
@@ -538,15 +519,14 @@ describe("Secrets", function() {
                 });
                 alice.store.storeAccountDataEvents([event]);
                 this.emit("accountData", event);
-                return {};
             };
 
-            await alice.bootstrapSecretStorage({});
+            await alice.bootstrapSecretStorage();
 
             expect(alice.getAccountData("m.secret_storage.default_key").getContent())
                 .toEqual({ key: "key_id" });
             const keyInfo = alice.getAccountData("m.secret_storage.key.key_id")
-                .getContent() as ISecretStorageKeyInfo;
+                .getContent();
             expect(keyInfo.algorithm)
                 .toEqual("m.secret_storage.v1.aes-hmac-sha2");
             expect(keyInfo.passphrase).toEqual({
@@ -558,10 +538,9 @@ describe("Secrets", function() {
             expect(keyInfo).toHaveProperty("mac");
             expect(alice.checkSecretStorageKey(secretStorageKeys.key_id, keyInfo))
                 .toBeTruthy();
-            alice.stopClient();
         });
         it("fixes backup keys in the wrong format", async function() {
-            let crossSigningKeys: Record<string, Uint8Array> = {
+            let crossSigningKeys = {
                 master: XSK,
                 user_signing: USK,
                 self_signing: SSK,
@@ -573,9 +552,9 @@ describe("Secrets", function() {
                 { userId: "@alice:example.com", deviceId: "Osborne2" },
                 {
                     cryptoCallbacks: {
-                        getCrossSigningKey: async t => crossSigningKeys[t],
+                        getCrossSigningKey: t => crossSigningKeys[t],
                         saveCrossSigningKeys: k => crossSigningKeys = k,
-                        getSecretStorageKey: async ({ keys }, name) => {
+                        getSecretStorageKey: ({ keys }, name) => {
                             for (const keyId of Object.keys(keys)) {
                                 if (secretStorageKeys[keyId]) {
                                     return [keyId, secretStorageKeys[keyId]];
@@ -640,8 +619,6 @@ describe("Secrets", function() {
                 }),
             ]);
             alice.crypto.deviceList.storeCrossSigningForUser("@alice:example.com", {
-                firstUse: false,
-                crossSigningVerifiedBefore: false,
                 keys: {
                     master: {
                         user_id: "@alice:example.com",
@@ -682,17 +659,15 @@ describe("Secrets", function() {
                 });
                 alice.store.storeAccountDataEvents([event]);
                 this.emit("accountData", event);
-                return {};
             };
 
-            await alice.bootstrapSecretStorage({});
+            await alice.bootstrapSecretStorage();
 
             const backupKey = alice.getAccountData("m.megolm_backup.v1")
                 .getContent();
             expect(backupKey.encrypted).toHaveProperty("key_id");
             expect(await alice.getSecret("m.megolm_backup.v1"))
                 .toEqual("ey0GB1kB6jhOWgwiBUMIWg==");
-            alice.stopClient();
         });
     });
 });

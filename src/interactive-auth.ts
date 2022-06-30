@@ -44,19 +44,11 @@ export interface IStageStatus {
 
 export interface IAuthData {
     session?: string;
-    type?: string;
     completed?: string[];
     flows?: IFlow[];
-    available_flows?: IFlow[];
-    stages?: string[];
-    required_stages?: AuthType[];
     params?: Record<string, Record<string, any>>;
-    data?: Record<string, string>;
     errcode?: string;
     error?: string;
-    user_id?: string;
-    device_id?: string;
-    access_token?: string;
 }
 
 export enum AuthType {
@@ -210,8 +202,6 @@ export class InteractiveAuth {
     private attemptAuthDeferred: IDeferred<IAuthData> = null;
     private chosenFlow: IFlow = null;
     private currentStage: string = null;
-
-    private emailAttempt = 1;
 
     // if we are currently trying to submit an auth dict (which includes polling)
     // the promise the will resolve/reject when it completes
@@ -419,34 +409,6 @@ export class InteractiveAuth {
     }
 
     /**
-     * Requests a new email token and sets the email sid for the validation session
-     */
-    public requestEmailToken = async () => {
-        if (!this.requestingEmailToken) {
-            logger.trace("Requesting email token. Attempt: " + this.emailAttempt);
-            // If we've picked a flow with email auth, we send the email
-            // now because we want the request to fail as soon as possible
-            // if the email address is not valid (ie. already taken or not
-            // registered, depending on what the operation is).
-            this.requestingEmailToken = true;
-            try {
-                const requestTokenResult = await this.requestEmailTokenCallback(
-                    this.inputs.emailAddress,
-                    this.clientSecret,
-                    this.emailAttempt++,
-                    this.data.session,
-                );
-                this.emailSid = requestTokenResult.sid;
-                logger.trace("Email token request succeeded");
-            } finally {
-                this.requestingEmailToken = false;
-            }
-        } else {
-            logger.warn("Could not request email token: Already requesting");
-        }
-    };
-
-    /**
      * Fire off a request, and either resolve the promise, or call
      * startAuthStage.
      *
@@ -496,9 +458,24 @@ export class InteractiveAuth {
                 return;
             }
 
-            if (!this.emailSid && this.chosenFlow.stages.includes(AuthType.Email)) {
+            if (
+                !this.emailSid &&
+                !this.requestingEmailToken &&
+                this.chosenFlow.stages.includes(AuthType.Email)
+            ) {
+                // If we've picked a flow with email auth, we send the email
+                // now because we want the request to fail as soon as possible
+                // if the email address is not valid (ie. already taken or not
+                // registered, depending on what the operation is).
+                this.requestingEmailToken = true;
                 try {
-                    await this.requestEmailToken();
+                    const requestTokenResult = await this.requestEmailTokenCallback(
+                        this.inputs.emailAddress,
+                        this.clientSecret,
+                        1, // TODO: Multiple send attempts?
+                        this.data.session,
+                    );
+                    this.emailSid = requestTokenResult.sid;
                     // NB. promise is not resolved here - at some point, doRequest
                     // will be called again and if the user has jumped through all
                     // the hoops correctly, auth will be complete and the request
@@ -514,6 +491,8 @@ export class InteractiveAuth {
                     // send the email, for whatever reason.
                     this.attemptAuthDeferred.reject(e);
                     this.attemptAuthDeferred = null;
+                } finally {
+                    this.requestingEmailToken = false;
                 }
             }
         }

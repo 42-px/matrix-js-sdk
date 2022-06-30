@@ -32,7 +32,6 @@ import {
 import { Room } from '../../models/room';
 import { MatrixEvent } from "../..";
 import { IEventDecryptionResult } from "../index";
-import { IInboundSession } from "../OlmDevice";
 
 const DeviceVerification = DeviceInfo.DeviceVerification;
 
@@ -52,7 +51,7 @@ interface IMessage {
  */
 class OlmEncryption extends EncryptionAlgorithm {
     private sessionPrepared = false;
-    private prepPromise: Promise<void> | null = null;
+    private prepPromise: Promise<void> = null;
 
     /**
      * @private
@@ -71,7 +70,7 @@ class OlmEncryption extends EncryptionAlgorithm {
             return Promise.resolve();
         }
 
-        this.prepPromise = this.crypto.downloadKeys(roomMembers).then(() => {
+        this.prepPromise = this.crypto.downloadKeys(roomMembers).then((res) => {
             return this.crypto.ensureOlmSessionsForUsers(roomMembers);
         }).then(() => {
             this.sessionPrepared = true;
@@ -117,11 +116,11 @@ class OlmEncryption extends EncryptionAlgorithm {
             ciphertext: {},
         };
 
-        const promises: Promise<void>[] = [];
+        const promises = [];
 
         for (let i = 0; i < users.length; ++i) {
             const userId = users[i];
-            const devices = this.crypto.getStoredDevicesForUser(userId) || [];
+            const devices = this.crypto.getStoredDevicesForUser(userId);
 
             for (let j = 0; j < devices.length; ++j) {
                 const deviceInfo = devices[j];
@@ -145,7 +144,7 @@ class OlmEncryption extends EncryptionAlgorithm {
             }
         }
 
-        return Promise.all(promises).then(() => encryptedContent);
+        return await Promise.all(promises).then(() => encryptedContent);
     }
 }
 
@@ -240,7 +239,7 @@ class OlmDecryption extends DecryptionAlgorithm {
             throw new DecryptionError(
                 "OLM_BAD_ROOM",
                 "Message intended for room " + payload.room_id, {
-                    reported_room: event.getRoomId() || "ROOM_ID_UNDEFINED",
+                    reported_room: event.getRoomId(),
                 },
             );
         }
@@ -262,7 +261,7 @@ class OlmDecryption extends DecryptionAlgorithm {
      *
      * @return {string} payload, if decrypted successfully.
      */
-    private decryptMessage(theirDeviceIdentityKey: string, message: IMessage): Promise<string> {
+    private async decryptMessage(theirDeviceIdentityKey: string, message: IMessage): Promise<string> {
         // This is a wrapper that serialises decryptions of prekey messages, because
         // otherwise we race between deciding we have no active sessions for the message
         // and creating a new one, which we can only do once because it removes the OTK.
@@ -275,7 +274,7 @@ class OlmDecryption extends DecryptionAlgorithm {
             });
             // we want the error, but don't propagate it to the next decryption
             this.olmDevice.olmPrekeyPromise = myPromise.catch(() => {});
-            return myPromise;
+            return await myPromise;
         }
     }
 
@@ -332,7 +331,7 @@ class OlmDecryption extends DecryptionAlgorithm {
         // prekey message which doesn't match any existing sessions: make a new
         // session.
 
-        let res: IInboundSession;
+        let res;
         try {
             res = await this.olmDevice.createInboundSession(
                 theirDeviceIdentityKey, message.type, message.body,

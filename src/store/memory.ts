@@ -29,7 +29,6 @@ import { Filter } from "../filter";
 import { ISavedSync, IStore } from "./index";
 import { RoomSummary } from "../models/room-summary";
 import { ISyncResponse } from "../sync-accumulator";
-import { IStateEventWithRoomId } from "../@types/search";
 
 function isValidFilterId(filterId: string): boolean {
     const isValidStr = typeof filterId === "string" &&
@@ -48,7 +47,7 @@ export interface IOpts {
  * Construct a new in-memory data store for the Matrix Client.
  * @constructor
  * @param {Object=} opts Config options
- * @param {Storage} opts.localStorage The local storage instance to persist
+ * @param {LocalStorage} opts.localStorage The local storage instance to persist
  * some forms of data such as tokens. Rooms will NOT be stored.
  */
 export class MemoryStore implements IStore {
@@ -60,9 +59,8 @@ export class MemoryStore implements IStore {
     // }
     private filters: Record<string, Record<string, Filter>> = {};
     public accountData: Record<string, MatrixEvent> = {}; // type : content
-    protected readonly localStorage: Storage;
-    private oobMembers: Record<string, IStateEventWithRoomId[]> = {}; // roomId: [member events]
-    private pendingEvents: { [roomId: string]: Partial<IEvent>[] } = {};
+    private readonly localStorage: Storage;
+    private oobMembers: Record<string, IEvent[]> = {}; // roomId: [member events]
     private clientOptions = {};
 
     constructor(opts: IOpts = {}) {
@@ -200,7 +198,7 @@ export class MemoryStore implements IStore {
     /**
      * Retrieve scrollback for this room.
      * @param {Room} room The matrix room
-     * @param {number} limit The max number of old events to retrieve.
+     * @param {integer} limit The max number of old events to retrieve.
      * @return {Array<Object>} An array of objects which will be at most 'limit'
      * length and at least 0. The objects are the raw event JSON.
      */
@@ -391,7 +389,7 @@ export class MemoryStore implements IStore {
      * @returns {event[]} the events, potentially an empty array if OOB loading didn't yield any new members
      * @returns {null} in case the members for this room haven't been stored yet
      */
-    public getOutOfBandMembers(roomId: string): Promise<IStateEventWithRoomId[] | null> {
+    public getOutOfBandMembers(roomId: string): Promise<IEvent[] | null> {
         return Promise.resolve(this.oobMembers[roomId] || null);
     }
 
@@ -403,7 +401,7 @@ export class MemoryStore implements IStore {
      * @param {event[]} membershipEvents the membership events to store
      * @returns {Promise} when all members have been stored
      */
-    public setOutOfBandMembers(roomId: string, membershipEvents: IStateEventWithRoomId[]): Promise<void> {
+    public setOutOfBandMembers(roomId: string, membershipEvents: IEvent[]): Promise<void> {
         this.oobMembers[roomId] = membershipEvents;
         return Promise.resolve();
     }
@@ -420,13 +418,5 @@ export class MemoryStore implements IStore {
     public storeClientOptions(options: object): Promise<void> {
         this.clientOptions = Object.assign({}, options);
         return Promise.resolve();
-    }
-
-    public async getPendingEvents(roomId: string): Promise<Partial<IEvent>[]> {
-        return this.pendingEvents[roomId] ?? [];
-    }
-
-    public async setPendingEvents(roomId: string, events: Partial<IEvent>[]): Promise<void> {
-        this.pendingEvents[roomId] = events;
     }
 }

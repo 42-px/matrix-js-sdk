@@ -1,13 +1,11 @@
-import { IRecoveryKey } from '../../../src/crypto/api';
-import { CrossSigningLevel } from '../../../src/crypto/CrossSigning';
 import { IndexedDBCryptoStore } from '../../../src/crypto/store/indexeddb-crypto-store';
 
 // needs to be phased out and replaced with bootstrapSecretStorage,
 // but that is doing too much extra stuff for it to be an easy transition.
-export async function resetCrossSigningKeys(
-    client,
-    { level }: { level?: CrossSigningLevel} = {},
-): Promise<void> {
+export async function resetCrossSigningKeys(client, {
+    level,
+    authUploadDeviceSigningKeys = async func => await func(),
+} = {}) {
     const crypto = client.crypto;
 
     const oldKeys = Object.assign({}, crypto.crossSigningInfo.keys);
@@ -32,14 +30,14 @@ export async function resetCrossSigningKeys(
     await crypto.afterCrossSigningLocalKeyChange();
 }
 
-export async function createSecretStorageKey(): Promise<IRecoveryKey> {
+export async function createSecretStorageKey() {
     const decryption = new global.Olm.PkDecryption();
     const storagePublicKey = decryption.generate_key();
     const storagePrivateKey = decryption.get_private_key();
     decryption.free();
     return {
         // `pubkey` not used anymore with symmetric 4S
-        keyInfo: { pubkey: storagePublicKey, key: undefined },
+        keyInfo: { pubkey: storagePublicKey },
         privateKey: storagePrivateKey,
     };
 }

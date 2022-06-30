@@ -218,7 +218,7 @@ export enum CallErrorCode {
 /**
  * The version field that we set in m.call.* events
  */
-const VOIP_PROTO_VERSION = "1";
+const VOIP_PROTO_VERSION = 1;
 
 /** The fallback ICE server to use for STUN or TURN protocols. */
 const FALLBACK_ICE_SERVER = 'stun:turn.matrix.org';
@@ -298,7 +298,7 @@ export class MatrixCall extends TypedEventEmitter<CallEvent, CallEventHandlerMap
     // yet, null if we have but they didn't send a party ID.
     private opponentPartyId: string;
     private opponentCaps: CallCapabilities;
-    private inviteTimeout: ReturnType<typeof setTimeout>;
+    private inviteTimeout: number;
 
     // The logic of when & if a call is on hold is nontrivial and explained in is*OnHold
     // This flag represents whether we want the other party to be on hold
@@ -322,7 +322,7 @@ export class MatrixCall extends TypedEventEmitter<CallEvent, CallEventHandlerMap
 
     private remoteSDPStreamMetadata: SDPStreamMetadata;
 
-    private callLengthInterval: ReturnType<typeof setInterval>;
+    private callLengthInterval: number;
     private callLength = 0;
 
     constructor(opts: CallOpts) {
@@ -708,9 +708,9 @@ export class MatrixCall extends TypedEventEmitter<CallEvent, CallEventHandlerMap
 
         const statsReport = await this.peerConn.getStats();
         const stats = [];
-        statsReport.forEach(item => {
-            stats.push(item);
-        });
+        for (const item of statsReport) {
+            stats.push(item[1]);
+        }
 
         return stats;
     }
@@ -909,7 +909,7 @@ export class MatrixCall extends TypedEventEmitter<CallEvent, CallEventHandlerMap
         if (this.state === CallState.WaitLocalMedia) return;
         const content = {};
         // Don't send UserHangup reason to older clients
-        if ((this.opponentVersion && this.opponentVersion !== 0) || reason !== CallErrorCode.UserHangup) {
+        if ((this.opponentVersion && this.opponentVersion >= 1) || reason !== CallErrorCode.UserHangup) {
             content["reason"] = reason;
         }
         this.sendVoipEvent(EventType.CallHangup, content);
@@ -925,7 +925,7 @@ export class MatrixCall extends TypedEventEmitter<CallEvent, CallEventHandlerMap
             throw Error("Call must be in 'ringing' state to reject!");
         }
 
-        if (this.opponentVersion === 0) {
+        if (this.opponentVersion < 1) {
             logger.info(
                 `Opponent version is less than 1 (${this.opponentVersion}): sending hangup instead of reject`,
             );
@@ -988,7 +988,9 @@ export class MatrixCall extends TypedEventEmitter<CallEvent, CallEventHandlerMap
      * @param {string} desktopCapturerSourceId optional id of the desktop capturer source to use
      * @returns {boolean} new screensharing state
      */
-    public async setScreensharingEnabled(enabled: boolean, desktopCapturerSourceId?: string): Promise<boolean> {
+    public async setScreensharingEnabled(
+        enabled: boolean, desktopCapturerSourceId?: string,
+    ): Promise<boolean> {
         // Skip if there is nothing to do
         if (enabled && this.isScreensharing()) {
             logger.warn(`There is already a screensharing stream - there is nothing to do!`);
@@ -1000,7 +1002,7 @@ export class MatrixCall extends TypedEventEmitter<CallEvent, CallEventHandlerMap
 
         // Fallback to replaceTrack()
         if (!this.opponentSupportsSDPStreamMetadata()) {
-            return this.setScreensharingEnabledWithoutMetadataSupport(enabled, desktopCapturerSourceId);
+            return await this.setScreensharingEnabledWithoutMetadataSupport(enabled, desktopCapturerSourceId);
         }
 
         logger.debug(`Set screensharing enabled? ${enabled}`);
@@ -2262,37 +2264,6 @@ function setTracksEnabled(tracks: Array<MediaStreamTrack>, enabled: boolean): vo
     }
 }
 
-export function supportsMatrixCall(): boolean {
-    // typeof prevents Node from erroring on an undefined reference
-    if (typeof(window) === 'undefined' || typeof(document) === 'undefined') {
-        // NB. We don't log here as apps try to create a call object as a test for
-        // whether calls are supported, so we shouldn't fill the logs up.
-        return false;
-    }
-
-    // Firefox throws on so little as accessing the RTCPeerConnection when operating in a secure mode.
-    // There's some information at https://bugzilla.mozilla.org/show_bug.cgi?id=1542616 though the concern
-    // is that the browser throwing a SecurityError will brick the client creation process.
-    try {
-        const supported = Boolean(
-            window.RTCPeerConnection || window.RTCSessionDescription ||
-            window.RTCIceCandidate || navigator.mediaDevices,
-        );
-        if (!supported) {
-            /* istanbul ignore if */ // Adds a lot of noise to test runs, so disable logging there.
-            if (process.env.NODE_ENV !== "test") {
-                logger.error("WebRTC is not supported in this browser / environment");
-            }
-            return false;
-        }
-    } catch (e) {
-        logger.error("Exception thrown when trying to access WebRTC", e);
-        return false;
-    }
-
-    return true;
-}
-
 /**
  * DEPRECATED
  * Use client.createCall()
@@ -2306,8 +2277,34 @@ export function supportsMatrixCall(): boolean {
  * since it's only possible to set this option on outbound calls.
  * @return {MatrixCall} the call or null if the browser doesn't support calling.
  */
-export function createNewMatrixCall(client: any, roomId: string, options?: CallOpts): MatrixCall | null {
-    if (!supportsMatrixCall()) return null;
+export function createNewMatrixCall(client: any, roomId: string, options?: CallOpts): MatrixCall {
+    // typeof prevents Node from erroring on an undefined reference
+    if (typeof(window) === 'undefined' || typeof(document) === 'undefined') {
+        // NB. We don't log here as apps try to create a call object as a test for
+        // whether calls are supported, so we shouldn't fill the logs up.
+        return null;
+    }
+
+    // Firefox throws on so little as accessing the RTCPeerConnection when operating in
+    // a secure mode. There's some information at https://bugzilla.mozilla.org/show_bug.cgi?id=1542616
+    // though the concern is that the browser throwing a SecurityError will brick the
+    // client creation process.
+    try {
+        const supported = Boolean(
+            window.RTCPeerConnection || window.RTCSessionDescription ||
+            window.RTCIceCandidate || navigator.mediaDevices,
+        );
+        if (!supported) {
+            // Adds a lot of noise to test runs, so disable logging there.
+            if (process.env.NODE_ENV !== "test") {
+                logger.error("WebRTC is not supported in this browser / environment");
+            }
+            return null;
+        }
+    } catch (e) {
+        logger.error("Exception thrown when trying to access WebRTC", e);
+        return null;
+    }
 
     const optionsForceTURN = options ? options.forceTURN : false;
 

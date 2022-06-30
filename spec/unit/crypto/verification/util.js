@@ -23,7 +23,6 @@ import { logger } from '../../../../src/logger';
 
 export async function makeTestClients(userInfos, options) {
     const clients = [];
-    const timeouts = [];
     const clientMap = {};
     const sendToDevice = function(type, map) {
         // logger.log(this.getUserId(), "sends", type, map);
@@ -67,7 +66,7 @@ export async function makeTestClients(userInfos, options) {
             },
         }));
 
-        const timeout = setTimeout(() => {
+        setImmediate(() => {
             for (const tc of clients) {
                 if (tc.client === this) { // eslint-disable-line @babel/no-invalid-this
                     logger.log("sending remote echo!!");
@@ -77,8 +76,6 @@ export async function makeTestClients(userInfos, options) {
                 }
             }
         });
-
-        timeouts.push(timeout);
 
         return Promise.resolve({ event_id: eventId });
     };
@@ -106,11 +103,7 @@ export async function makeTestClients(userInfos, options) {
 
     await Promise.all(clients.map((testClient) => testClient.client.initCrypto()));
 
-    const destroy = () => {
-        timeouts.forEach((t) => clearTimeout(t));
-    };
-
-    return [clients, destroy];
+    return clients;
 }
 
 export function setupWebcrypto() {

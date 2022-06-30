@@ -43,15 +43,13 @@ const requests = [
 
 describe.each([
     ["IndexedDBCryptoStore",
-        () => new IndexedDBCryptoStore(global.indexedDB, "tests")],
+     () => new IndexedDBCryptoStore(global.indexedDB, "tests")],
     ["LocalStorageCryptoStore",
-        () => new IndexedDBCryptoStore(undefined, "tests")],
+     () => new IndexedDBCryptoStore(undefined, "tests")],
     ["MemoryCryptoStore", () => {
         const store = new IndexedDBCryptoStore(undefined, "tests");
-        // @ts-ignore set private properties
-        store.backend = new MemoryCryptoStore();
-        // @ts-ignore
-        store.backendPromise = Promise.resolve(store.backend);
+        store._backend = new MemoryCryptoStore();
+        store._backendPromise = Promise.resolve(store._backend);
         return store;
     }],
 ])("Outgoing room key requests [%s]", function(name, dbFactory) {
@@ -66,22 +64,22 @@ describe.each([
     });
 
     it("getAllOutgoingRoomKeyRequestsByState retrieves all entries in a given state",
-        async () => {
-            const r = await
+    async () => {
+        const r = await
             store.getAllOutgoingRoomKeyRequestsByState(RoomKeyRequestState.Sent);
-            expect(r).toHaveLength(2);
-            requests.filter((e) => e.state === RoomKeyRequestState.Sent).forEach((e) => {
-                expect(r).toContainEqual(e);
-            });
+        expect(r).toHaveLength(2);
+        requests.filter((e) => e.state === RoomKeyRequestState.Sent).forEach((e) => {
+            expect(r).toContainEqual(e);
         });
+    });
 
     test("getOutgoingRoomKeyRequestByState retrieves any entry in a given state",
-        async () => {
-            const r =
+    async () => {
+        const r =
             await store.getOutgoingRoomKeyRequestByState([RoomKeyRequestState.Sent]);
-            expect(r).not.toBeNull();
-            expect(r).not.toBeUndefined();
-            expect(r.state).toEqual(RoomKeyRequestState.Sent);
-            expect(requests).toContainEqual(r);
-        });
+        expect(r).not.toBeNull();
+        expect(r).not.toBeUndefined();
+        expect(r.state).toEqual(RoomKeyRequestState.Sent);
+        expect(requests).toContainEqual(r);
+    });
 });

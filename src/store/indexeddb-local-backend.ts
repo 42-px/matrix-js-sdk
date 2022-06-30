@@ -18,7 +18,7 @@ import { IMinimalEvent, ISyncData, ISyncResponse, SyncAccumulator } from "../syn
 import * as utils from "../utils";
 import * as IndexedDBHelpers from "../indexeddb-helpers";
 import { logger } from '../logger';
-import { IStartClientOpts, IStateEventWithRoomId } from "..";
+import { IEvent, IStartClientOpts } from "..";
 import { ISavedSync } from "./index";
 import { IIndexedDBBackend, UserTuple } from "./indexeddb-backend";
 
@@ -127,8 +127,6 @@ export class LocalIndexedDBStoreBackend implements IIndexedDBBackend {
     private db: IDBDatabase = null;
     private disconnected = true;
     private _isNewlyCreated = false;
-    private isPersisting = false;
-    private pendingUserPresenceData: UserTuple[] = [];
 
     /**
      * Does the actual reading from and writing to the indexeddb
@@ -231,15 +229,15 @@ export class LocalIndexedDBStoreBackend implements IIndexedDBBackend {
      * @returns {Promise<event[]>} the events, potentially an empty array if OOB loading didn't yield any new members
      * @returns {null} in case the members for this room haven't been stored yet
      */
-    public getOutOfBandMembers(roomId: string): Promise<IStateEventWithRoomId[] | null> {
-        return new Promise<IStateEventWithRoomId[] | null>((resolve, reject) => {
+    public getOutOfBandMembers(roomId: string): Promise<IEvent[] | null> {
+        return new Promise<IEvent[] | null>((resolve, reject) => {
             const tx = this.db.transaction(["oob_membership_events"], "readonly");
             const store = tx.objectStore("oob_membership_events");
             const roomIndex = store.index("room");
             const range = IDBKeyRange.only(roomId);
             const request = roomIndex.openCursor(range);
 
-            const membershipEvents: IStateEventWithRoomId[] = [];
+            const membershipEvents: IEvent[] = [];
             // did we encounter the oob_written marker object
             // amongst the results? That means OOB member
             // loading already happened for this room
@@ -268,7 +266,7 @@ export class LocalIndexedDBStoreBackend implements IIndexedDBBackend {
                 reject(err);
             };
         }).then((events) => {
-            logger.log(`LL: got ${events?.length} membershipEvents from storage for room ${roomId} ...`);
+            logger.log(`LL: got ${events && events.length} membershipEvents from storage for room ${roomId} ...`);
             return events;
         });
     }
@@ -280,7 +278,7 @@ export class LocalIndexedDBStoreBackend implements IIndexedDBBackend {
      * @param {string} roomId
      * @param {event[]} membershipEvents the membership events to store
      */
-    public async setOutOfBandMembers(roomId: string, membershipEvents: IStateEventWithRoomId[]): Promise<void> {
+    public async setOutOfBandMembers(roomId: string, membershipEvents: IEvent[]): Promise<void> {
         logger.log(`LL: backend about to store ${membershipEvents.length}` +
             ` members for ${roomId}`);
         const tx = this.db.transaction(["oob_membership_events"], "readwrite");
@@ -403,24 +401,11 @@ export class LocalIndexedDBStoreBackend implements IIndexedDBBackend {
     public async syncToDatabase(userTuples: UserTuple[]): Promise<void> {
         const syncData = this.syncAccumulator.getJSON(true);
 
-        if (this.isPersisting) {
-            logger.warn("Skipping syncToDatabase() as persist already in flight");
-            this.pendingUserPresenceData.push(...userTuples);
-            return;
-        } else {
-            userTuples.unshift(...this.pendingUserPresenceData);
-            this.isPersisting = true;
-        }
-
-        try {
-            await Promise.all([
-                this.persistUserPresenceEvents(userTuples),
-                this.persistAccountData(syncData.accountData),
-                this.persistSyncData(syncData.nextBatch, syncData.roomsData),
-            ]);
-        } finally {
-            this.isPersisting = false;
-        }
+        await Promise.all([
+            this.persistUserPresenceEvents(userTuples),
+            this.persistAccountData(syncData.accountData),
+            this.persistSyncData(syncData.nextBatch, syncData.roomsData),
+        ]);
     }
 
     /**
@@ -442,9 +427,7 @@ export class LocalIndexedDBStoreBackend implements IIndexedDBBackend {
                 nextBatch,
                 roomsData,
             }); // put == UPSERT
-            return txnAsPromise(txn).then(() => {
-                logger.log("Persisted sync data up to", nextBatch);
-            });
+            return txnAsPromise(txn).then();
         });
     }
 
@@ -547,7 +530,9 @@ export class LocalIndexedDBStoreBackend implements IIndexedDBBackend {
             const txn = this.db.transaction(["client_options"], "readonly");
             const store = txn.objectStore("client_options");
             return selectQuery(store, undefined, (cursor) => {
-                return cursor.value?.options;
+                if (cursor.value && cursor.value && cursor.value.options) {
+                    return cursor.value.options;
+                }
             }).then((results) => results[0]);
         });
     }

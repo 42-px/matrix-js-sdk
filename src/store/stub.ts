@@ -27,7 +27,6 @@ import { Filter } from "../filter";
 import { ISavedSync, IStore } from "./index";
 import { RoomSummary } from "../models/room-summary";
 import { ISyncResponse } from "../sync-accumulator";
-import { IStateEventWithRoomId } from "../@types/search";
 
 /**
  * Construct a stub store. This does no-ops on most store methods.
@@ -123,7 +122,7 @@ export class StubStore implements IStore {
     /**
      * No-op.
      * @param {Room} room
-     * @param {number} limit
+     * @param {integer} limit
      * @return {Array}
      */
     public scrollback(room: Room, limit: number): MatrixEvent[] {
@@ -243,11 +242,11 @@ export class StubStore implements IStore {
         return Promise.resolve();
     }
 
-    public getOutOfBandMembers(): Promise<IStateEventWithRoomId[]> {
+    public getOutOfBandMembers(): Promise<IEvent[]> {
         return Promise.resolve(null);
     }
 
-    public setOutOfBandMembers(roomId: string, membershipEvents: IStateEventWithRoomId[]): Promise<void> {
+    public setOutOfBandMembers(roomId: string, membershipEvents: IEvent[]): Promise<void> {
         return Promise.resolve();
     }
 
@@ -260,14 +259,6 @@ export class StubStore implements IStore {
     }
 
     public storeClientOptions(options: object): Promise<void> {
-        return Promise.resolve();
-    }
-
-    public async getPendingEvents(roomId: string): Promise<Partial<IEvent>[]> {
-        return [];
-    }
-
-    public setPendingEvents(roomId: string, events: Partial<IEvent>[]): Promise<void> {
         return Promise.resolve();
     }
 }

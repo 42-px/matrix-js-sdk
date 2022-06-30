@@ -35,14 +35,13 @@ function createTimeline(numEvents, baseIndex) {
     return timeline;
 }
 
-function addEventsToTimeline(timeline, numEvents, toStartOfTimeline) {
+function addEventsToTimeline(timeline, numEvents, atStart) {
     for (let i = 0; i < numEvents; i++) {
         timeline.addEvent(
             utils.mkMessage({
                 room: ROOM_ID, user: USER_ID,
                 event: true,
-            }),
-            { toStartOfTimeline },
+            }), atStart,
         );
     }
 }

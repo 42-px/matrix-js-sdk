@@ -179,7 +179,7 @@ export abstract class DecryptionAlgorithm {
      *
      * @param {module:models/event.MatrixEvent} params event key event
      */
-    public async onRoomKeyEvent(params: MatrixEvent): Promise<void> {
+    public onRoomKeyEvent(params: MatrixEvent): void {
         // ignore by default
     }
 

@@ -92,17 +92,12 @@ export interface InboundGroupSessionData {
     sharedHistory?: boolean;
 }
 
-export interface IDecryptedGroupMessage {
+interface IDecryptedGroupMessage {
     result: string;
     keysClaimed: Record<string, string>;
     senderKey: string;
     forwardingCurve25519KeyChain: string[];
     untrusted: boolean;
-}
-
-export interface IInboundSession {
-    payload: string;
-    session_id: string;
 }
 
 export interface IExportedDevice {
@@ -625,7 +620,7 @@ export class OlmDevice {
         theirDeviceIdentityKey: string,
         messageType: number,
         ciphertext: string,
-    ): Promise<IInboundSession> {
+    ): Promise<{ payload: string, session_id: string }> { // eslint-disable-line camelcase
         if (messageType !== 0) {
             throw new Error("Need messageType == 0 to create inbound session");
         }
@@ -914,12 +909,12 @@ export class OlmDevice {
         await this.cryptoStore.storeEndToEndSessionProblem(deviceKey, type, fixed);
     }
 
-    public sessionMayHaveProblems(deviceKey: string, timestamp: number): Promise<IProblem> {
-        return this.cryptoStore.getEndToEndSessionProblem(deviceKey, timestamp);
+    public async sessionMayHaveProblems(deviceKey: string, timestamp: number): Promise<IProblem> {
+        return await this.cryptoStore.getEndToEndSessionProblem(deviceKey, timestamp);
     }
 
-    public filterOutNotifiedErrorDevices(devices: IOlmDevice[]): Promise<IOlmDevice[]> {
-        return this.cryptoStore.filterOutNotifiedErrorDevices(devices);
+    public async filterOutNotifiedErrorDevices(devices: IOlmDevice[]): Promise<IOlmDevice[]> {
+        return await this.cryptoStore.filterOutNotifiedErrorDevices(devices);
     }
 
     // Outbound group session

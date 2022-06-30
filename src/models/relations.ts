@@ -15,11 +15,10 @@ limitations under the License.
 */
 
 import { EventStatus, IAggregatedRelation, MatrixEvent, MatrixEventEvent } from './event';
+import { Room } from './room';
 import { logger } from '../logger';
 import { RelationType } from "../@types/event";
 import { TypedEventEmitter } from "./typed-event-emitter";
-import { MatrixClient } from "../client";
-import { Room } from "./room";
 
 export enum RelationsEvent {
     Add = "Relations.add",
@@ -49,7 +48,6 @@ export class Relations extends TypedEventEmitter<RelationsEvent, EventHandlerMap
     private sortedAnnotationsByKey: [string, Set<MatrixEvent>][] = [];
     private targetEvent: MatrixEvent = null;
     private creationEmitted = false;
-    private readonly client: MatrixClient;
 
     /**
      * @param {RelationType} relationType
@@ -57,16 +55,16 @@ export class Relations extends TypedEventEmitter<RelationsEvent, EventHandlerMap
      * "m.replace", etc.
      * @param {String} eventType
      * The relation event's type, such as "m.reaction", etc.
-     * @param {MatrixClient|Room} client
-     * The client which created this instance. For backwards compatibility also accepts a Room.
+     * @param {?Room} room
+     * Room for this container. May be null for non-room cases, such as the
+     * notification timeline.
      */
     constructor(
         public readonly relationType: RelationType | string,
         public readonly eventType: string,
-        client: MatrixClient | Room,
+        private readonly room: Room,
     ) {
         super();
-        this.client = client instanceof Room ? client.client : client;
     }
 
     /**
@@ -105,7 +103,7 @@ export class Relations extends TypedEventEmitter<RelationsEvent, EventHandlerMap
 
         if (this.relationType === RelationType.Annotation) {
             this.addAnnotationToAggregation(event);
-        } else if (this.relationType === RelationType.Replace && this.targetEvent && !this.targetEvent.isState()) {
+        } else if (this.relationType === RelationType.Replace && this.targetEvent) {
             const lastReplacement = await this.getLastReplacement();
             this.targetEvent.makeReplaced(lastReplacement);
         }
@@ -146,7 +144,7 @@ export class Relations extends TypedEventEmitter<RelationsEvent, EventHandlerMap
 
         if (this.relationType === RelationType.Annotation) {
             this.removeAnnotationFromAggregation(event);
-        } else if (this.relationType === RelationType.Replace && this.targetEvent && !this.targetEvent.isState()) {
+        } else if (this.relationType === RelationType.Replace && this.targetEvent) {
             const lastReplacement = await this.getLastReplacement();
             this.targetEvent.makeReplaced(lastReplacement);
         }
@@ -263,7 +261,7 @@ export class Relations extends TypedEventEmitter<RelationsEvent, EventHandlerMap
         if (this.relationType === RelationType.Annotation) {
             // Remove the redacted annotation from aggregation by key
             this.removeAnnotationFromAggregation(redactedEvent);
-        } else if (this.relationType === RelationType.Replace && this.targetEvent && !this.targetEvent.isState()) {
+        } else if (this.relationType === RelationType.Replace && this.targetEvent) {
             const lastReplacement = await this.getLastReplacement();
             this.targetEvent.makeReplaced(lastReplacement);
         }
@@ -349,7 +347,7 @@ export class Relations extends TypedEventEmitter<RelationsEvent, EventHandlerMap
         }, null);
 
         if (lastReplacement?.shouldAttemptDecryption()) {
-            await lastReplacement.attemptDecryption(this.client.crypto);
+            await lastReplacement.attemptDecryption(this.room.client.crypto);
         } else if (lastReplacement?.isBeingDecrypted()) {
             await lastReplacement.getDecryptionPromise();
         }
@@ -366,7 +364,7 @@ export class Relations extends TypedEventEmitter<RelationsEvent, EventHandlerMap
         }
         this.targetEvent = event;
 
-        if (this.relationType === RelationType.Replace && !this.targetEvent.isState()) {
+        if (this.relationType === RelationType.Replace) {
             const replacement = await this.getLastReplacement();
             // this is the initial update, so only call it if we already have something
             // to not emit Event.replaced needlessly

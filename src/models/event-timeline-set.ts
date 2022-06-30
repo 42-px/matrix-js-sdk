@@ -18,17 +18,17 @@ limitations under the License.
  * @module models/event-timeline-set
  */
 
-import { EventTimeline, IAddEventOptions } from "./event-timeline";
-import { MatrixEvent } from "./event";
+import { EventTimeline } from "./event-timeline";
+import { EventStatus, MatrixEvent, MatrixEventEvent } from "./event";
 import { logger } from '../logger';
+import { Relations } from './relations';
 import { Room, RoomEvent } from "./room";
 import { Filter } from "../filter";
+import { EventType, RelationType } from "../@types/event";
 import { RoomState } from "./room-state";
 import { TypedEventEmitter } from "./typed-event-emitter";
-import { RelationsContainer } from "./relations-container";
-import { MatrixClient } from "../client";
-import { Thread } from "./thread";
 
+// var DEBUG = false;
 const DEBUG = true;
 
 let debuglog: (...args: any[]) => void;
@@ -42,6 +42,7 @@ if (DEBUG) {
 interface IOpts {
     timelineSupport?: boolean;
     filter?: Filter;
+    unstableClientRelationAggregation?: boolean;
     pendingEvents?: boolean;
 }
 
@@ -55,23 +56,6 @@ export interface IRoomTimelineData {
     liveEvent?: boolean;
 }
 
-export interface IAddEventToTimelineOptions
-    extends Pick<IAddEventOptions, 'toStartOfTimeline' | 'roomState' | 'timelineWasEmpty'> {
-    /** Whether the sync response came from cache */
-    fromCache?: boolean;
-}
-
-export interface IAddLiveEventOptions
-    extends Pick<IAddEventToTimelineOptions, 'fromCache' | 'roomState' | 'timelineWasEmpty'> {
-    /** Applies to events in the timeline only. If this is 'replace' then if a
-     * duplicate is encountered, the event passed to this function will replace
-     * the existing event in the timeline. If this is not specified, or is
-     * 'ignore', then the event passed to this function will be ignored
-     * entirely, preserving the existing event in the timeline. Events are
-     * identical based on their event ID <b>only</b>. */
-    duplicateStrategy?: DuplicateStrategy;
-}
-
 type EmittedEvents = RoomEvent.Timeline | RoomEvent.TimelineReset;
 
 export type EventTimelineSetHandlerMap = {
@@ -81,13 +65,14 @@ export type EventTimelineSetHandlerMap = {
 };
 
 export class EventTimelineSet extends TypedEventEmitter<EmittedEvents, EventTimelineSetHandlerMap> {
-    public readonly relations?: RelationsContainer;
     private readonly timelineSupport: boolean;
-    private readonly displayPendingEvents: boolean;
+    private unstableClientRelationAggregation: boolean;
+    private displayPendingEvents: boolean;
     private liveTimeline: EventTimeline;
     private timelines: EventTimeline[];
     private _eventIdToTimeline: Record<string, EventTimeline>;
     private filter?: Filter;
+    private relations: Record<string, Record<string, Record<RelationType, Relations>>>;
 
     /**
      * Construct a set of EventTimeline objects, typically on behalf of a given
@@ -111,7 +96,7 @@ export class EventTimelineSet extends TypedEventEmitter<EmittedEvents, EventTime
      * map from event_id to timeline and index.
      *
      * @constructor
-     * @param {Room=} room
+     * @param {?Room} room
      * Room for this timelineSet. May be null for non-room cases, such as the
      * notification timeline.
      * @param {Object} opts Options inherited from Room.
@@ -120,20 +105,17 @@ export class EventTimelineSet extends TypedEventEmitter<EmittedEvents, EventTime
      * Set to true to enable improved timeline support.
      * @param {Object} [opts.filter = null]
      * The filter object, if any, for this timelineSet.
-     * @param {MatrixClient=} client the Matrix client which owns this EventTimelineSet,
-     * can be omitted if room is specified.
-     * @param {Thread=} thread the thread to which this timeline set relates.
+     * @param {boolean} [opts.unstableClientRelationAggregation = false]
+     * Optional. Set to true to enable client-side aggregation of event relations
+     * via `getRelationsForEvent`.
+     * This feature is currently unstable and the API may change without notice.
      */
-    constructor(
-        public readonly room: Room | undefined,
-        opts: IOpts = {},
-        client?: MatrixClient,
-        public readonly thread?: Thread,
-    ) {
+    constructor(public readonly room: Room, opts: IOpts) {
         super();
 
         this.timelineSupport = Boolean(opts.timelineSupport);
         this.liveTimeline = new EventTimeline(this);
+        this.unstableClientRelationAggregation = !!opts.unstableClientRelationAggregation;
         this.displayPendingEvents = opts.pendingEvents !== false;
 
         // just a list - *not* ordered.
@@ -142,7 +124,11 @@ export class EventTimelineSet extends TypedEventEmitter<EmittedEvents, EventTime
 
         this.filter = opts.filter;
 
-        this.relations = this.room?.relations ?? new RelationsContainer(room?.client ?? client);
+        if (this.unstableClientRelationAggregation) {
+            // A tree of objects to access a set of relations for an event, as in:
+            // this.relations[relatesToEventId][relationType][relationEventType]
+            this.relations = {};
+        }
     }
 
     /**
@@ -193,15 +179,6 @@ export class EventTimelineSet extends TypedEventEmitter<EmittedEvents, EventTime
      */
     public getLiveTimeline(): EventTimeline {
         return this.liveTimeline;
-    }
-
-    /**
-     * Set the live timeline for this room.
-     *
-     * @return {module:models/event-timeline~EventTimeline} live timeline
-     */
-    public setLiveTimeline(timeline: EventTimeline): void {
-        this.liveTimeline = timeline;
     }
 
     /**
@@ -454,9 +431,7 @@ export class EventTimelineSet extends TypedEventEmitter<EmittedEvents, EventTime
 
             if (!existingTimeline) {
                 // we don't know about this event yet. Just add it to the timeline.
-                this.addEventToTimeline(event, timeline, {
-                    toStartOfTimeline,
-                });
+                this.addEventToTimeline(event, timeline, toStartOfTimeline);
                 lastEventWasNew = true;
                 didUpdate = true;
                 continue;
@@ -548,52 +523,16 @@ export class EventTimelineSet extends TypedEventEmitter<EmittedEvents, EventTime
      * Add an event to the end of this live timeline.
      *
      * @param {MatrixEvent} event Event to be added
-     * @param {IAddLiveEventOptions} options addLiveEvent options
+     * @param {string?} duplicateStrategy 'ignore' or 'replace'
+     * @param {boolean} fromCache whether the sync response came from cache
+     * @param roomState the state events to reconcile metadata from
      */
     public addLiveEvent(
         event: MatrixEvent,
-        {
-            duplicateStrategy,
-            fromCache,
-            roomState,
-            timelineWasEmpty,
-        }: IAddLiveEventOptions,
-    ): void;
-    /**
-     * @deprecated In favor of the overload with `IAddLiveEventOptions`
-     */
-    public addLiveEvent(
-        event: MatrixEvent,
-        duplicateStrategy?: DuplicateStrategy,
-        fromCache?: boolean,
-        roomState?: RoomState,
-    ): void;
-    public addLiveEvent(
-        event: MatrixEvent,
-        duplicateStrategyOrOpts?: DuplicateStrategy | IAddLiveEventOptions,
+        duplicateStrategy: DuplicateStrategy = DuplicateStrategy.Ignore,
         fromCache = false,
         roomState?: RoomState,
     ): void {
-        let duplicateStrategy = duplicateStrategyOrOpts as DuplicateStrategy || DuplicateStrategy.Ignore;
-        let timelineWasEmpty: boolean;
-        if (typeof (duplicateStrategyOrOpts) === 'object') {
-            ({
-                duplicateStrategy = DuplicateStrategy.Ignore,
-                fromCache = false,
-                roomState,
-                timelineWasEmpty,
-            } = duplicateStrategyOrOpts);
-        } else if (duplicateStrategyOrOpts !== undefined) {
-            // Deprecation warning
-            // FIXME: Remove after 2023-06-01 (technical debt)
-            logger.warn(
-                'Overload deprecated: ' +
-                '`EventTimelineSet.addLiveEvent(event, duplicateStrategy?, fromCache?, roomState?)` ' +
-                'is deprecated in favor of the overload with ' +
-                '`EventTimelineSet.addLiveEvent(event, IAddLiveEventOptions)`',
-            );
-        }
-
         if (this.filter) {
             const events = this.filter.filterRoomTimeline([event]);
             if (!events.length) {
@@ -604,7 +543,8 @@ export class EventTimelineSet extends TypedEventEmitter<EmittedEvents, EventTime
         const timeline = this._eventIdToTimeline[event.getId()];
         if (timeline) {
             if (duplicateStrategy === DuplicateStrategy.Replace) {
-                debuglog("EventTimelineSet.addLiveEvent: replacing duplicate event " + event.getId());
+                debuglog("EventTimelineSet.addLiveEvent: replacing duplicate event " +
+                    event.getId());
                 const tlEvents = timeline.getEvents();
                 for (let j = 0; j < tlEvents.length; j++) {
                     if (tlEvents[j].getId() === event.getId()) {
@@ -624,17 +564,13 @@ export class EventTimelineSet extends TypedEventEmitter<EmittedEvents, EventTime
                     }
                 }
             } else {
-                debuglog("EventTimelineSet.addLiveEvent: ignoring duplicate event " + event.getId());
+                debuglog("EventTimelineSet.addLiveEvent: ignoring duplicate event " +
+                    event.getId());
             }
             return;
         }
 
-        this.addEventToTimeline(event, this.liveTimeline, {
-            toStartOfTimeline: false,
-            fromCache,
-            roomState,
-            timelineWasEmpty,
-        });
+        this.addEventToTimeline(event, this.liveTimeline, false, fromCache, roomState);
     }
 
     /**
@@ -645,62 +581,24 @@ export class EventTimelineSet extends TypedEventEmitter<EmittedEvents, EventTime
      *
      * @param {MatrixEvent} event
      * @param {EventTimeline} timeline
-     * @param {IAddEventToTimelineOptions} options addEventToTimeline options
+     * @param {boolean} toStartOfTimeline
+     * @param {boolean} fromCache whether the sync response came from cache
      *
      * @fires module:client~MatrixClient#event:"Room.timeline"
      */
     public addEventToTimeline(
         event: MatrixEvent,
         timeline: EventTimeline,
-        {
-            toStartOfTimeline,
-            fromCache,
-            roomState,
-            timelineWasEmpty,
-        }: IAddEventToTimelineOptions,
-    ): void;
-    /**
-     * @deprecated In favor of the overload with `IAddEventToTimelineOptions`
-     */
-    public addEventToTimeline(
-        event: MatrixEvent,
-        timeline: EventTimeline,
         toStartOfTimeline: boolean,
-        fromCache?: boolean,
-        roomState?: RoomState,
-    ): void;
-    public addEventToTimeline(
-        event: MatrixEvent,
-        timeline: EventTimeline,
-        toStartOfTimelineOrOpts: boolean | IAddEventToTimelineOptions,
         fromCache = false,
         roomState?: RoomState,
-    ): void {
-        let toStartOfTimeline = !!toStartOfTimelineOrOpts;
-        let timelineWasEmpty: boolean;
-        if (typeof (toStartOfTimelineOrOpts) === 'object') {
-            ({ toStartOfTimeline, fromCache = false, roomState, timelineWasEmpty } = toStartOfTimelineOrOpts);
-        } else if (toStartOfTimelineOrOpts !== undefined) {
-            // Deprecation warning
-            // FIXME: Remove after 2023-06-01 (technical debt)
-            logger.warn(
-                'Overload deprecated: ' +
-                '`EventTimelineSet.addEventToTimeline(event, timeline, toStartOfTimeline, fromCache?, roomState?)` ' +
-                'is deprecated in favor of the overload with ' +
-                '`EventTimelineSet.addEventToTimeline(event, timeline, IAddEventToTimelineOptions)`',
-            );
-        }
-
+    ) {
         const eventId = event.getId();
-        timeline.addEvent(event, {
-            toStartOfTimeline,
-            roomState,
-            timelineWasEmpty,
-        });
+        timeline.addEvent(event, toStartOfTimeline, roomState);
         this._eventIdToTimeline[eventId] = timeline;
 
-        this.relations.aggregateParentEvent(event);
-        this.relations.aggregateChildEvent(event, this);
+        this.setRelationsTarget(event);
+        this.aggregateRelations(event);
 
         const data: IRoomTimelineData = {
             timeline: timeline,
@@ -732,14 +630,10 @@ export class EventTimelineSet extends TypedEventEmitter<EmittedEvents, EventTime
         } else {
             if (this.filter) {
                 if (this.filter.filterRoomTimeline([localEvent]).length) {
-                    this.addEventToTimeline(localEvent, this.liveTimeline, {
-                        toStartOfTimeline: false,
-                    });
+                    this.addEventToTimeline(localEvent, this.liveTimeline, false);
                 }
             } else {
-                this.addEventToTimeline(localEvent, this.liveTimeline, {
-                    toStartOfTimeline: false,
-                });
+                this.addEventToTimeline(localEvent, this.liveTimeline, false);
             }
         }
     }
@@ -800,8 +694,8 @@ export class EventTimelineSet extends TypedEventEmitter<EmittedEvents, EventTime
         if (timeline1 === timeline2) {
             // both events are in the same timeline - figure out their
             // relative indices
-            let idx1: number;
-            let idx2: number;
+            let idx1;
+            let idx2;
             const events = timeline1.getEvents();
             for (let idx = 0; idx < events.length &&
             (idx1 === undefined || idx2 === undefined); idx++) {
@@ -844,28 +738,134 @@ export class EventTimelineSet extends TypedEventEmitter<EmittedEvents, EventTime
     }
 
     /**
-     * Determine whether a given event can sanely be added to this event timeline set,
-     * for timeline sets relating to a thread, only return true for events in the same
-     * thread timeline, for timeline sets not relating to a thread only return true
-     * for events which should be shown in the main room timeline.
-     * Requires the `room` property to have been set at EventTimelineSet construction time.
+     * Get a collection of relations to a given event in this timeline set.
      *
-     * @param event {MatrixEvent} the event to check whether it belongs to this timeline set.
-     * @throws {Error} if `room` was not set when constructing this timeline set.
-     * @return {boolean} whether the event belongs to this timeline set.
+     * @param {String} eventId
+     * The ID of the event that you'd like to access relation events for.
+     * For example, with annotations, this would be the ID of the event being annotated.
+     * @param {String} relationType
+     * The type of relation involved, such as "m.annotation", "m.reference", "m.replace", etc.
+     * @param {String} eventType
+     * The relation event's type, such as "m.reaction", etc.
+     * @throws If <code>eventId</code>, <code>relationType</code> or <code>eventType</code>
+     * are not valid.
+     *
+     * @returns {?Relations}
+     * A container for relation events or undefined if there are no relation events for
+     * the relationType.
      */
-    public canContain(event: MatrixEvent): boolean {
-        if (!this.room) {
-            throw new Error("Cannot call `EventTimelineSet::canContain without a `room` set. " +
-                "Set the room when creating the EventTimelineSet to call this method.");
+    public getRelationsForEvent(
+        eventId: string,
+        relationType: RelationType | string,
+        eventType: EventType | string,
+    ): Relations | undefined {
+        if (!this.unstableClientRelationAggregation) {
+            throw new Error("Client-side relation aggregation is disabled");
         }
 
-        const { threadId, shouldLiveInRoom } = this.room.eventShouldLiveIn(event);
-
-        if (this.thread) {
-            return this.thread.id === threadId;
+        if (!eventId || !relationType || !eventType) {
+            throw new Error("Invalid arguments for `getRelationsForEvent`");
         }
-        return shouldLiveInRoom;
+
+        // debuglog("Getting relations for: ", eventId, relationType, eventType);
+
+        const relationsForEvent = this.relations[eventId] || {};
+        const relationsWithRelType = relationsForEvent[relationType] || {};
+        return relationsWithRelType[eventType];
+    }
+
+    public getAllRelationsEventForEvent(eventId: string): MatrixEvent[] {
+        const relationsForEvent = this.relations?.[eventId] || {};
+        const events = [];
+        for (const relationsRecord of Object.values(relationsForEvent)) {
+            for (const relations of Object.values(relationsRecord)) {
+                events.push(...relations.getRelations());
+            }
+        }
+        return events;
+    }
+
+    /**
+     * Set an event as the target event if any Relations exist for it already
+     *
+     * @param {MatrixEvent} event
+     * The event to check as relation target.
+     */
+    public setRelationsTarget(event: MatrixEvent): void {
+        if (!this.unstableClientRelationAggregation) {
+            return;
+        }
+
+        const relationsForEvent = this.relations[event.getId()];
+        if (!relationsForEvent) {
+            return;
+        }
+
+        for (const relationsWithRelType of Object.values(relationsForEvent)) {
+            for (const relationsWithEventType of Object.values(relationsWithRelType)) {
+                relationsWithEventType.setTargetEvent(event);
+            }
+        }
+    }
+
+    /**
+     * Add relation events to the relevant relation collection.
+     *
+     * @param {MatrixEvent} event
+     * The new relation event to be aggregated.
+     */
+    public aggregateRelations(event: MatrixEvent): void {
+        if (!this.unstableClientRelationAggregation) {
+            return;
+        }
+
+        if (event.isRedacted() || event.status === EventStatus.CANCELLED) {
+            return;
+        }
+
+        // If the event is currently encrypted, wait until it has been decrypted.
+        if (event.isBeingDecrypted() || event.shouldAttemptDecryption()) {
+            event.once(MatrixEventEvent.Decrypted, () => {
+                this.aggregateRelations(event);
+            });
+            return;
+        }
+
+        const relation = event.getRelation();
+        if (!relation) {
+            return;
+        }
+
+        const relatesToEventId = relation.event_id;
+        const relationType = relation.rel_type;
+        const eventType = event.getType();
+
+        // debuglog("Aggregating relation: ", event.getId(), eventType, relation);
+
+        let relationsForEvent: Record<string, Partial<Record<string, Relations>>> = this.relations[relatesToEventId];
+        if (!relationsForEvent) {
+            relationsForEvent = this.relations[relatesToEventId] = {};
+        }
+        let relationsWithRelType = relationsForEvent[relationType];
+        if (!relationsWithRelType) {
+            relationsWithRelType = relationsForEvent[relationType] = {};
+        }
+        let relationsWithEventType = relationsWithRelType[eventType];
+
+        let relatesToEvent: MatrixEvent;
+        if (!relationsWithEventType) {
+            relationsWithEventType = relationsWithRelType[eventType] = new Relations(
+                relationType,
+                eventType,
+                this.room,
+            );
+            relatesToEvent = this.findEventById(relatesToEventId) || this.room.getPendingEvent(relatesToEventId);
+            if (relatesToEvent) {
+                relationsWithEventType.setTargetEvent(relatesToEvent);
+            }
+        }
+
+        relationsWithEventType.addEvent(event);
     }
 }
 

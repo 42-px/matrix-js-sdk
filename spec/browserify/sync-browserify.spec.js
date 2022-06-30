@@ -47,7 +47,7 @@ describe("Browserify Test", function() {
         httpBackend.stop();
     });
 
-    it("Sync", function() {
+    it("Sync", async function() {
         const event = utils.mkMembership({
             room: ROOM_ID,
             mship: "join",
@@ -71,7 +71,7 @@ describe("Browserify Test", function() {
         };
 
         httpBackend.when("GET", "/sync").respond(200, syncData);
-        return Promise.race([
+        return await Promise.race([
             httpBackend.flushAllExpected(),
             new Promise((_, reject) => {
                 client.once("sync.unexpectedError", reject);

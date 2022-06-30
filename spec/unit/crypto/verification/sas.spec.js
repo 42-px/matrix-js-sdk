@@ -75,10 +75,9 @@ describe("SAS verification", function() {
         let bobSasEvent;
         let aliceVerifier;
         let bobPromise;
-        let clearTestClientTimeouts;
 
         beforeEach(async () => {
-            [[alice, bob], clearTestClientTimeouts] = await makeTestClients(
+            [alice, bob] = await makeTestClients(
                 [
                     { userId: "@alice:example.com", deviceId: "Osborne2" },
                     { userId: "@bob:example.com", deviceId: "Dynabook" },
@@ -179,8 +178,6 @@ describe("SAS verification", function() {
                 alice.stop(),
                 bob.stop(),
             ]);
-
-            clearTestClientTimeouts();
         });
 
         it("should verify a key", async () => {
@@ -337,7 +334,7 @@ describe("SAS verification", function() {
     });
 
     it("should send a cancellation message on error", async function() {
-        const [[alice, bob], clearTestClientTimeouts] = await makeTestClients(
+        const [alice, bob] = await makeTestClients(
             [
                 { userId: "@alice:example.com", deviceId: "Osborne2" },
                 { userId: "@bob:example.com", deviceId: "Dynabook" },
@@ -380,10 +377,6 @@ describe("SAS verification", function() {
             .not.toHaveBeenCalled();
         expect(bob.client.setDeviceVerified)
             .not.toHaveBeenCalled();
-
-        alice.stop();
-        bob.stop();
-        clearTestClientTimeouts();
     });
 
     describe("verification in DM", function() {
@@ -393,10 +386,9 @@ describe("SAS verification", function() {
         let bobSasEvent;
         let aliceVerifier;
         let bobPromise;
-        let clearTestClientTimeouts;
 
         beforeEach(async function() {
-            [[alice, bob], clearTestClientTimeouts] = await makeTestClients(
+            [alice, bob] = await makeTestClients(
                 [
                     { userId: "@alice:example.com", deviceId: "Osborne2" },
                     { userId: "@bob:example.com", deviceId: "Dynabook" },
@@ -496,8 +488,6 @@ describe("SAS verification", function() {
                 alice.stop(),
                 bob.stop(),
             ]);
-
-            clearTestClientTimeouts();
         });
 
         it("should verify a key", async function() {

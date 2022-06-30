@@ -22,7 +22,6 @@ import { Filter } from "../filter";
 import { RoomSummary } from "../models/room-summary";
 import { IMinimalEvent, IRooms, ISyncResponse } from "../sync-accumulator";
 import { IStartClientOpts } from "../client";
-import { IStateEventWithRoomId } from "../@types/search";
 
 export interface ISavedSync {
     nextBatch: string;
@@ -37,11 +36,7 @@ export interface ISavedSync {
 export interface IStore {
     readonly accountData: Record<string, MatrixEvent>; // type : content
 
-    // XXX: The indexeddb store exposes a non-standard emitter for the "degraded" event
-    // for when it falls back to being a memory store due to errors.
-    on?: (event: string, handler: (...args: any[]) => void) => void;
-
-    /** @return {Promise<boolean>} whether or not the database was newly created in this session. */
+    /** @return {Promise<bool>} whether or not the database was newly created in this session. */
     isNewlyCreated(): Promise<boolean>;
 
     /**
@@ -109,7 +104,7 @@ export interface IStore {
     /**
      * No-op.
      * @param {Room} room
-     * @param {number} limit
+     * @param {integer} limit
      * @return {Array}
      */
     scrollback(room: Room, limit: number): MatrixEvent[];
@@ -209,17 +204,13 @@ export interface IStore {
      */
     deleteAllData(): Promise<void>;
 
-    getOutOfBandMembers(roomId: string): Promise<IStateEventWithRoomId[] | null>;
+    getOutOfBandMembers(roomId: string): Promise<IEvent[] | null>;
 
-    setOutOfBandMembers(roomId: string, membershipEvents: IStateEventWithRoomId[]): Promise<void>;
+    setOutOfBandMembers(roomId: string, membershipEvents: IEvent[]): Promise<void>;
 
     clearOutOfBandMembers(roomId: string): Promise<void>;
 
     getClientOptions(): Promise<IStartClientOpts>;
 
     storeClientOptions(options: IStartClientOpts): Promise<void>;
-
-    getPendingEvents(roomId: string): Promise<Partial<IEvent>[]>;
-
-    setPendingEvents(roomId: string, events: Partial<IEvent>[]): Promise<void>;
 }

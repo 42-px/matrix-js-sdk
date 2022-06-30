@@ -1,6 +1,5 @@
 import * as utils from "../test-utils/test-utils";
 import { PushProcessor } from "../../src/pushprocessor";
-import { EventType } from "../../src";
 
 describe('NotificationService', function() {
     const testUserId = "@ali:matrix.org";
@@ -209,7 +208,6 @@ describe('NotificationService', function() {
                 msgtype: "m.text",
             },
         });
-        matrixClient.pushRules = PushProcessor.rewriteDefaultRules(matrixClient.pushRules);
         pushProcessor = new PushProcessor(matrixClient);
     });
 
@@ -295,22 +293,6 @@ describe('NotificationService', function() {
         testEvent.event.content.body = "bake";
         actions = pushProcessor.actionsForEvent(testEvent);
         expect(actions.tweaks.highlight).toEqual(false);
-    });
-
-    it('should not bing on room server ACL changes', function() {
-        testEvent = utils.mkEvent({
-            type: EventType.RoomServerAcl,
-            room: testRoomId,
-            user: "@alfred:localhost",
-            skey: "",
-            event: true,
-            content: {},
-        });
-
-        const actions = pushProcessor.actionsForEvent(testEvent);
-        expect(actions.tweaks.highlight).toBeFalsy();
-        expect(actions.tweaks.sound).toBeFalsy();
-        expect(actions.notify).toBeFalsy();
     });
 
     // invalid

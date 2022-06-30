@@ -23,7 +23,6 @@ import * as utils from "../test-utils/test-utils";
 import {
     DuplicateStrategy,
     EventStatus,
-    EventTimelineSet,
     EventType,
     JoinRule,
     MatrixEvent,
@@ -32,13 +31,12 @@ import {
     RoomEvent,
 } from "../../src";
 import { EventTimeline } from "../../src/models/event-timeline";
-import { IWrappedReceipt, Room } from "../../src/models/room";
+import { Room } from "../../src/models/room";
 import { RoomState } from "../../src/models/room-state";
 import { UNSTABLE_ELEMENT_FUNCTIONAL_USERS } from "../../src/@types/event";
 import { TestClient } from "../TestClient";
 import { emitPromise } from "../test-utils/test-utils";
-import { ReceiptType } from "../../src/@types/read_receipts";
-import { Thread, ThreadEvent } from "../../src/models/thread";
+import { ThreadEvent } from "../../src/models/thread";
 
 describe("Room", function() {
     const roomId = "!foo:bar";
@@ -52,7 +50,7 @@ describe("Room", function() {
         event: true,
         user: userA,
         room: roomId,
-    }, room.client);
+    }, room.client) as MatrixEvent;
 
     const mkReply = (target: MatrixEvent) => utils.mkEvent({
         event: true,
@@ -67,7 +65,7 @@ describe("Room", function() {
                 },
             },
         },
-    }, room.client);
+    }, room.client) as MatrixEvent;
 
     const mkEdit = (target: MatrixEvent, salt = Math.random()) => utils.mkEvent({
         event: true,
@@ -84,7 +82,7 @@ describe("Room", function() {
                 event_id: target.getId(),
             },
         },
-    }, room.client);
+    }, room.client) as MatrixEvent;
 
     const mkThreadResponse = (root: MatrixEvent) => utils.mkEvent({
         event: true,
@@ -101,7 +99,7 @@ describe("Room", function() {
                 "rel_type": "m.thread",
             },
         },
-    }, room.client);
+    }, room.client) as MatrixEvent;
 
     const mkReaction = (target: MatrixEvent) => utils.mkEvent({
         event: true,
@@ -115,7 +113,7 @@ describe("Room", function() {
                 "key": Math.random().toString(),
             },
         },
-    }, room.client);
+    }, room.client) as MatrixEvent;
 
     const mkRedaction = (target: MatrixEvent) => utils.mkEvent({
         event: true,
@@ -124,34 +122,13 @@ describe("Room", function() {
         room: roomId,
         redacts: target.getId(),
         content: {},
-    }, room.client);
+    }, room.client) as MatrixEvent;
 
     beforeEach(function() {
         room = new Room(roomId, new TestClient(userA, "device").client, userA);
         // mock RoomStates
         room.oldState = room.getLiveTimeline().startState = utils.mock(RoomState, "oldState");
         room.currentState = room.getLiveTimeline().endState = utils.mock(RoomState, "currentState");
-    });
-
-    describe('getCreator', () => {
-        it("should return the creator from m.room.create", function() {
-            room.currentState.getStateEvents.mockImplementation(function(type, key) {
-                if (type === EventType.RoomCreate && key === "") {
-                    return utils.mkEvent({
-                        event: true,
-                        type: EventType.RoomCreate,
-                        skey: "",
-                        room: roomId,
-                        user: userA,
-                        content: {
-                            creator: userA,
-                        },
-                    });
-                }
-            });
-            const roomCreator = room.getCreator();
-            expect(roomCreator).toStrictEqual(userA);
-        });
     });
 
     describe("getAvatarUrl", function() {
@@ -210,24 +187,29 @@ describe("Room", function() {
         const events: MatrixEvent[] = [
             utils.mkMessage({
                 room: roomId, user: userA, msg: "changing room name", event: true,
-            }),
+            }) as MatrixEvent,
             utils.mkEvent({
                 type: EventType.RoomName, room: roomId, user: userA, event: true,
                 content: { name: "New Room Name" },
-            }),
+            }) as MatrixEvent,
         ];
 
-        it("Make sure legacy overload passing options directly as parameters still works", () => {
-            expect(() => room.addLiveEvents(events, DuplicateStrategy.Replace, false)).not.toThrow();
-            expect(() => room.addLiveEvents(events, DuplicateStrategy.Ignore, true)).not.toThrow();
-            expect(() => room.addLiveEvents(events, "shouldfailbecauseinvalidduplicatestrategy", false)).toThrow();
+        it("should call RoomState.setTypingEvent on m.typing events", function() {
+            const typing = utils.mkEvent({
+                room: roomId,
+                type: EventType.Typing,
+                event: true,
+                content: {
+                    user_ids: [userA],
+                },
+            });
+            room.addEphemeralEvents([typing]);
+            expect(room.currentState.setTypingEvent).toHaveBeenCalledWith(typing);
         });
 
         it("should throw if duplicateStrategy isn't 'replace' or 'ignore'", function() {
             expect(function() {
-                room.addLiveEvents(events, {
-                    duplicateStrategy: "foo",
-                });
+                room.addLiveEvents(events, "foo");
             }).toThrow();
         });
 
@@ -235,13 +217,11 @@ describe("Room", function() {
             // make a duplicate
             const dupe = utils.mkMessage({
                 room: roomId, user: userA, msg: "dupe", event: true,
-            });
+            }) as MatrixEvent;
             dupe.event.event_id = events[0].getId();
             room.addLiveEvents(events);
             expect(room.timeline[0]).toEqual(events[0]);
-            room.addLiveEvents([dupe], {
-                duplicateStrategy: DuplicateStrategy.Replace,
-            });
+            room.addLiveEvents([dupe], DuplicateStrategy.Replace);
             expect(room.timeline[0]).toEqual(dupe);
         });
 
@@ -249,13 +229,11 @@ describe("Room", function() {
             // make a duplicate
             const dupe = utils.mkMessage({
                 room: roomId, user: userA, msg: "dupe", event: true,
-            });
+            }) as MatrixEvent;
             dupe.event.event_id = events[0].getId();
             room.addLiveEvents(events);
             expect(room.timeline[0]).toEqual(events[0]);
-            room.addLiveEvents([dupe], {
-                duplicateStrategy: "ignore",
-            });
+            room.addLiveEvents([dupe], "ignore");
             expect(room.timeline[0]).toEqual(events[0]);
         });
 
@@ -277,22 +255,20 @@ describe("Room", function() {
                 const events: MatrixEvent[] = [
                     utils.mkMembership({
                         room: roomId, mship: "invite", user: userB, skey: userA, event: true,
-                    }),
+                    }) as MatrixEvent,
                     utils.mkEvent({
                         type: EventType.RoomName, room: roomId, user: userB, event: true,
                         content: {
                             name: "New room",
                         },
-                    }),
+                    }) as MatrixEvent,
                 ];
                 room.addLiveEvents(events);
                 expect(room.currentState.setStateEvents).toHaveBeenCalledWith(
                     [events[0]],
-                    { timelineWasEmpty: undefined },
                 );
                 expect(room.currentState.setStateEvents).toHaveBeenCalledWith(
                     [events[1]],
-                    { timelineWasEmpty: undefined },
                 );
                 expect(events[0].forwardLooking).toBe(true);
                 expect(events[1].forwardLooking).toBe(true);
@@ -318,13 +294,13 @@ describe("Room", function() {
         it("should emit Room.localEchoUpdated when a local echo is updated", function() {
             const localEvent = utils.mkMessage({
                 room: roomId, user: userA, event: true,
-            });
+            }) as MatrixEvent;
             localEvent.status = EventStatus.SENDING;
             const localEventId = localEvent.getId();
 
             const remoteEvent = utils.mkMessage({
                 room: roomId, user: userA, event: true,
-            });
+            }) as MatrixEvent;
             remoteEvent.event.unsigned = { transaction_id: "TXN_ID" };
             const remoteEventId = remoteEvent.getId();
 
@@ -360,21 +336,6 @@ describe("Room", function() {
             expect(room.timeline.length).toEqual(1);
 
             expect(callCount).toEqual(2);
-        });
-    });
-
-    describe('addEphemeralEvents', () => {
-        it("should call RoomState.setTypingEvent on m.typing events", function() {
-            const typing = utils.mkEvent({
-                room: roomId,
-                type: EventType.Typing,
-                event: true,
-                content: {
-                    user_ids: [userA],
-                },
-            });
-            room.addEphemeralEvents([typing]);
-            expect(room.currentState.setTypingEvent).toHaveBeenCalledWith(typing);
         });
     });
 
@@ -445,11 +406,11 @@ describe("Room", function() {
             const newEv = utils.mkEvent({
                 type: EventType.RoomName, room: roomId, user: userA, event: true,
                 content: { name: "New Room Name" },
-            });
+            }) as MatrixEvent;
             const oldEv = utils.mkEvent({
                 type: EventType.RoomName, room: roomId, user: userA, event: true,
                 content: { name: "Old Room Name" },
-            });
+            }) as MatrixEvent;
             room.addLiveEvents([newEv]);
             expect(newEv.sender).toEqual(sentinel);
             room.addEventsToTimeline([oldEv], true, room.getLiveTimeline());
@@ -482,10 +443,10 @@ describe("Room", function() {
 
             const newEv = utils.mkMembership({
                 room: roomId, mship: "invite", user: userB, skey: userA, event: true,
-            });
+            }) as MatrixEvent;
             const oldEv = utils.mkMembership({
                 room: roomId, mship: "ban", user: userB, skey: userA, event: true,
-            });
+            }) as MatrixEvent;
             room.addLiveEvents([newEv]);
             expect(newEv.target).toEqual(sentinel);
             room.addEventsToTimeline([oldEv], true, room.getLiveTimeline());
@@ -497,23 +458,21 @@ describe("Room", function() {
             const events: MatrixEvent[] = [
                 utils.mkMembership({
                     room: roomId, mship: "invite", user: userB, skey: userA, event: true,
-                }),
+                }) as MatrixEvent,
                 utils.mkEvent({
                     type: EventType.RoomName, room: roomId, user: userB, event: true,
                     content: {
                         name: "New room",
                     },
-                }),
+                }) as MatrixEvent,
             ];
 
             room.addEventsToTimeline(events, true, room.getLiveTimeline());
             expect(room.oldState.setStateEvents).toHaveBeenCalledWith(
                 [events[0]],
-                { timelineWasEmpty: undefined },
             );
             expect(room.oldState.setStateEvents).toHaveBeenCalledWith(
                 [events[1]],
-                { timelineWasEmpty: undefined },
             );
             expect(events[0].forwardLooking).toBe(false);
             expect(events[1].forwardLooking).toBe(false);
@@ -559,23 +518,6 @@ describe("Room", function() {
         it("should reset the legacy timeline fields", function() {
             room.addLiveEvents([events[0], events[1]]);
             expect(room.timeline.length).toEqual(2);
-
-            const oldStateBeforeRunningReset = room.oldState;
-            let oldStateUpdateEmitCount = 0;
-            room.on(RoomEvent.OldStateUpdated, function(room, previousOldState, oldState) {
-                expect(previousOldState).toBe(oldStateBeforeRunningReset);
-                expect(oldState).toBe(room.oldState);
-                oldStateUpdateEmitCount += 1;
-            });
-
-            const currentStateBeforeRunningReset = room.currentState;
-            let currentStateUpdateEmitCount = 0;
-            room.on(RoomEvent.CurrentStateUpdated, function(room, previousCurrentState, currentState) {
-                expect(previousCurrentState).toBe(currentStateBeforeRunningReset);
-                expect(currentState).toBe(room.currentState);
-                currentStateUpdateEmitCount += 1;
-            });
-
             room.resetLiveTimeline('sometoken', 'someothertoken');
 
             room.addLiveEvents([events[2]]);
@@ -585,10 +527,6 @@ describe("Room", function() {
                 newLiveTimeline.getState(EventTimeline.BACKWARDS));
             expect(room.currentState).toEqual(
                 newLiveTimeline.getState(EventTimeline.FORWARDS));
-            // Make sure `RoomEvent.OldStateUpdated` was emitted
-            expect(oldStateUpdateEmitCount).toEqual(1);
-            // Make sure `RoomEvent.OldStateUpdated` was emitted if necessary
-            expect(currentStateUpdateEmitCount).toEqual(timelineSupport ? 1 : 0);
         });
 
         it("should emit Room.timelineReset event and set the correct " +
@@ -631,13 +569,13 @@ describe("Room", function() {
         const events: MatrixEvent[] = [
             utils.mkMessage({
                 room: roomId, user: userA, msg: "1111", event: true,
-            }),
+            }) as MatrixEvent,
             utils.mkMessage({
                 room: roomId, user: userA, msg: "2222", event: true,
-            }),
+            }) as MatrixEvent,
             utils.mkMessage({
                 room: roomId, user: userA, msg: "3333", event: true,
-            }),
+            }) as MatrixEvent,
         ];
 
         it("should handle events in the same timeline", function() {
@@ -778,26 +716,26 @@ describe("Room", function() {
                 type: EventType.RoomJoinRules, room: roomId, user: userA, content: {
                     join_rule: rule,
                 }, event: true,
-            })]);
+            }) as MatrixEvent]);
         };
         const setAltAliases = function(aliases: string[]) {
             room.addLiveEvents([utils.mkEvent({
                 type: EventType.RoomCanonicalAlias, room: roomId, skey: "", content: {
                     alt_aliases: aliases,
                 }, event: true,
-            })]);
+            }) as MatrixEvent]);
         };
         const setAlias = function(alias: string) {
             room.addLiveEvents([utils.mkEvent({
                 type: EventType.RoomCanonicalAlias, room: roomId, skey: "", content: { alias }, event: true,
-            })]);
+            }) as MatrixEvent]);
         };
         const setRoomName = function(name: string) {
             room.addLiveEvents([utils.mkEvent({
                 type: EventType.RoomName, room: roomId, user: userA, content: {
                     name: name,
                 }, event: true,
-            })]);
+            }) as MatrixEvent]);
         };
         const addMember = function(userId: string, state = "join", opts: any = {}) {
             opts.room = roomId;
@@ -805,7 +743,7 @@ describe("Room", function() {
             opts.user = opts.user || userId;
             opts.skey = userId;
             opts.event = true;
-            const event = utils.mkMembership(opts);
+            const event = utils.mkMembership(opts) as MatrixEvent;
             room.addLiveEvents([event]);
             return event;
         };
@@ -1113,7 +1051,7 @@ describe("Room", function() {
         const eventToAck = utils.mkMessage({
             room: roomId, user: userA, msg: "PLEASE ACKNOWLEDGE MY EXISTENCE",
             event: true,
-        });
+        }) as MatrixEvent;
 
         function mkReceipt(roomId: string, records) {
             const content = {};
@@ -1179,7 +1117,7 @@ describe("Room", function() {
                 const nextEventToAck = utils.mkMessage({
                     room: roomId, user: userA, msg: "I AM HERE YOU KNOW",
                     event: true,
-                });
+                }) as MatrixEvent;
                 const ts = 13787898424;
                 room.addReceipt(mkReceipt(roomId, [
                     mkRecord(eventToAck.getId(), "m.read", userB, ts),
@@ -1214,11 +1152,11 @@ describe("Room", function() {
                 const eventTwo = utils.mkMessage({
                     room: roomId, user: userA, msg: "2222",
                     event: true,
-                });
+                }) as MatrixEvent;
                 const eventThree = utils.mkMessage({
                     room: roomId, user: userA, msg: "3333",
                     event: true,
-                });
+                }) as MatrixEvent;
                 const ts = 13787898424;
                 room.addReceipt(mkReceipt(roomId, [
                     mkRecord(eventToAck.getId(), "m.read", userB, ts),
@@ -1266,15 +1204,15 @@ describe("Room", function() {
                     utils.mkMessage({
                         room: roomId, user: userA, msg: "1111",
                         event: true,
-                    }),
+                    }) as MatrixEvent,
                     utils.mkMessage({
                         room: roomId, user: userA, msg: "2222",
                         event: true,
-                    }),
+                    }) as MatrixEvent,
                     utils.mkMessage({
                         room: roomId, user: userA, msg: "3333",
                         event: true,
-                    }),
+                    }) as MatrixEvent,
                 ];
 
                 room.addLiveEvents(events);
@@ -1304,15 +1242,15 @@ describe("Room", function() {
                     utils.mkMessage({
                         room: roomId, user: userA, msg: "1111",
                         event: true,
-                    }),
+                    }) as MatrixEvent,
                     utils.mkMessage({
                         room: roomId, user: userA, msg: "2222",
                         event: true,
-                    }),
+                    }) as MatrixEvent,
                     utils.mkMessage({
                         room: roomId, user: userA, msg: "3333",
                         event: true,
-                    }),
+                    }) as MatrixEvent,
                 ];
 
                 room.addLiveEvents(events);
@@ -1404,14 +1342,14 @@ describe("Room", function() {
             });
             const eventA = utils.mkMessage({
                 room: roomId, user: userA, msg: "remote 1", event: true,
-            });
+            }) as MatrixEvent;
             const eventB = utils.mkMessage({
                 room: roomId, user: userA, msg: "local 1", event: true,
-            });
+            }) as MatrixEvent;
             eventB.status = EventStatus.SENDING;
             const eventC = utils.mkMessage({
                 room: roomId, user: userA, msg: "remote 2", event: true,
-            });
+            }) as MatrixEvent;
             room.addLiveEvents([eventA]);
             room.addPendingEvent(eventB, "TXN1");
             room.addLiveEvents([eventC]);
@@ -1430,14 +1368,14 @@ describe("Room", function() {
             });
             const eventA = utils.mkMessage({
                 room: roomId, user: userA, msg: "remote 1", event: true,
-            });
+            }) as MatrixEvent;
             const eventB = utils.mkMessage({
                 room: roomId, user: userA, msg: "local 1", event: true,
-            });
+            }) as MatrixEvent;
             eventB.status = EventStatus.SENDING;
             const eventC = utils.mkMessage({
                 room: roomId, user: userA, msg: "remote 2", event: true,
-            });
+            }) as MatrixEvent;
             room.addLiveEvents([eventA]);
             room.addPendingEvent(eventB, "TXN1");
             room.addLiveEvents([eventC]);
@@ -1457,7 +1395,7 @@ describe("Room", function() {
             });
             const eventA = utils.mkMessage({
                 room: roomId, user: userA, event: true,
-            });
+            }) as MatrixEvent;
             eventA.status = EventStatus.SENDING;
             const eventId = eventA.getId();
 
@@ -1490,7 +1428,7 @@ describe("Room", function() {
             const room = new Room(roomId, null, userA);
             const eventA = utils.mkMessage({
                 room: roomId, user: userA, event: true,
-            });
+            }) as MatrixEvent;
             eventA.status = EventStatus.SENDING;
             const eventId = eventA.getId();
 
@@ -1533,13 +1471,16 @@ describe("Room", function() {
                 isRoomEncrypted: function() {
                     return false;
                 },
-                members: jest.fn().mockImplementation(() => {
-                    if (serverResponse instanceof Error) {
-                        return Promise.reject(serverResponse);
-                    } else {
-                        return Promise.resolve({ chunk: serverResponse });
-                    }
-                }),
+                http: {
+                    serverResponse,
+                    authedRequest: function() {
+                        if (this.serverResponse instanceof Error) {
+                            return Promise.reject(this.serverResponse);
+                        } else {
+                            return Promise.resolve({ chunk: this.serverResponse });
+                        }
+                    },
+                },
                 store: {
                     storageResponse,
                     storedMembers: null,
@@ -1555,8 +1496,6 @@ describe("Room", function() {
                         return Promise.resolve();
                     },
                     getSyncToken: () => "sync_token",
-                    getPendingEvents: jest.fn().mockResolvedValue([]),
-                    setPendingEvents: jest.fn().mockResolvedValue(undefined),
                 },
             };
         }
@@ -1567,7 +1506,7 @@ describe("Room", function() {
             room: roomId,
             event: true,
             name: "User A",
-        });
+        }) as MatrixEvent;
 
         it("should load members from server on first call", async function() {
             const client = createClientMock([memberEvent]);
@@ -1587,7 +1526,7 @@ describe("Room", function() {
                 room: roomId,
                 event: true,
                 name: "Ms A",
-            });
+            }) as MatrixEvent;
             const client = createClientMock([memberEvent2], [memberEvent]);
             const room = new Room(roomId, client as any, null, { lazyLoadMembers: true });
 
@@ -1608,7 +1547,7 @@ describe("Room", function() {
             }
             expect(hasThrown).toEqual(true);
 
-            client.members.mockReturnValue({ chunk: [memberEvent] });
+            client.http.serverResponse = [memberEvent];
             await room.loadMembersIfNeeded();
             const memberA = room.getMember("@user_a:bar");
             expect(memberA.name).toEqual("User A");
@@ -1658,7 +1597,7 @@ describe("Room", function() {
                 mship: "join",
                 room: roomId,
                 event: true,
-            })]);
+            }) as MatrixEvent]);
             expect(room.guessDMUserId()).toEqual(userB);
         });
         it("should return self if only member present", function() {
@@ -1691,11 +1630,11 @@ describe("Room", function() {
                 utils.mkMembership({
                     user: userA, mship: "join",
                     room: roomId, event: true, name: "User A",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userB, mship: "join",
                     room: roomId, event: true, name: "User B",
-                }),
+                }) as MatrixEvent,
             ]);
             expect(room.getDefaultRoomName(userA)).toEqual("User B");
         });
@@ -1706,11 +1645,11 @@ describe("Room", function() {
                 utils.mkMembership({
                     user: userA, mship: "join",
                     room: roomId, event: true, name: "User A",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userB, mship: "ban",
                     room: roomId, event: true, name: "User B",
-                }),
+                }) as MatrixEvent,
             ]);
             expect(room.getDefaultRoomName(userA)).toEqual("Empty room (was User B)");
         });
@@ -1721,11 +1660,11 @@ describe("Room", function() {
                 utils.mkMembership({
                     user: userA, mship: "join",
                     room: roomId, event: true, name: "User A",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userB, mship: "invite",
                     room: roomId, event: true, name: "User B",
-                }),
+                }) as MatrixEvent,
             ]);
             expect(room.getDefaultRoomName(userA)).toEqual("User B");
         });
@@ -1736,11 +1675,11 @@ describe("Room", function() {
                 utils.mkMembership({
                     user: userA, mship: "join",
                     room: roomId, event: true, name: "User A",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userB, mship: "leave",
                     room: roomId, event: true, name: "User B",
-                }),
+                }) as MatrixEvent,
             ]);
             expect(room.getDefaultRoomName(userA)).toEqual("Empty room (was User B)");
         });
@@ -1751,15 +1690,15 @@ describe("Room", function() {
                 utils.mkMembership({
                     user: userA, mship: "join",
                     room: roomId, event: true, name: "User A",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userB, mship: "join",
                     room: roomId, event: true, name: "User B",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userC, mship: "join",
                     room: roomId, event: true, name: "User C",
-                }),
+                }) as MatrixEvent,
             ]);
             expect(room.getDefaultRoomName(userA)).toEqual("User B and User C");
         });
@@ -1770,19 +1709,19 @@ describe("Room", function() {
                 utils.mkMembership({
                     user: userA, mship: "join",
                     room: roomId, event: true, name: "User A",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userB, mship: "join",
                     room: roomId, event: true, name: "User B",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userC, mship: "join",
                     room: roomId, event: true, name: "User C",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userD, mship: "join",
                     room: roomId, event: true, name: "User D",
-                }),
+                }) as MatrixEvent,
             ]);
             expect(room.getDefaultRoomName(userA)).toEqual("User B and 2 others");
         });
@@ -1795,18 +1734,18 @@ describe("Room", function() {
                 utils.mkMembership({
                     user: userA, mship: "join",
                     room: roomId, event: true, name: "User A",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userB, mship: "join",
                     room: roomId, event: true, name: "User B",
-                }),
+                }) as MatrixEvent,
                 utils.mkEvent({
                     type: UNSTABLE_ELEMENT_FUNCTIONAL_USERS.name, skey: "",
                     room: roomId, event: true,
                     content: {
                         service_members: [],
                     },
-                }),
+                }) as MatrixEvent,
             ]);
             expect(room.getDefaultRoomName(userA)).toEqual("User B");
         });
@@ -1817,11 +1756,11 @@ describe("Room", function() {
                 utils.mkMembership({
                     user: userA, mship: "join",
                     room: roomId, event: true, name: "User A",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userB, mship: "join",
                     room: roomId, event: true, name: "User B",
-                }),
+                }) as MatrixEvent,
                 utils.mkEvent({
                     type: UNSTABLE_ELEMENT_FUNCTIONAL_USERS.name,
                     skey: "",
@@ -1830,7 +1769,7 @@ describe("Room", function() {
                     content: {
                         service_members: 1,
                     },
-                }),
+                }) as MatrixEvent,
             ]);
             expect(room.getDefaultRoomName(userA)).toEqual("User B");
         });
@@ -1841,18 +1780,18 @@ describe("Room", function() {
                 utils.mkMembership({
                     user: userA, mship: "join",
                     room: roomId, event: true, name: "User A",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userB, mship: "join",
                     room: roomId, event: true, name: "User B",
-                }),
+                }) as MatrixEvent,
                 utils.mkEvent({
                     type: UNSTABLE_ELEMENT_FUNCTIONAL_USERS.name, skey: "",
                     room: roomId, event: true,
                     content: {
                         service_members: userB,
                     },
-                }),
+                }) as MatrixEvent,
             ]);
             expect(room.getDefaultRoomName(userA)).toEqual("User B");
         });
@@ -1863,18 +1802,18 @@ describe("Room", function() {
                 utils.mkMembership({
                     user: userA, mship: "join",
                     room: roomId, event: true, name: "User A",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userB, mship: "join",
                     room: roomId, event: true, name: "User B",
-                }),
+                }) as MatrixEvent,
                 utils.mkEvent({
                     type: UNSTABLE_ELEMENT_FUNCTIONAL_USERS.name, skey: "",
                     room: roomId, event: true,
                     content: {
                         service_members: [userB],
                     },
-                }),
+                }) as MatrixEvent,
             ]);
             expect(room.getDefaultRoomName(userA)).toEqual("Empty room");
         });
@@ -1885,22 +1824,22 @@ describe("Room", function() {
                 utils.mkMembership({
                     user: userA, mship: "join",
                     room: roomId, event: true, name: "User A",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userB, mship: "join",
                     room: roomId, event: true, name: "User B",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userC, mship: "join",
                     room: roomId, event: true, name: "User C",
-                }),
+                }) as MatrixEvent,
                 utils.mkEvent({
                     type: UNSTABLE_ELEMENT_FUNCTIONAL_USERS.name, skey: "",
                     room: roomId, event: true, user: userA,
                     content: {
                         service_members: [userC],
                     },
-                }),
+                }) as MatrixEvent,
             ]);
             expect(room.getDefaultRoomName(userA)).toEqual("User B");
         });
@@ -1911,22 +1850,22 @@ describe("Room", function() {
                 utils.mkMembership({
                     user: userA, mship: "join",
                     room: roomId, event: true, name: "User A",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userB, mship: "join",
                     room: roomId, event: true, name: "User B",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userC, mship: "join",
                     room: roomId, event: true, name: "User C",
-                }),
+                }) as MatrixEvent,
                 utils.mkEvent({
                     type: UNSTABLE_ELEMENT_FUNCTIONAL_USERS.name, skey: "",
                     room: roomId, event: true, user: userA,
                     content: {
                         service_members: [userB, userC],
                     },
-                }),
+                }) as MatrixEvent,
             ]);
             expect(room.getDefaultRoomName(userA)).toEqual("Empty room");
         });
@@ -1937,18 +1876,18 @@ describe("Room", function() {
                 utils.mkMembership({
                     user: userA, mship: "join",
                     room: roomId, event: true, name: "User A",
-                }),
+                }) as MatrixEvent,
                 utils.mkMembership({
                     user: userB, mship: "join",
                     room: roomId, event: true, name: "User B",
-                }),
+                }) as MatrixEvent,
                 utils.mkEvent({
                     type: UNSTABLE_ELEMENT_FUNCTIONAL_USERS.name, skey: "",
                     room: roomId, event: true, user: userA,
                     content: {
                         service_members: [userC],
                     },
-                }),
+                }) as MatrixEvent,
             ]);
             expect(room.getDefaultRoomName(userA)).toEqual("User B");
         });
@@ -1978,7 +1917,7 @@ describe("Room", function() {
                 },
             });
 
-            room.createThread("$000", undefined, [eventWithoutARootEvent]);
+            room.createThread(undefined, [eventWithoutARootEvent]);
 
             const rootEvent = new MatrixEvent({
                 event_id: "$666",
@@ -1996,16 +1935,7 @@ describe("Room", function() {
                 },
             });
 
-            expect(() => room.createThread(rootEvent.getId(), rootEvent, [])).not.toThrow();
-        });
-
-        it("creating thread from edited event should not conflate old versions of the event", () => {
-            const message = mkMessage();
-            const edit = mkEdit(message);
-            message.makeReplaced(edit);
-
-            const thread = room.createThread("$000", message, [], true);
-            expect(thread).toHaveLength(0);
+            expect(() => room.createThread(rootEvent, [])).not.toThrow();
         });
 
         it("Edits update the lastReply event", async () => {
@@ -2032,16 +1962,14 @@ describe("Room", function() {
                 },
             });
 
-            let prom = emitPromise(room, ThreadEvent.New);
             room.addLiveEvents([randomMessage, threadRoot, threadResponse]);
-            const thread = await prom;
+            const thread = await emitPromise(room, ThreadEvent.New);
 
             expect(thread.replyToEvent).toBe(threadResponse);
             expect(thread.replyToEvent.getContent().body).toBe(threadResponse.getContent().body);
 
-            prom = emitPromise(thread, ThreadEvent.Update);
             room.addLiveEvents([threadResponseEdit]);
-            await prom;
+            await emitPromise(thread, ThreadEvent.Update);
             expect(thread.replyToEvent.getContent().body).toBe(threadResponseEdit.getContent()["m.new_content"].body);
         });
 
@@ -2068,17 +1996,15 @@ describe("Room", function() {
                 },
             });
 
-            let prom = emitPromise(room, ThreadEvent.New);
             room.addLiveEvents([threadRoot, threadResponse1, threadResponse2]);
-            const thread = await prom;
+            const thread = await emitPromise(room, ThreadEvent.New);
 
             expect(thread).toHaveLength(2);
             expect(thread.replyToEvent.getId()).toBe(threadResponse2.getId());
 
-            prom = emitPromise(thread, ThreadEvent.Update);
             const threadResponse1Redaction = mkRedaction(threadResponse1);
             room.addLiveEvents([threadResponse1Redaction]);
-            await prom;
+            await emitPromise(thread, ThreadEvent.Update);
             expect(thread).toHaveLength(1);
             expect(thread.replyToEvent.getId()).toBe(threadResponse2.getId());
         });
@@ -2107,55 +2033,17 @@ describe("Room", function() {
                 },
             });
 
-            const prom = emitPromise(room, ThreadEvent.New);
             room.addLiveEvents([threadRoot, threadResponse1, threadResponse2, threadResponse2Reaction]);
-            const thread = await prom;
+            const thread = await emitPromise(room, ThreadEvent.New);
 
             expect(thread).toHaveLength(2);
             expect(thread.replyToEvent.getId()).toBe(threadResponse2.getId());
 
             const threadResponse2ReactionRedaction = mkRedaction(threadResponse2Reaction);
             room.addLiveEvents([threadResponse2ReactionRedaction]);
+            await emitPromise(thread, ThreadEvent.Update);
             expect(thread).toHaveLength(2);
             expect(thread.replyToEvent.getId()).toBe(threadResponse2.getId());
-        });
-
-        it("should not decrement the length when the thread root is redacted", async () => {
-            room.client.supportsExperimentalThreads = () => true;
-
-            const threadRoot = mkMessage();
-            const threadResponse1 = mkThreadResponse(threadRoot);
-            threadResponse1.localTimestamp += 1000;
-            const threadResponse2 = mkThreadResponse(threadRoot);
-            threadResponse2.localTimestamp += 2000;
-            const threadResponse2Reaction = mkReaction(threadResponse2);
-
-            room.client.fetchRoomEvent = (eventId: string) => Promise.resolve({
-                ...threadRoot.event,
-                unsigned: {
-                    "age": 123,
-                    "m.relations": {
-                        "m.thread": {
-                            latest_event: threadResponse2.event,
-                            count: 2,
-                            current_user_participated: true,
-                        },
-                    },
-                },
-            });
-
-            let prom = emitPromise(room, ThreadEvent.New);
-            room.addLiveEvents([threadRoot, threadResponse1, threadResponse2, threadResponse2Reaction]);
-            const thread = await prom;
-
-            expect(thread).toHaveLength(2);
-            expect(thread.replyToEvent.getId()).toBe(threadResponse2.getId());
-
-            prom = emitPromise(room, ThreadEvent.Update);
-            const threadRootRedaction = mkRedaction(threadRoot);
-            room.addLiveEvents([threadRootRedaction]);
-            await prom;
-            expect(thread).toHaveLength(2);
         });
 
         it("Redacting the lastEvent finds a new lastEvent", async () => {
@@ -2181,24 +2069,21 @@ describe("Room", function() {
                 },
             });
 
-            let prom = emitPromise(room, ThreadEvent.New);
             room.addLiveEvents([threadRoot, threadResponse1, threadResponse2]);
-            const thread = await prom;
+            const thread = await emitPromise(room, ThreadEvent.New);
 
             expect(thread).toHaveLength(2);
             expect(thread.replyToEvent.getId()).toBe(threadResponse2.getId());
 
-            prom = emitPromise(room, ThreadEvent.Update);
             const threadResponse2Redaction = mkRedaction(threadResponse2);
             room.addLiveEvents([threadResponse2Redaction]);
-            await prom;
+            await emitPromise(thread, ThreadEvent.Update);
             expect(thread).toHaveLength(1);
             expect(thread.replyToEvent.getId()).toBe(threadResponse1.getId());
 
-            prom = emitPromise(room, ThreadEvent.Update);
             const threadResponse1Redaction = mkRedaction(threadResponse1);
             room.addLiveEvents([threadResponse1Redaction]);
-            await prom;
+            await emitPromise(thread, ThreadEvent.Update);
             expect(thread).toHaveLength(0);
             expect(thread.replyToEvent.getId()).toBe(threadRoot.getId());
         });
@@ -2269,32 +2154,36 @@ describe("Room", function() {
             expect(room.eventShouldLiveIn(threadReaction2Redaction, events, roots).threadId).toBe(threadRoot.getId());
         });
 
-        it("reply to thread response and its relations&redactions should be only in main timeline", () => {
+        it("reply to thread response and its relations&redactions should be only in thread timeline", () => {
             const threadRoot = mkMessage();
             const threadResponse1 = mkThreadResponse(threadRoot);
             const reply1 = mkReply(threadResponse1);
-            const reaction1 = mkReaction(reply1);
-            const reaction2 = mkReaction(reply1);
-            const reaction2Redaction = mkRedaction(reply1);
+            const threadReaction1 = mkReaction(reply1);
+            const threadReaction2 = mkReaction(reply1);
+            const threadReaction2Redaction = mkRedaction(reply1);
 
             const roots = new Set([threadRoot.getId()]);
             const events = [
                 threadRoot,
                 threadResponse1,
                 reply1,
-                reaction1,
-                reaction2,
-                reaction2Redaction,
+                threadReaction1,
+                threadReaction2,
+                threadReaction2Redaction,
             ];
 
-            expect(room.eventShouldLiveIn(reply1, events, roots).shouldLiveInRoom).toBeTruthy();
-            expect(room.eventShouldLiveIn(reply1, events, roots).shouldLiveInThread).toBeFalsy();
-            expect(room.eventShouldLiveIn(reaction1, events, roots).shouldLiveInRoom).toBeTruthy();
-            expect(room.eventShouldLiveIn(reaction1, events, roots).shouldLiveInThread).toBeFalsy();
-            expect(room.eventShouldLiveIn(reaction2, events, roots).shouldLiveInRoom).toBeTruthy();
-            expect(room.eventShouldLiveIn(reaction2, events, roots).shouldLiveInThread).toBeFalsy();
-            expect(room.eventShouldLiveIn(reaction2Redaction, events, roots).shouldLiveInRoom).toBeTruthy();
-            expect(room.eventShouldLiveIn(reaction2Redaction, events, roots).shouldLiveInThread).toBeFalsy();
+            expect(room.eventShouldLiveIn(reply1, events, roots).shouldLiveInRoom).toBeFalsy();
+            expect(room.eventShouldLiveIn(reply1, events, roots).shouldLiveInThread).toBeTruthy();
+            expect(room.eventShouldLiveIn(reply1, events, roots).threadId).toBe(threadRoot.getId());
+            expect(room.eventShouldLiveIn(threadReaction1, events, roots).shouldLiveInRoom).toBeFalsy();
+            expect(room.eventShouldLiveIn(threadReaction1, events, roots).shouldLiveInThread).toBeTruthy();
+            expect(room.eventShouldLiveIn(threadReaction1, events, roots).threadId).toBe(threadRoot.getId());
+            expect(room.eventShouldLiveIn(threadReaction2, events, roots).shouldLiveInRoom).toBeFalsy();
+            expect(room.eventShouldLiveIn(threadReaction2, events, roots).shouldLiveInThread).toBeTruthy();
+            expect(room.eventShouldLiveIn(threadReaction2, events, roots).threadId).toBe(threadRoot.getId());
+            expect(room.eventShouldLiveIn(threadReaction2Redaction, events, roots).shouldLiveInRoom).toBeFalsy();
+            expect(room.eventShouldLiveIn(threadReaction2Redaction, events, roots).shouldLiveInThread).toBeTruthy();
+            expect(room.eventShouldLiveIn(threadReaction2Redaction, events, roots).threadId).toBe(threadRoot.getId());
         });
 
         it("reply to reply to thread root should only be in the main timeline", () => {
@@ -2315,71 +2204,6 @@ describe("Room", function() {
             expect(room.eventShouldLiveIn(reply1, events, roots).shouldLiveInThread).toBeFalsy();
             expect(room.eventShouldLiveIn(reply2, events, roots).shouldLiveInRoom).toBeTruthy();
             expect(room.eventShouldLiveIn(reply2, events, roots).shouldLiveInThread).toBeFalsy();
-        });
-
-        it("should aggregate relations in thread event timeline set", () => {
-            Thread.setServerSideSupport(true, true);
-            const threadRoot = mkMessage();
-            const rootReaction = mkReaction(threadRoot);
-            const threadResponse = mkThreadResponse(threadRoot);
-            const threadReaction = mkReaction(threadResponse);
-
-            const events = [
-                threadRoot,
-                rootReaction,
-                threadResponse,
-                threadReaction,
-            ];
-
-            room.addLiveEvents(events);
-
-            const thread = threadRoot.getThread();
-            expect(thread.rootEvent).toBe(threadRoot);
-
-            const rootRelations = thread.timelineSet.relations.getChildEventsForEvent(
-                threadRoot.getId(),
-                RelationType.Annotation,
-                EventType.Reaction,
-            ).getSortedAnnotationsByKey();
-            expect(rootRelations).toHaveLength(1);
-            expect(rootRelations[0][0]).toEqual(rootReaction.getRelation().key);
-            expect(rootRelations[0][1].size).toEqual(1);
-            expect(rootRelations[0][1].has(rootReaction)).toBeTruthy();
-
-            const responseRelations = thread.timelineSet.relations.getChildEventsForEvent(
-                threadResponse.getId(),
-                RelationType.Annotation,
-                EventType.Reaction,
-            ).getSortedAnnotationsByKey();
-            expect(responseRelations).toHaveLength(1);
-            expect(responseRelations[0][0]).toEqual(threadReaction.getRelation().key);
-            expect(responseRelations[0][1].size).toEqual(1);
-            expect(responseRelations[0][1].has(threadReaction)).toBeTruthy();
-        });
-    });
-
-    describe("getEventReadUpTo()", () => {
-        const client = new TestClient(userA).client;
-        const room = new Room(roomId, client, userA);
-
-        it("handles missing receipt type", () => {
-            room.getReadReceiptForUserId = (userId, ignore, receiptType) => {
-                return receiptType === ReceiptType.ReadPrivate ? { eventId: "eventId" } as IWrappedReceipt : null;
-            };
-
-            expect(room.getEventReadUpTo(userA)).toEqual("eventId");
-        });
-
-        it("prefers older receipt", () => {
-            room.getReadReceiptForUserId = (userId, ignore, receiptType) => {
-                return (receiptType === ReceiptType.Read
-                    ? { eventId: "eventId1" }
-                    : { eventId: "eventId2" }
-                    ) as IWrappedReceipt;
-            };
-            room.getUnfilteredTimelineSet = () => ({ compareEventOrdering: (event1, event2) => 1 } as EventTimelineSet);
-
-            expect(room.getEventReadUpTo(userA)).toEqual("eventId1");
         });
     });
 });

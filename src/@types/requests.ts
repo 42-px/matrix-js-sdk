@@ -17,12 +17,9 @@ limitations under the License.
 import { Callback } from "../client";
 import { IContent, IEvent } from "../models/event";
 import { Preset, Visibility } from "./partials";
-import { IEventWithRoomId, SearchKey } from "./search";
+import { SearchKey } from "./search";
 import { IRoomEventFilter } from "../filter";
 import { Direction } from "../models/event-timeline";
-import { PushRuleAction } from "./PushRules";
-import { IRoomEvent } from "../sync-accumulator";
-import { RoomType } from "./event";
 
 // allow camelcase as these are things that go onto the wire
 /* eslint-disable camelcase */
@@ -112,8 +109,7 @@ export interface IRoomDirectoryOptions {
     limit?: number;
     since?: string;
     filter?: {
-        generic_search_term?: string;
-        "org.matrix.msc3827.room_types"?: Array<RoomType | null>;
+        generic_search_term: string;
     };
     include_all_networks?: boolean;
     third_party_instance_id?: string;
@@ -157,52 +153,6 @@ export interface IRelationsResponse {
     chunk: IEvent[];
     next_batch?: string;
     prev_batch?: string;
-}
-
-export interface IContextResponse {
-    end: string;
-    start: string;
-    state: IEventWithRoomId[];
-    events_before: IEventWithRoomId[];
-    events_after: IEventWithRoomId[];
-    event: IEventWithRoomId;
-}
-
-export interface IEventsResponse {
-    chunk: IEventWithRoomId[];
-    end: string;
-    start: string;
-}
-
-export interface INotification {
-    actions: PushRuleAction[];
-    event: IRoomEvent;
-    profile_tag?: string;
-    read: boolean;
-    room_id: string;
-    ts: number;
-}
-
-export interface INotificationsResponse {
-    next_token: string;
-    notifications: INotification[];
-}
-
-export interface IFilterResponse {
-    filter_id: string;
-}
-
-export interface ITagsResponse {
-    tags: {
-        [tagId: string]: {
-            order: number;
-        };
-    };
-}
-
-export interface IStatusResponse extends IPresenceOpts {
-    currently_active?: boolean;
-    last_active_ago?: number;
 }
 
 /* eslint-enable camelcase */

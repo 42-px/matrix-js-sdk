@@ -15,7 +15,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { ReceiptType } from "../../src/@types/read_receipts";
 import { SyncAccumulator } from "../../src/sync-accumulator";
 
 // The event body & unsigned object get frozen to assert that they don't get altered
@@ -295,12 +294,9 @@ describe("SyncAccumulator", function() {
             room_id: "!foo:bar",
             content: {
                 "$event1:localhost": {
-                    [ReceiptType.Read]: {
+                    "m.read": {
                         "@alice:localhost": { ts: 1 },
                         "@bob:localhost": { ts: 2 },
-                    },
-                    [ReceiptType.ReadPrivate]: {
-                        "@dan:localhost": { ts: 4 },
                     },
                     "some.other.receipt.type": {
                         "@should_be_ignored:localhost": { key: "val" },
@@ -313,7 +309,7 @@ describe("SyncAccumulator", function() {
             room_id: "!foo:bar",
             content: {
                 "$event2:localhost": {
-                    [ReceiptType.Read]: {
+                    "m.read": {
                         "@bob:localhost": { ts: 2 }, // clobbers event1 receipt
                         "@charlie:localhost": { ts: 3 },
                     },
@@ -341,15 +337,12 @@ describe("SyncAccumulator", function() {
             room_id: "!foo:bar",
             content: {
                 "$event1:localhost": {
-                    [ReceiptType.Read]: {
+                    "m.read": {
                         "@alice:localhost": { ts: 1 },
-                    },
-                    [ReceiptType.ReadPrivate]: {
-                        "@dan:localhost": { ts: 4 },
                     },
                 },
                 "$event2:localhost": {
-                    [ReceiptType.Read]: {
+                    "m.read": {
                         "@bob:localhost": { ts: 2 },
                         "@charlie:localhost": { ts: 3 },
                     },
