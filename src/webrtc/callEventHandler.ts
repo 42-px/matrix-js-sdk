@@ -14,16 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { MatrixEvent } from '../models/event';
+import { MatrixEvent, MatrixEventEvent } from '../models/event';
 import { logger } from '../logger';
-import { createNewMatrixCall, MatrixCall, CallErrorCode, CallState, CallDirection } from './call';
+import { CallDirection, CallErrorCode, CallState, createNewMatrixCall, MatrixCall } from './call';
 import { EventType } from '../@types/event';
-import { MatrixClient } from '../client';
+import { ClientEvent, MatrixClient } from '../client';
 import { MCallAnswer, MCallHangupReject } from "./callEventTypes";
+import { SyncState } from "../sync";
+import { RoomEvent } from "../models/room";
 
 // Don't ring unless we'd be ringing for at least 3 seconds: the user needs some
 // time to press the 'accept' button
 const RING_GRACE_PERIOD = 3000;
+
+export enum CallEventHandlerEvent {
+    Incoming = "Call.incoming",
+}
+
+export type CallEventHandlerEventHandlerMap = {
+    [CallEventHandlerEvent.Incoming]: (call: MatrixCall) => void;
+};
 
 export class CallEventHandler {
     client: MatrixClient;
@@ -47,36 +57,32 @@ export class CallEventHandler {
     }
 
     public start() {
-        this.client.on("sync", this.evaluateEventBuffer);
-        this.client.on("Room.timeline", this.onRoomTimeline);
+        this.client.on(ClientEvent.Sync, this.evaluateEventBuffer);
+        this.client.on(RoomEvent.Timeline, this.onRoomTimeline);
     }
 
     public stop() {
-        this.client.removeListener("sync", this.evaluateEventBuffer);
-        this.client.removeListener("Room.timeline", this.onRoomTimeline);
+        this.client.removeListener(ClientEvent.Sync, this.evaluateEventBuffer);
+        this.client.removeListener(RoomEvent.Timeline, this.onRoomTimeline);
     }
 
     private evaluateEventBuffer = async () => {
-        if (this.client.getSyncState() === "SYNCING") {
+        if (this.client.getSyncState() === SyncState.Syncing) {
             await Promise.all(this.callEventBuffer.map(event => {
                 this.client.decryptEventIfNeeded(event);
             }));
 
-            const ignoreCallIds = new Set<String>();
+            const ignoreCallIds = new Set<string>();
             // inspect the buffer and mark all calls which have been answered
             // or hung up before passing them to the call event handler.
             for (const ev of this.callEventBuffer) {
-                if (ev.getType() === EventType.CallAnswer ||
-                        ev.getType() === EventType.CallHangup) {
+                if (ev.getType() === EventType.CallAnswer || ev.getType() === EventType.CallHangup) {
                     ignoreCallIds.add(ev.getContent().call_id);
                 }
             }
             // now loop through the buffer chronologically and inject them
             for (const e of this.callEventBuffer) {
-                if (
-                    e.getType() === EventType.CallInvite &&
-                    ignoreCallIds.has(e.getContent().call_id)
-                ) {
+                if (e.getType() === EventType.CallInvite && ignoreCallIds.has(e.getContent().call_id)) {
                     // This call has previously been answered or hung up: ignore it
                     continue;
                 }
@@ -101,7 +107,7 @@ export class CallEventHandler {
 
         if (event.isBeingDecrypted() || event.isDecryptionFailure()) {
             // add an event listener for once the event is decrypted.
-            event.once("Event.decrypted", async () => {
+            event.once(MatrixEventEvent.Decrypted, async () => {
                 if (!this.eventIsACall(event)) return;
 
                 if (this.callEventBuffer.includes(event)) {
@@ -181,7 +187,7 @@ export class CallEventHandler {
             }
 
             // Were we trying to call that user (room)?
-            let existingCall;
+            let existingCall: MatrixCall;
             for (const thisCall of this.calls.values()) {
                 const isCalling = [CallState.WaitLocalMedia, CallState.CreateOffer, CallState.InviteSent].includes(
                     thisCall.state,
@@ -221,7 +227,7 @@ export class CallEventHandler {
                     call.hangup(CallErrorCode.Replaced, true);
                 }
             } else {
-                this.client.emit("Call.incoming", call);
+                this.client.emit(CallEventHandlerEvent.Incoming, call);
             }
             return;
         } else if (type === EventType.CallCandidates) {
@@ -257,7 +263,11 @@ export class CallEventHandler {
                     } else {
                         call.onRejectReceived(content as MCallHangupReject);
                     }
-                    this.calls.delete(content.call_id);
+
+                    // @ts-expect-error typescript thinks the state can't be 'ended' because we're
+                    // inside the if block where it wasn't, but it could have changed because
+                    // on[Hangup|Reject]Received are side-effecty.
+                    if (call.state === CallState.Ended) this.calls.delete(content.call_id);
                 }
             }
             return;
@@ -265,7 +275,7 @@ export class CallEventHandler {
 
         // The following events need a call and a peer connection
         if (!call || !call.hasPeerConnection) {
-            logger.warn("Discarding an event, we don't have a call/peerConn", type);
+            logger.info(`Discarding possible call event ${event.getId()} as we don't have a call/peerConn`, type);
             return;
         }
         // Ignore remote echo

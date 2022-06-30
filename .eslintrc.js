@@ -31,6 +31,9 @@ module.exports = {
         "no-async-promise-executor": "off",
         // We use a `logger` intermediary module
         "no-console": "error",
+
+        // restrict EventEmitters to force callers to use TypedEventEmitter
+        "no-restricted-imports": ["error", "events"],
     },
     overrides: [{
         files: [
@@ -49,6 +52,8 @@ module.exports = {
             "@typescript-eslint/no-explicit-any": "off",
             // We'd rather not do this but we do
             "@typescript-eslint/ban-ts-comment": "off",
+            // We're okay with assertion errors when we ask for them
+            "@typescript-eslint/no-non-null-assertion": "off",
 
             "quotes": "off",
             // We use a `logger` intermediary module

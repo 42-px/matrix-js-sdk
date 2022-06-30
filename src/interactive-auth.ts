@@ -18,11 +18,9 @@ limitations under the License.
 
 /** @module interactive-auth */
 
-import * as utils from "./utils";
 import { logger } from './logger';
 import { MatrixClient } from "./client";
 import { defer, IDeferred } from "./utils";
-import { MatrixError } from "./http-api";
 
 const EMAIL_STAGE_TYPE = "m.login.email.identity";
 const MSISDN_STAGE_TYPE = "m.login.msisdn";
@@ -35,6 +33,7 @@ export interface IInputs {
     emailAddress?: string;
     phoneCountry?: string;
     phoneNumber?: string;
+    registrationToken?: string;
 }
 
 export interface IStageStatus {
@@ -45,11 +44,19 @@ export interface IStageStatus {
 
 export interface IAuthData {
     session?: string;
+    type?: string;
     completed?: string[];
     flows?: IFlow[];
+    available_flows?: IFlow[];
+    stages?: string[];
+    required_stages?: AuthType[];
     params?: Record<string, Record<string, any>>;
+    data?: Record<string, string>;
     errcode?: string;
-    error?: MatrixError;
+    error?: string;
+    user_id?: string;
+    device_id?: string;
+    access_token?: string;
 }
 
 export enum AuthType {
@@ -61,12 +68,17 @@ export enum AuthType {
     Sso = "m.login.sso",
     SsoUnstable = "org.matrix.login.sso",
     Dummy = "m.login.dummy",
+    RegistrationToken = "m.login.registration_token",
+    // For backwards compatability with servers that have not yet updated to
+    // use the stable "m.login.registration_token" type.
+    // The authentication flow is the same in both cases.
+    UnstableRegistrationToken = "org.matrix.msc3231.login.registration_token",
 }
 
 export interface IAuthDict {
     // [key: string]: any;
     type?: string;
-    // session?: string; // TODO
+    session?: string;
     // TODO: Remove `user` once servers support proper UIA
     // See https://github.com/vector-im/element-web/issues/10312
     user?: string;
@@ -79,6 +91,8 @@ export interface IAuthDict {
     // eslint-disable-next-line camelcase
     threepid_creds?: any;
     threepidCreds?: any;
+    // For m.login.registration_token type
+    token?: string;
 }
 
 class NoAuthFlowFoundError extends Error {
@@ -196,6 +210,8 @@ export class InteractiveAuth {
     private attemptAuthDeferred: IDeferred<IAuthData> = null;
     private chosenFlow: IFlow = null;
     private currentStage: string = null;
+
+    private emailAttempt = 1;
 
     // if we are currently trying to submit an auth dict (which includes polling)
     // the promise the will resolve/reject when it completes
@@ -357,12 +373,12 @@ export class InteractiveAuth {
         }
 
         // use the sessionid from the last request, if one is present.
-        let auth;
+        let auth: IAuthDict;
         if (this.data.session) {
             auth = {
                 session: this.data.session,
             };
-            utils.extend(auth, authData);
+            Object.assign(auth, authData);
         } else {
             auth = authData;
         }
@@ -401,6 +417,34 @@ export class InteractiveAuth {
     public setEmailSid(sid: string): void {
         this.emailSid = sid;
     }
+
+    /**
+     * Requests a new email token and sets the email sid for the validation session
+     */
+    public requestEmailToken = async () => {
+        if (!this.requestingEmailToken) {
+            logger.trace("Requesting email token. Attempt: " + this.emailAttempt);
+            // If we've picked a flow with email auth, we send the email
+            // now because we want the request to fail as soon as possible
+            // if the email address is not valid (ie. already taken or not
+            // registered, depending on what the operation is).
+            this.requestingEmailToken = true;
+            try {
+                const requestTokenResult = await this.requestEmailTokenCallback(
+                    this.inputs.emailAddress,
+                    this.clientSecret,
+                    this.emailAttempt++,
+                    this.data.session,
+                );
+                this.emailSid = requestTokenResult.sid;
+                logger.trace("Email token request succeeded");
+            } finally {
+                this.requestingEmailToken = false;
+            }
+        } else {
+            logger.warn("Could not request email token: Already requesting");
+        }
+    };
 
     /**
      * Fire off a request, and either resolve the promise, or call
@@ -449,26 +493,12 @@ export class InteractiveAuth {
             } catch (e) {
                 this.attemptAuthDeferred.reject(e);
                 this.attemptAuthDeferred = null;
+                return;
             }
 
-            if (
-                !this.emailSid &&
-                !this.requestingEmailToken &&
-                this.chosenFlow.stages.includes(AuthType.Email)
-            ) {
-                // If we've picked a flow with email auth, we send the email
-                // now because we want the request to fail as soon as possible
-                // if the email address is not valid (ie. already taken or not
-                // registered, depending on what the operation is).
-                this.requestingEmailToken = true;
+            if (!this.emailSid && this.chosenFlow.stages.includes(AuthType.Email)) {
                 try {
-                    const requestTokenResult = await this.requestEmailTokenCallback(
-                        this.inputs.emailAddress,
-                        this.clientSecret,
-                        1, // TODO: Multiple send attempts?
-                        this.data.session,
-                    );
-                    this.emailSid = requestTokenResult.sid;
+                    await this.requestEmailToken();
                     // NB. promise is not resolved here - at some point, doRequest
                     // will be called again and if the user has jumped through all
                     // the hoops correctly, auth will be complete and the request
@@ -484,8 +514,6 @@ export class InteractiveAuth {
                     // send the email, for whatever reason.
                     this.attemptAuthDeferred.reject(e);
                     this.attemptAuthDeferred = null;
-                } finally {
-                    this.requestingEmailToken = false;
                 }
             }
         }
