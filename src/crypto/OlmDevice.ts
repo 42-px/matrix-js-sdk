@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Account, InboundGroupSession, OutboundGroupSession, Session, Utility } from "@matrix-org/olm";
+import { Logger } from "loglevel";
+
 import { logger } from '../logger';
 import { IndexedDBCryptoStore } from './store/indexeddb-crypto-store';
 import * as algorithms from './algorithms';
 import { CryptoStore, IProblem, ISessionInfo, IWithheld } from "./store/base";
-import { Account, InboundGroupSession, OutboundGroupSession, Session, Utility } from "@matrix-org/olm";
-import { Logger } from "loglevel";
 import { IOlmDevice, IOutboundGroupSessionKey } from "./algorithms/megolm";
 import { IMegolmSessionData } from "./index";
 
@@ -91,12 +92,17 @@ export interface InboundGroupSessionData {
     sharedHistory?: boolean;
 }
 
-interface IDecryptedGroupMessage {
+export interface IDecryptedGroupMessage {
     result: string;
     keysClaimed: Record<string, string>;
     senderKey: string;
     forwardingCurve25519KeyChain: string[];
     untrusted: boolean;
+}
+
+export interface IInboundSession {
+    payload: string;
+    session_id: string;
 }
 
 export interface IExportedDevice {
@@ -542,11 +548,23 @@ export class OlmDevice {
             'readonly', [IndexedDBCryptoStore.STORE_ACCOUNT],
             (txn) => {
                 this.getAccount(txn, (account: Account) => {
-                    result = JSON.parse(account.fallback_key());
+                    result = JSON.parse(account.unpublished_fallback_key());
                 });
             },
         );
         return result;
+    }
+
+    public async forgetOldFallbackKey(): Promise<void> {
+        await this.cryptoStore.doTxn(
+            'readwrite', [IndexedDBCryptoStore.STORE_ACCOUNT],
+            (txn) => {
+                this.getAccount(txn, (account: Account) => {
+                    account.forget_old_fallback_key();
+                    this.storeAccount(txn, account);
+                });
+            },
+        );
     }
 
     /**
@@ -607,7 +625,7 @@ export class OlmDevice {
         theirDeviceIdentityKey: string,
         messageType: number,
         ciphertext: string,
-    ): Promise<{ payload: string, session_id: string }> { // eslint-disable-line camelcase
+    ): Promise<IInboundSession> {
         if (messageType !== 0) {
             throw new Error("Need messageType == 0 to create inbound session");
         }
@@ -896,12 +914,12 @@ export class OlmDevice {
         await this.cryptoStore.storeEndToEndSessionProblem(deviceKey, type, fixed);
     }
 
-    public async sessionMayHaveProblems(deviceKey: string, timestamp: number): Promise<IProblem> {
-        return await this.cryptoStore.getEndToEndSessionProblem(deviceKey, timestamp);
+    public sessionMayHaveProblems(deviceKey: string, timestamp: number): Promise<IProblem> {
+        return this.cryptoStore.getEndToEndSessionProblem(deviceKey, timestamp);
     }
 
-    public async filterOutNotifiedErrorDevices(devices: IOlmDevice[]): Promise<IOlmDevice[]> {
-        return await this.cryptoStore.filterOutNotifiedErrorDevices(devices);
+    public filterOutNotifiedErrorDevices(devices: IOlmDevice[]): Promise<IOlmDevice[]> {
+        return this.cryptoStore.filterOutNotifiedErrorDevices(devices);
     }
 
     // Outbound group session

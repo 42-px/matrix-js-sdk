@@ -14,12 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { EventEmitter } from 'events';
-
-import { EventStatus, MatrixEvent } from './event';
-import { Room } from './room';
+import { EventStatus, IAggregatedRelation, MatrixEvent, MatrixEventEvent } from './event';
 import { logger } from '../logger';
 import { RelationType } from "../@types/event";
+import { TypedEventEmitter } from "./typed-event-emitter";
+import { MatrixClient } from "../client";
+import { Room } from "./room";
+
+export enum RelationsEvent {
+    Add = "Relations.add",
+    Remove = "Relations.remove",
+    Redaction = "Relations.redaction",
+}
+
+export type EventHandlerMap = {
+    [RelationsEvent.Add]: (event: MatrixEvent) => void;
+    [RelationsEvent.Remove]: (event: MatrixEvent) => void;
+    [RelationsEvent.Redaction]: (event: MatrixEvent) => void;
+};
 
 /**
  * A container for relation events that supports easy access to common ways of
@@ -29,7 +41,7 @@ import { RelationType } from "../@types/event";
  * The typical way to get one of these containers is via
  * EventTimelineSet#getRelationsForEvent.
  */
-export class Relations extends EventEmitter {
+export class Relations extends TypedEventEmitter<RelationsEvent, EventHandlerMap> {
     private relationEventIds = new Set<string>();
     private relations = new Set<MatrixEvent>();
     private annotationsByKey: Record<string, Set<MatrixEvent>> = {};
@@ -37,6 +49,7 @@ export class Relations extends EventEmitter {
     private sortedAnnotationsByKey: [string, Set<MatrixEvent>][] = [];
     private targetEvent: MatrixEvent = null;
     private creationEmitted = false;
+    private readonly client: MatrixClient;
 
     /**
      * @param {RelationType} relationType
@@ -44,16 +57,16 @@ export class Relations extends EventEmitter {
      * "m.replace", etc.
      * @param {String} eventType
      * The relation event's type, such as "m.reaction", etc.
-     * @param {?Room} room
-     * Room for this container. May be null for non-room cases, such as the
-     * notification timeline.
+     * @param {MatrixClient|Room} client
+     * The client which created this instance. For backwards compatibility also accepts a Room.
      */
     constructor(
         public readonly relationType: RelationType | string,
         public readonly eventType: string,
-        private readonly room: Room,
+        client: MatrixClient | Room,
     ) {
         super();
+        this.client = client instanceof Room ? client.client : client;
     }
 
     /**
@@ -84,7 +97,7 @@ export class Relations extends EventEmitter {
         // If the event is in the process of being sent, listen for cancellation
         // so we can remove the event from the collection.
         if (event.isSending()) {
-            event.on("Event.status", this.onEventStatus);
+            event.on(MatrixEventEvent.Status, this.onEventStatus);
         }
 
         this.relations.add(event);
@@ -92,14 +105,14 @@ export class Relations extends EventEmitter {
 
         if (this.relationType === RelationType.Annotation) {
             this.addAnnotationToAggregation(event);
-        } else if (this.relationType === RelationType.Replace && this.targetEvent) {
+        } else if (this.relationType === RelationType.Replace && this.targetEvent && !this.targetEvent.isState()) {
             const lastReplacement = await this.getLastReplacement();
             this.targetEvent.makeReplaced(lastReplacement);
         }
 
-        event.on("Event.beforeRedaction", this.onBeforeRedaction);
+        event.on(MatrixEventEvent.BeforeRedaction, this.onBeforeRedaction);
 
-        this.emit("Relations.add", event);
+        this.emit(RelationsEvent.Add, event);
 
         this.maybeEmitCreated();
     }
@@ -133,12 +146,12 @@ export class Relations extends EventEmitter {
 
         if (this.relationType === RelationType.Annotation) {
             this.removeAnnotationFromAggregation(event);
-        } else if (this.relationType === RelationType.Replace && this.targetEvent) {
+        } else if (this.relationType === RelationType.Replace && this.targetEvent && !this.targetEvent.isState()) {
             const lastReplacement = await this.getLastReplacement();
             this.targetEvent.makeReplaced(lastReplacement);
         }
 
-        this.emit("Relations.remove", event);
+        this.emit(RelationsEvent.Remove, event);
     }
 
     /**
@@ -150,14 +163,14 @@ export class Relations extends EventEmitter {
     private onEventStatus = (event: MatrixEvent, status: EventStatus) => {
         if (!event.isSending()) {
             // Sending is done, so we don't need to listen anymore
-            event.removeListener("Event.status", this.onEventStatus);
+            event.removeListener(MatrixEventEvent.Status, this.onEventStatus);
             return;
         }
         if (status !== EventStatus.CANCELLED) {
             return;
         }
         // Event was cancelled, remove from the collection
-        event.removeListener("Event.status", this.onEventStatus);
+        event.removeListener(MatrixEventEvent.Status, this.onEventStatus);
         this.removeEvent(event);
     };
 
@@ -171,11 +184,11 @@ export class Relations extends EventEmitter {
      * @return {Array}
      * Relation events in insertion order.
      */
-    public getRelations() {
+    public getRelations(): MatrixEvent[] {
         return [...this.relations];
     }
 
-    private addAnnotationToAggregation(event: MatrixEvent) {
+    private addAnnotationToAggregation(event: MatrixEvent): void {
         const { key } = event.getRelation();
         if (!key) {
             return;
@@ -204,7 +217,7 @@ export class Relations extends EventEmitter {
         eventsFromSender.add(event);
     }
 
-    private removeAnnotationFromAggregation(event: MatrixEvent) {
+    private removeAnnotationFromAggregation(event: MatrixEvent): void {
         const { key } = event.getRelation();
         if (!key) {
             return;
@@ -240,7 +253,7 @@ export class Relations extends EventEmitter {
      * @param {MatrixEvent} redactedEvent
      * The original relation event that is about to be redacted.
      */
-    private onBeforeRedaction = async (redactedEvent: MatrixEvent) => {
+    private onBeforeRedaction = async (redactedEvent: MatrixEvent): Promise<void> => {
         if (!this.relations.has(redactedEvent)) {
             return;
         }
@@ -250,14 +263,14 @@ export class Relations extends EventEmitter {
         if (this.relationType === RelationType.Annotation) {
             // Remove the redacted annotation from aggregation by key
             this.removeAnnotationFromAggregation(redactedEvent);
-        } else if (this.relationType === RelationType.Replace && this.targetEvent) {
+        } else if (this.relationType === RelationType.Replace && this.targetEvent && !this.targetEvent.isState()) {
             const lastReplacement = await this.getLastReplacement();
             this.targetEvent.makeReplaced(lastReplacement);
         }
 
-        redactedEvent.removeListener("Event.beforeRedaction", this.onBeforeRedaction);
+        redactedEvent.removeListener(MatrixEventEvent.BeforeRedaction, this.onBeforeRedaction);
 
-        this.emit("Relations.redaction", redactedEvent);
+        this.emit(RelationsEvent.Redaction, redactedEvent);
     };
 
     /**
@@ -319,8 +332,8 @@ export class Relations extends EventEmitter {
 
         // the all-knowning server tells us that the event at some point had
         // this timestamp for its replacement, so any following replacement should definitely not be less
-        const replaceRelation = this.targetEvent.getServerAggregatedRelation(RelationType.Replace);
-        const minTs = replaceRelation && replaceRelation.origin_server_ts;
+        const replaceRelation = this.targetEvent.getServerAggregatedRelation<IAggregatedRelation>(RelationType.Replace);
+        const minTs = replaceRelation?.origin_server_ts;
 
         const lastReplacement = this.getRelations().reduce((last, event) => {
             if (event.getSender() !== this.targetEvent.getSender()) {
@@ -336,7 +349,7 @@ export class Relations extends EventEmitter {
         }, null);
 
         if (lastReplacement?.shouldAttemptDecryption()) {
-            await lastReplacement.attemptDecryption(this.room.client.crypto);
+            await lastReplacement.attemptDecryption(this.client.crypto);
         } else if (lastReplacement?.isBeingDecrypted()) {
             await lastReplacement.getDecryptionPromise();
         }
@@ -353,7 +366,7 @@ export class Relations extends EventEmitter {
         }
         this.targetEvent = event;
 
-        if (this.relationType === RelationType.Replace) {
+        if (this.relationType === RelationType.Replace && !this.targetEvent.isState()) {
             const replacement = await this.getLastReplacement();
             // this is the initial update, so only call it if we already have something
             // to not emit Event.replaced needlessly
@@ -375,6 +388,6 @@ export class Relations extends EventEmitter {
             return;
         }
         this.creationEmitted = true;
-        this.targetEvent.emit("Event.relationsCreated", this.relationType, this.eventType);
+        this.targetEvent.emit(MatrixEventEvent.RelationsCreated, this.relationType, this.eventType);
     }
 }

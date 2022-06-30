@@ -2,7 +2,7 @@ import '../../../olm-loader';
 import * as algorithms from "../../../../src/crypto/algorithms";
 import { MemoryCryptoStore } from "../../../../src/crypto/store/memory-crypto-store";
 import { MockStorageApi } from "../../../MockStorageApi";
-import * as testUtils from "../../../test-utils";
+import * as testUtils from "../../../test-utils/test-utils";
 import { OlmDevice } from "../../../../src/crypto/OlmDevice";
 import { Crypto } from "../../../../src/crypto";
 import { logger } from "../../../../src/logger";
@@ -257,6 +257,8 @@ describe("MegolmDecryption", function() {
         });
 
         describe("session reuse and key reshares", () => {
+            const rotationPeriodMs = 999 * 24 * 60 * 60 * 1000; // 999 days, so we don't have to deal with it
+
             let megolmEncryption;
             let aliceDeviceInfo;
             let mockRoom;
@@ -318,7 +320,7 @@ describe("MegolmDecryption", function() {
                     baseApis: mockBaseApis,
                     roomId: ROOM_ID,
                     config: {
-                        rotation_period_ms: 9999999999999,
+                        rotation_period_ms: rotationPeriodMs,
                     },
                 });
                 mockRoom = {
@@ -327,6 +329,31 @@ describe("MegolmDecryption", function() {
                     ),
                     getBlacklistUnverifiedDevices: jest.fn().mockReturnValue(false),
                 };
+            });
+
+            it("should use larger otkTimeout when preparing to encrypt room", async () => {
+                megolmEncryption.prepareToEncrypt(mockRoom);
+                await megolmEncryption.encryptMessage(mockRoom, "a.fake.type", {
+                    body: "Some text",
+                });
+                expect(mockRoom.getEncryptionTargetMembers).toHaveBeenCalled();
+
+                expect(mockBaseApis.claimOneTimeKeys).toHaveBeenCalledWith(
+                    [['@alice:home.server', 'aliceDevice']], 'signed_curve25519', 10000,
+                );
+            });
+
+            it("should generate a new session if this one needs rotation", async () => {
+                const session = await megolmEncryption.prepareNewSession(false);
+                session.creationTime -= rotationPeriodMs + 10000; // a smidge over the rotation time
+                // Inject expired session which needs rotation
+                megolmEncryption.setupPromise = Promise.resolve(session);
+
+                const prepareNewSessionSpy = jest.spyOn(megolmEncryption, "prepareNewSession");
+                await megolmEncryption.encryptMessage(mockRoom, "a.fake.type", {
+                    body: "Some text",
+                });
+                expect(prepareNewSessionSpy).toHaveBeenCalledTimes(1);
             });
 
             it("re-uses sessions for sequential messages", async function() {
@@ -462,7 +489,7 @@ describe("MegolmDecryption", function() {
         let run = false;
         aliceClient.sendToDevice = async (msgtype, contentMap) => {
             run = true;
-            expect(msgtype).toBe("org.matrix.room_key.withheld");
+            expect(msgtype).toMatch(/^(org.matrix|m).room_key.withheld$/);
             delete contentMap["@bob:example.com"].bobdevice1.session_id;
             delete contentMap["@bob:example.com"].bobdevice2.session_id;
             expect(contentMap).toStrictEqual({
@@ -572,7 +599,7 @@ describe("MegolmDecryption", function() {
 
         const sendPromise = new Promise((resolve, reject) => {
             aliceClient.sendToDevice = async (msgtype, contentMap) => {
-                expect(msgtype).toBe("org.matrix.room_key.withheld");
+                expect(msgtype).toMatch(/^(org.matrix|m).room_key.withheld$/);
                 expect(contentMap).toStrictEqual({
                     '@bob:example.com': {
                         bobdevice: {
@@ -596,6 +623,8 @@ describe("MegolmDecryption", function() {
         });
         await aliceClient.crypto.encryptEvent(event, aliceRoom);
         await sendPromise;
+        aliceClient.stopClient();
+        bobClient.stopClient();
     });
 
     it("throws an error describing why it doesn't have a key", async function() {
@@ -619,7 +648,7 @@ describe("MegolmDecryption", function() {
             content: {
                 algorithm: "m.megolm.v1.aes-sha2",
                 room_id: roomId,
-                session_id: "session_id",
+                session_id: "session_id1",
                 sender_key: bobDevice.deviceCurve25519Key,
                 code: "m.blacklisted",
                 reason: "You have been blocked",
@@ -636,9 +665,38 @@ describe("MegolmDecryption", function() {
                 ciphertext: "blablabla",
                 device_id: "bobdevice",
                 sender_key: bobDevice.deviceCurve25519Key,
-                session_id: "session_id",
+                session_id: "session_id1",
             },
         }))).rejects.toThrow("The sender has blocked you.");
+
+        aliceClient.crypto.onToDeviceEvent(new MatrixEvent({
+            type: "m.room_key.withheld",
+            sender: "@bob:example.com",
+            content: {
+                algorithm: "m.megolm.v1.aes-sha2",
+                room_id: roomId,
+                session_id: "session_id2",
+                sender_key: bobDevice.deviceCurve25519Key,
+                code: "m.blacklisted",
+                reason: "You have been blocked",
+            },
+        }));
+
+        await expect(aliceClient.crypto.decryptEvent(new MatrixEvent({
+            type: "m.room.encrypted",
+            sender: "@bob:example.com",
+            event_id: "$event",
+            room_id: roomId,
+            content: {
+                algorithm: "m.megolm.v1.aes-sha2",
+                ciphertext: "blablabla",
+                device_id: "bobdevice",
+                sender_key: bobDevice.deviceCurve25519Key,
+                session_id: "session_id2",
+            },
+        }))).rejects.toThrow("The sender has blocked you.");
+        aliceClient.stopClient();
+        bobClient.stopClient();
     });
 
     it("throws an error describing the lack of an olm session", async function() {
@@ -665,7 +723,7 @@ describe("MegolmDecryption", function() {
             content: {
                 algorithm: "m.megolm.v1.aes-sha2",
                 room_id: roomId,
-                session_id: "session_id",
+                session_id: "session_id1",
                 sender_key: bobDevice.deviceCurve25519Key,
                 code: "m.no_olm",
                 reason: "Unable to establish a secure channel.",
@@ -686,10 +744,44 @@ describe("MegolmDecryption", function() {
                 ciphertext: "blablabla",
                 device_id: "bobdevice",
                 sender_key: bobDevice.deviceCurve25519Key,
-                session_id: "session_id",
+                session_id: "session_id1",
             },
             origin_server_ts: now,
         }))).rejects.toThrow("The sender was unable to establish a secure channel.");
+
+        aliceClient.crypto.onToDeviceEvent(new MatrixEvent({
+            type: "m.room_key.withheld",
+            sender: "@bob:example.com",
+            content: {
+                algorithm: "m.megolm.v1.aes-sha2",
+                room_id: roomId,
+                session_id: "session_id2",
+                sender_key: bobDevice.deviceCurve25519Key,
+                code: "m.no_olm",
+                reason: "Unable to establish a secure channel.",
+            },
+        }));
+
+        await new Promise((resolve) => {
+            setTimeout(resolve, 100);
+        });
+
+        await expect(aliceClient.crypto.decryptEvent(new MatrixEvent({
+            type: "m.room.encrypted",
+            sender: "@bob:example.com",
+            event_id: "$event",
+            room_id: roomId,
+            content: {
+                algorithm: "m.megolm.v1.aes-sha2",
+                ciphertext: "blablabla",
+                device_id: "bobdevice",
+                sender_key: bobDevice.deviceCurve25519Key,
+                session_id: "session_id2",
+            },
+            origin_server_ts: now,
+        }))).rejects.toThrow("The sender was unable to establish a secure channel.");
+        aliceClient.stopClient();
+        bobClient.stopClient();
     });
 
     it("throws an error to indicate a wedged olm session", async function() {
@@ -740,5 +832,7 @@ describe("MegolmDecryption", function() {
             },
             origin_server_ts: now,
         }))).rejects.toThrow("The secure channel with the sender was corrupted.");
+        aliceClient.stopClient();
+        bobClient.stopClient();
     });
 });
