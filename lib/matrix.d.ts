@@ -31,7 +31,13 @@ export * from './@types/requests';
 export * from './@types/search';
 export * from './models/room-summary';
 export * as ContentHelpers from "./content-helpers";
-export * from './crypto';
+export * from './crypto/CrossSigning';
+export * from './crypto/api';
+export * from './crypto/olmlib';
+export * from './crypto/key_passphrase';
+export * from './crypto/recoverykey';
+export * from './crypto/verification/request/VerificationRequest';
+export * from './crypto/verification/request/Channel';
 export { createNewMatrixCall, } from "./webrtc/call";
 /**
  * The function used to perform HTTP requests. Only use this if you want to

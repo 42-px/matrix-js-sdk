@@ -16486,7 +16486,7 @@ AutoDiscovery.PROMPT = AutoDiscoveryAction.PROMPT;
  * @constructor
  */
 AutoDiscovery.SUCCESS = AutoDiscoveryAction.SUCCESS;
-},{"./logger":125,"./matrix":126}],82:[function(require,module,exports){
+},{"./logger":126,"./matrix":127}],82:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 
@@ -16575,7 +16575,7 @@ global.matrixcs = matrixcs;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./matrix":126,"@babel/runtime/helpers/interopRequireDefault":6,"@babel/runtime/helpers/typeof":11,"browser-request":16,"qs":58}],83:[function(require,module,exports){
+},{"./matrix":127,"@babel/runtime/helpers/interopRequireDefault":6,"@babel/runtime/helpers/typeof":11,"browser-request":16,"qs":58}],83:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -23528,7 +23528,7 @@ MatrixClient.RESTORE_BACKUP_ERROR_BAD_KEY = 'RESTORE_BACKUP_ERROR_BAD_KEY';
  */
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./@types/PushRules":69,"./@types/beacon":70,"./@types/event":71,"./@types/partials":74,"./@types/read_receipts":75,"./@types/search":77,"./ReEmitter":80,"./autodiscovery":81,"./content-helpers":84,"./content-repo":85,"./crypto":102,"./crypto/RoomList":91,"./crypto/api":98,"./crypto/backup":99,"./crypto/dehydration":100,"./crypto/key_passphrase":103,"./crypto/olmlib":104,"./crypto/recoverykey":105,"./event-mapper":119,"./filter":121,"./http-api":122,"./logger":125,"./matrix":126,"./models/MSC3089TreeSpace":128,"./models/event":134,"./models/event-timeline":133,"./models/search-result":141,"./models/thread":142,"./models/typed-event-emitter":143,"./models/user":144,"./pushprocessor":145,"./randomstring":146,"./service-types":149,"./store/stub":154,"./sync":156,"./utils":158,"./webrtc/call":159,"./webrtc/callEventHandler":160,"./webrtc/mediaHandler":163,"matrix-events-sdk":47}],84:[function(require,module,exports){
+},{"./@types/PushRules":69,"./@types/beacon":70,"./@types/event":71,"./@types/partials":74,"./@types/read_receipts":75,"./@types/search":77,"./ReEmitter":80,"./autodiscovery":81,"./content-helpers":84,"./content-repo":85,"./crypto":102,"./crypto/RoomList":91,"./crypto/api":98,"./crypto/backup":99,"./crypto/dehydration":100,"./crypto/key_passphrase":103,"./crypto/olmlib":104,"./crypto/recoverykey":105,"./event-mapper":120,"./filter":122,"./http-api":123,"./logger":126,"./matrix":127,"./models/MSC3089TreeSpace":129,"./models/event":135,"./models/event-timeline":134,"./models/search-result":142,"./models/thread":143,"./models/typed-event-emitter":144,"./models/user":145,"./pushprocessor":146,"./randomstring":147,"./service-types":150,"./store/stub":155,"./sync":157,"./utils":159,"./webrtc/call":160,"./webrtc/callEventHandler":161,"./webrtc/mediaHandler":164,"matrix-events-sdk":47}],84:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 - 2022 The Matrix.org Foundation C.I.C.
@@ -23851,7 +23851,7 @@ function getHttpUriForMxc(baseUrl, mxc, width, height, resizeMethod, allowDirect
     return baseUrl + prefix + serverAndMediaId + urlParams + fragment;
 }
 exports.getHttpUriForMxc = getHttpUriForMxc;
-},{"./utils":158}],86:[function(require,module,exports){
+},{"./utils":159}],86:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -24588,7 +24588,7 @@ function requestKeysDuringVerification(baseApis, userId, deviceId) {
 exports.requestKeysDuringVerification = requestKeysDuringVerification;
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../crypto/store/indexeddb-crypto-store":107,"../logger":125,"./aes":93,"./olmlib":104,"buffer":19}],87:[function(require,module,exports){
+},{"../crypto/store/indexeddb-crypto-store":107,"../logger":126,"./aes":93,"./olmlib":104,"buffer":19}],87:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -25471,7 +25471,7 @@ function storeDeviceKeys(olmDevice, userStore, deviceResult) {
         return true;
     });
 }
-},{"../logger":125,"../models/typed-event-emitter":143,"../utils":158,"./CrossSigning":86,"./deviceinfo":101,"./index":102,"./olmlib":104,"./store/indexeddb-crypto-store":107}],88:[function(require,module,exports){
+},{"../logger":126,"../models/typed-event-emitter":144,"../utils":159,"./CrossSigning":86,"./deviceinfo":101,"./index":102,"./olmlib":104,"./store/indexeddb-crypto-store":107}],88:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -25821,7 +25821,7 @@ class SSSSCryptoCallbacks {
         (_b = (_a = this.delegateCryptoCallbacks) === null || _a === void 0 ? void 0 : _a.cacheSecretStorageKey) === null || _b === void 0 ? void 0 : _b.call(_a, keyId, keyInfo, privKey);
     }
 }
-},{"../http-api":122,"../logger":125,"../matrix":126,"../models/event":134,"../models/typed-event-emitter":143,"./CrossSigning":86,"./store/indexeddb-crypto-store":107}],89:[function(require,module,exports){
+},{"../http-api":123,"../logger":126,"../matrix":127,"../models/event":135,"../models/typed-event-emitter":144,"./CrossSigning":86,"./store/indexeddb-crypto-store":107}],89:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -27063,7 +27063,7 @@ function calculateWithheldMessage(withheld) {
 }
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"../logger":125,"./algorithms":95,"./store/indexeddb-crypto-store":107}],90:[function(require,module,exports){
+},{"../logger":126,"./algorithms":95,"./store/indexeddb-crypto-store":107}],90:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -27484,7 +27484,7 @@ function stringifyRecipientList(recipients) {
         + recipients.map((r) => `${r.userId}:${r.deviceId}`).join(",")
         + ']';
 }
-},{"../@types/event":71,"../logger":125}],91:[function(require,module,exports){
+},{"../@types/event":71,"../logger":126}],91:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 - 2021 The Matrix.org Foundation C.I.C.
@@ -28082,7 +28082,7 @@ class SecretStorage {
     }
 }
 exports.SecretStorage = SecretStorage;
-},{"../logger":125,"../matrix":126,"../randomstring":146,"./aes":93,"./olmlib":104}],93:[function(require,module,exports){
+},{"../logger":126,"../matrix":127,"../randomstring":147,"./aes":93,"./olmlib":104}],93:[function(require,module,exports){
 (function (Buffer){(function (){
 "use strict";
 /*
@@ -28302,7 +28302,7 @@ function calculateKeyCheck(key, iv) {
 exports.calculateKeyCheck = calculateKeyCheck;
 }).call(this)}).call(this,require("buffer").Buffer)
 
-},{"../utils":158,"./olmlib":104,"buffer":19}],94:[function(require,module,exports){
+},{"../utils":159,"./olmlib":104,"buffer":19}],94:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -30044,7 +30044,7 @@ const PROBLEM_DESCRIPTIONS = {
     unknown: "The secure channel with the sender was corrupted.",
 };
 (0, base_1.registerAlgorithm)(olmlib.MEGOLM_ALGORITHM, MegolmEncryption, MegolmDecryption);
-},{"../../logger":125,"../OlmDevice":89,"../olmlib":104,"./base":94}],97:[function(require,module,exports){
+},{"../../logger":126,"../OlmDevice":89,"../olmlib":104,"./base":94}],97:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -30349,7 +30349,7 @@ class OlmDecryption extends base_1.DecryptionAlgorithm {
     }
 }
 (0, base_1.registerAlgorithm)(olmlib.OLM_ALGORITHM, OlmEncryption, OlmDecryption);
-},{"../../logger":125,"../deviceinfo":101,"../olmlib":104,"./base":94}],98:[function(require,module,exports){
+},{"../../logger":126,"../deviceinfo":101,"../olmlib":104,"./base":94}],98:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -31083,7 +31083,7 @@ exports.algorithmsByName = {
 exports.DefaultAlgorithm = Curve25519;
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"../NamespacedValue":79,"../client":83,"../logger":125,"../utils":158,"./aes":93,"./index":102,"./key_passphrase":103,"./olmlib":104,"./recoverykey":105,"./store/indexeddb-crypto-store":107}],100:[function(require,module,exports){
+},{"../NamespacedValue":79,"../client":83,"../logger":126,"../utils":159,"./aes":93,"./index":102,"./key_passphrase":103,"./olmlib":104,"./recoverykey":105,"./store/indexeddb-crypto-store":107}],100:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -31315,7 +31315,7 @@ class DehydrationManager {
 exports.DehydrationManager = DehydrationManager;
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../crypto/store/indexeddb-crypto-store":107,"../http-api":122,"../logger":125,"./aes":93,"./olmlib":104,"another-json":13,"buffer":19}],101:[function(require,module,exports){
+},{"../crypto/store/indexeddb-crypto-store":107,"../http-api":123,"../logger":126,"./aes":93,"./olmlib":104,"another-json":13,"buffer":19}],101:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -34676,7 +34676,7 @@ class IncomingRoomKeyRequestCancellation {
  */
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../ReEmitter":80,"../client":83,"../errors":118,"../logger":125,"../models/event":134,"../models/room":140,"../models/room-member":137,"../models/typed-event-emitter":143,"./CrossSigning":86,"./DeviceList":87,"./EncryptionSetup":88,"./OlmDevice":89,"./OutgoingRoomKeyRequestManager":90,"./SecretStorage":92,"./aes":93,"./algorithms":95,"./backup":99,"./dehydration":100,"./deviceinfo":101,"./key_passphrase":103,"./olmlib":104,"./recoverykey":105,"./store/indexeddb-crypto-store":107,"./verification/IllegalMethod":112,"./verification/QRCode":113,"./verification/SAS":114,"./verification/request/InRoomChannel":115,"./verification/request/ToDeviceChannel":116,"./verification/request/VerificationRequest":117,"another-json":13,"buffer":19}],103:[function(require,module,exports){
+},{"../ReEmitter":80,"../client":83,"../errors":119,"../logger":126,"../models/event":135,"../models/room":141,"../models/room-member":138,"../models/typed-event-emitter":144,"./CrossSigning":86,"./DeviceList":87,"./EncryptionSetup":88,"./OlmDevice":89,"./OutgoingRoomKeyRequestManager":90,"./SecretStorage":92,"./aes":93,"./algorithms":95,"./backup":99,"./dehydration":100,"./deviceinfo":101,"./key_passphrase":103,"./olmlib":104,"./recoverykey":105,"./store/indexeddb-crypto-store":107,"./verification/IllegalMethod":112,"./verification/QRCode":113,"./verification/SAS":114,"./verification/request/InRoomChannel":116,"./verification/request/ToDeviceChannel":117,"./verification/request/VerificationRequest":118,"another-json":13,"buffer":19}],103:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -34769,7 +34769,7 @@ function deriveKeyNode(password, salt, iterations, numBits) {
 }
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../randomstring":146,"../utils":158,"buffer":19}],104:[function(require,module,exports){
+},{"../randomstring":147,"../utils":159,"buffer":19}],104:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -35277,7 +35277,7 @@ function decodeBase64(base64) {
 exports.decodeBase64 = decodeBase64;
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../logger":125,"another-json":13,"buffer":19}],105:[function(require,module,exports){
+},{"../logger":126,"another-json":13,"buffer":19}],105:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -36266,7 +36266,7 @@ function promiseifyTxn(txn) {
         };
     });
 }
-},{"../../logger":125,"../../utils":158}],107:[function(require,module,exports){
+},{"../../logger":126,"../../utils":159}],107:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -36841,7 +36841,7 @@ IndexedDBCryptoStore.STORE_ROOMS = 'rooms';
 IndexedDBCryptoStore.STORE_BACKUP = 'sessions_needing_backup';
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"../../errors":118,"../../indexeddb-helpers":123,"../../logger":125,"./indexeddb-crypto-store-backend":106,"./localStorage-crypto-store":108,"./memory-crypto-store":109}],108:[function(require,module,exports){
+},{"../../errors":119,"../../indexeddb-helpers":124,"../../logger":126,"./indexeddb-crypto-store-backend":106,"./localStorage-crypto-store":108,"./memory-crypto-store":109}],108:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -37169,7 +37169,7 @@ function getJsonItem(store, key) {
 function setJsonItem(store, key, val) {
     store.setItem(key, JSON.stringify(val));
 }
-},{"../../logger":125,"./memory-crypto-store":109}],109:[function(require,module,exports){
+},{"../../logger":126,"./memory-crypto-store":109}],109:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -37610,7 +37610,7 @@ class MemoryCryptoStore {
     }
 }
 exports.MemoryCryptoStore = MemoryCryptoStore;
-},{"../../logger":125,"../../utils":158}],110:[function(require,module,exports){
+},{"../../logger":126,"../../utils":159}],110:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 New Vector Ltd
@@ -37945,7 +37945,7 @@ class VerificationBase extends typed_event_emitter_1.TypedEventEmitter {
     }
 }
 exports.VerificationBase = VerificationBase;
-},{"../../logger":125,"../../models/event":134,"../../models/typed-event-emitter":143,"../CrossSigning":86,"../deviceinfo":101,"./Error":111}],111:[function(require,module,exports){
+},{"../../logger":126,"../../models/event":135,"../../models/typed-event-emitter":144,"../CrossSigning":86,"../deviceinfo":101,"./Error":111}],111:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 - 2021 The Matrix.org Foundation C.I.C.
@@ -38027,7 +38027,7 @@ function errorFromEvent(event) {
     }
 }
 exports.errorFromEvent = errorFromEvent;
-},{"../../models/event":134}],112:[function(require,module,exports){
+},{"../../models/event":135}],112:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2020 The Matrix.org Foundation C.I.C.
@@ -38362,7 +38362,7 @@ class QRCodeData {
 exports.QRCodeData = QRCodeData;
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../../logger":125,"../olmlib":104,"./Base":110,"./Error":111,"buffer":19}],114:[function(require,module,exports){
+},{"../../logger":126,"../olmlib":104,"./Base":110,"./Error":111,"buffer":19}],114:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -38837,7 +38837,25 @@ class SAS extends Base_1.VerificationBase {
 exports.SAS = SAS;
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"../../logger":125,"./Base":110,"./Error":111,"another-json":13}],115:[function(require,module,exports){
+},{"../../logger":126,"./Base":110,"./Error":111,"another-json":13}],115:[function(require,module,exports){
+"use strict";
+/*
+Copyright 2021 The Matrix.org Foundation C.I.C.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+Object.defineProperty(exports, "__esModule", { value: true });
+},{}],116:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 New Vector Ltd
@@ -39181,7 +39199,7 @@ class InRoomRequests {
     }
 }
 exports.InRoomRequests = InRoomRequests;
-},{"../../../@types/event":71,"../../../logger":125,"./VerificationRequest":117}],116:[function(require,module,exports){
+},{"../../../@types/event":71,"../../../logger":126,"./VerificationRequest":118}],117:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 New Vector Ltd
@@ -39513,7 +39531,7 @@ class ToDeviceRequests {
     }
 }
 exports.ToDeviceRequests = ToDeviceRequests;
-},{"../../../logger":125,"../../../models/event":134,"../../../randomstring":146,"../Error":111,"./VerificationRequest":117}],117:[function(require,module,exports){
+},{"../../../logger":126,"../../../models/event":135,"../../../randomstring":147,"../Error":111,"./VerificationRequest":118}],118:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 - 2021 The Matrix.org Foundation C.I.C.
@@ -40355,7 +40373,7 @@ class VerificationRequest extends typed_event_emitter_1.TypedEventEmitter {
     }
 }
 exports.VerificationRequest = VerificationRequest;
-},{"../../../logger":125,"../../../models/typed-event-emitter":143,"../Error":111,"../QRCode":113}],118:[function(require,module,exports){
+},{"../../../logger":126,"../../../models/typed-event-emitter":144,"../Error":111,"../QRCode":113}],119:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
@@ -40442,7 +40460,7 @@ var KeySignatureUploadError = /*#__PURE__*/function (_Error) {
 
 exports.KeySignatureUploadError = KeySignatureUploadError;
 
-},{"@babel/runtime/helpers/classCallCheck":2,"@babel/runtime/helpers/getPrototypeOf":4,"@babel/runtime/helpers/inherits":5,"@babel/runtime/helpers/interopRequireDefault":6,"@babel/runtime/helpers/possibleConstructorReturn":9,"@babel/runtime/helpers/wrapNativeSuper":12}],119:[function(require,module,exports){
+},{"@babel/runtime/helpers/classCallCheck":2,"@babel/runtime/helpers/getPrototypeOf":4,"@babel/runtime/helpers/inherits":5,"@babel/runtime/helpers/interopRequireDefault":6,"@babel/runtime/helpers/possibleConstructorReturn":9,"@babel/runtime/helpers/wrapNativeSuper":12}],120:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -40510,7 +40528,7 @@ function eventMapperFor(client, options) {
     return mapper;
 }
 exports.eventMapperFor = eventMapperFor;
-},{"./models/event":134}],120:[function(require,module,exports){
+},{"./models/event":135}],121:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -40678,7 +40696,7 @@ class FilterComponent {
     }
 }
 exports.FilterComponent = FilterComponent;
-},{"./models/thread":142}],121:[function(require,module,exports){
+},{"./models/thread":143}],122:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 Matrix.org Foundation C.I.C.
@@ -40857,7 +40875,7 @@ exports.Filter = Filter;
 Filter.LAZY_LOADING_MESSAGES_FILTER = {
     lazy_load_members: true,
 };
-},{"./filter-component":120}],122:[function(require,module,exports){
+},{"./filter-component":121}],123:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -41794,7 +41812,7 @@ function retryNetworkOperation(maxAttempts, callback) {
 exports.retryNetworkOperation = retryNetworkOperation;
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./logger":125,"./realtime-callbacks":147,"./utils":158,"content-type":22}],123:[function(require,module,exports){
+},{"./logger":126,"./realtime-callbacks":148,"./utils":159,"content-type":22}],124:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2019 New Vector Ltd
@@ -41848,7 +41866,7 @@ function exists(indexedDB, dbName) {
     });
 }
 exports.exists = exists;
-},{}],124:[function(require,module,exports){
+},{}],125:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 OpenMarket Ltd
@@ -42405,7 +42423,7 @@ class InteractiveAuth {
     }
 }
 exports.InteractiveAuth = InteractiveAuth;
-},{"./logger":125,"./utils":158}],125:[function(require,module,exports){
+},{"./logger":126,"./utils":159}],126:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 André Jaenisch
@@ -42488,7 +42506,7 @@ function getPrefixedLogger(prefix) {
     }
     return prefixLogger;
 }
-},{"loglevel":31}],126:[function(require,module,exports){
+},{"loglevel":31}],127:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -42568,7 +42586,13 @@ __exportStar(require("./@types/requests"), exports);
 __exportStar(require("./@types/search"), exports);
 __exportStar(require("./models/room-summary"), exports);
 exports.ContentHelpers = __importStar(require("./content-helpers"));
-__exportStar(require("./crypto"), exports);
+__exportStar(require("./crypto/CrossSigning"), exports);
+__exportStar(require("./crypto/api"), exports);
+__exportStar(require("./crypto/olmlib"), exports);
+__exportStar(require("./crypto/key_passphrase"), exports);
+__exportStar(require("./crypto/recoverykey"), exports);
+__exportStar(require("./crypto/verification/request/VerificationRequest"), exports);
+__exportStar(require("./crypto/verification/request/Channel"), exports);
 var call_1 = require("./webrtc/call");
 Object.defineProperty(exports, "createNewMatrixCall", { enumerable: true, get: function () { return call_1.createNewMatrixCall; } });
 // expose the underlying request object so different environments can use
@@ -42692,7 +42716,7 @@ exports.createClient = createClient;
   */
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./@types/PushRules":69,"./@types/event":71,"./@types/partials":74,"./@types/requests":76,"./@types/search":77,"./autodiscovery":81,"./client":83,"./content-helpers":84,"./content-repo":85,"./crypto":102,"./crypto/store/indexeddb-crypto-store":107,"./crypto/store/memory-crypto-store":109,"./errors":118,"./filter":121,"./http-api":122,"./interactive-auth":124,"./models/beacon":129,"./models/event":134,"./models/event-timeline":133,"./models/event-timeline-set":132,"./models/room":140,"./models/room-member":137,"./models/room-state":138,"./models/room-summary":139,"./models/user":144,"./scheduler":148,"./service-types":149,"./store/indexeddb":152,"./store/memory":153,"./sync-accumulator":155,"./timeline-window":157,"./webrtc/call":159}],127:[function(require,module,exports){
+},{"./@types/PushRules":69,"./@types/event":71,"./@types/partials":74,"./@types/requests":76,"./@types/search":77,"./autodiscovery":81,"./client":83,"./content-helpers":84,"./content-repo":85,"./crypto/CrossSigning":86,"./crypto/api":98,"./crypto/key_passphrase":103,"./crypto/olmlib":104,"./crypto/recoverykey":105,"./crypto/store/indexeddb-crypto-store":107,"./crypto/store/memory-crypto-store":109,"./crypto/verification/request/Channel":115,"./crypto/verification/request/VerificationRequest":118,"./errors":119,"./filter":122,"./http-api":123,"./interactive-auth":125,"./models/beacon":130,"./models/event":135,"./models/event-timeline":134,"./models/event-timeline-set":133,"./models/room":141,"./models/room-member":138,"./models/room-state":139,"./models/room-summary":140,"./models/user":145,"./scheduler":149,"./service-types":150,"./store/indexeddb":153,"./store/memory":154,"./sync-accumulator":156,"./timeline-window":158,"./webrtc/call":160}],128:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -42909,7 +42933,7 @@ class MSC3089Branch {
     }
 }
 exports.MSC3089Branch = MSC3089Branch;
-},{"../@types/event":71,"./event-timeline":133}],128:[function(require,module,exports){
+},{"../@types/event":71,"./event-timeline":134}],129:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -43428,7 +43452,7 @@ class MSC3089TreeSpace {
     }
 }
 exports.MSC3089TreeSpace = MSC3089TreeSpace;
-},{"../@types/event":71,"../crypto/algorithms/megolm":96,"../logger":125,"../utils":158,"./MSC3089Branch":127,"p-retry":55}],129:[function(require,module,exports){
+},{"../@types/event":71,"../crypto/algorithms/megolm":96,"../logger":126,"../utils":159,"./MSC3089Branch":128,"p-retry":55}],130:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2022 The Matrix.org Foundation C.I.C.
@@ -43588,7 +43612,7 @@ class Beacon extends typed_event_emitter_1.TypedEventEmitter {
     }
 }
 exports.Beacon = Beacon;
-},{"../@types/location":73,"../content-helpers":84,"../utils":158,"./typed-event-emitter":143}],130:[function(require,module,exports){
+},{"../@types/location":73,"../content-helpers":84,"../utils":159,"./typed-event-emitter":144}],131:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -43702,7 +43726,7 @@ class EventContext {
     }
 }
 exports.EventContext = EventContext;
-},{"./event-timeline":133}],131:[function(require,module,exports){
+},{"./event-timeline":134}],132:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2022 The Matrix.org Foundation C.I.C.
@@ -43741,7 +43765,7 @@ var EventStatus;
     /** The event was cancelled before it was successfully sent. */
     EventStatus["CANCELLED"] = "cancelled";
 })(EventStatus = exports.EventStatus || (exports.EventStatus = {}));
-},{}],132:[function(require,module,exports){
+},{}],133:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -44446,7 +44470,7 @@ exports.EventTimelineSet = EventTimelineSet;
  * @param {EventTimelineSet} timelineSet timelineSet room whose live timeline was reset
  * @param {boolean} resetAllTimelines True if all timelines were reset.
  */
-},{"../logger":125,"./event-timeline":133,"./relations-container":135,"./room":140,"./typed-event-emitter":143}],133:[function(require,module,exports){
+},{"../logger":126,"./event-timeline":134,"./relations-container":136,"./room":141,"./typed-event-emitter":144}],134:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -44850,7 +44874,7 @@ EventTimeline.BACKWARDS = Direction.Backward;
  * refers to the end of the timeline, or forwards in time.
  */
 EventTimeline.FORWARDS = Direction.Forward;
-},{"../@types/event":71,"../logger":125,"./room-state":138}],134:[function(require,module,exports){
+},{"../@types/event":71,"../logger":126,"./room-state":139}],135:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2022 The Matrix.org Foundation C.I.C.
@@ -46191,7 +46215,7 @@ const REDACT_KEEP_CONTENT_MAP = {
  *    The error that occurred during decryption, or `undefined` if no
  *    error occurred.
  */
-},{"../@types/event":71,"../ReEmitter":80,"../logger":125,"../utils":158,"./event-status":131,"./thread":142,"./typed-event-emitter":143,"matrix-events-sdk":47}],135:[function(require,module,exports){
+},{"../@types/event":71,"../ReEmitter":80,"../logger":126,"../utils":159,"./event-status":132,"./thread":143,"./typed-event-emitter":144,"matrix-events-sdk":47}],136:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2022 The Matrix.org Foundation C.I.C.
@@ -46320,7 +46344,7 @@ class RelationsContainer {
     }
 }
 exports.RelationsContainer = RelationsContainer;
-},{"./event":134,"./relations":136}],136:[function(require,module,exports){
+},{"./event":135,"./relations":137}],137:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2019, 2021 The Matrix.org Foundation C.I.C.
@@ -46682,7 +46706,7 @@ class Relations extends typed_event_emitter_1.TypedEventEmitter {
     }
 }
 exports.Relations = Relations;
-},{"../@types/event":71,"../logger":125,"./event":134,"./room":140,"./typed-event-emitter":143}],137:[function(require,module,exports){
+},{"../@types/event":71,"../logger":126,"./event":135,"./room":141,"./typed-event-emitter":144}],138:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -47086,7 +47110,7 @@ function calculateDisplayName(selfUserId, displayName, roomState, disambiguate) 
  *   var newNormPowerLevel = member.powerLevelNorm;
  * });
  */
-},{"../@types/event":71,"../content-repo":85,"../logger":125,"../utils":158,"./typed-event-emitter":143}],138:[function(require,module,exports){
+},{"../@types/event":71,"../content-repo":85,"../logger":126,"../utils":159,"./typed-event-emitter":144}],139:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -47991,7 +48015,7 @@ exports.RoomState = RoomState;
  *   // add event listeners on 'member'
  * });
  */
-},{"../@types/beacon":70,"../@types/event":71,"../@types/partials":74,"../ReEmitter":80,"../logger":125,"../utils":158,"./beacon":129,"./event":134,"./room-member":137,"./typed-event-emitter":143}],139:[function(require,module,exports){
+},{"../@types/beacon":70,"../@types/event":71,"../@types/partials":74,"../ReEmitter":80,"../logger":126,"../utils":159,"./beacon":130,"./event":135,"./room-member":138,"./typed-event-emitter":144}],140:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -48029,7 +48053,7 @@ class RoomSummary {
     }
 }
 exports.RoomSummary = RoomSummary;
-},{}],140:[function(require,module,exports){
+},{}],141:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -50824,7 +50848,7 @@ function memberNamesToRoomName(names, count = (names.length + 1)) {
  * @param {string} membership The new membership value
  * @param {string} prevMembership The previous membership value
  */
-},{"../@types/event":71,"../@types/read_receipts":75,"../ReEmitter":80,"../client":83,"../content-repo":85,"../filter":121,"../logger":125,"../utils":158,"./event":134,"./event-status":131,"./event-timeline":133,"./event-timeline-set":132,"./relations-container":135,"./room-member":137,"./room-summary":139,"./thread":142,"./typed-event-emitter":143}],141:[function(require,module,exports){
+},{"../@types/event":71,"../@types/read_receipts":75,"../ReEmitter":80,"../client":83,"../content-repo":85,"../filter":122,"../logger":126,"../utils":159,"./event":135,"./event-status":132,"./event-timeline":134,"./event-timeline-set":133,"./relations-container":136,"./room-member":138,"./room-summary":140,"./thread":143,"./typed-event-emitter":144}],142:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -50885,7 +50909,7 @@ class SearchResult {
     }
 }
 exports.SearchResult = SearchResult;
-},{"./event-context":130}],142:[function(require,module,exports){
+},{"./event-context":131}],143:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -51241,7 +51265,7 @@ var ThreadFilterType;
     ThreadFilterType[ThreadFilterType["My"] = 0] = "My";
     ThreadFilterType[ThreadFilterType["All"] = 1] = "All";
 })(ThreadFilterType = exports.ThreadFilterType || (exports.ThreadFilterType = {}));
-},{"../NamespacedValue":79,"../ReEmitter":80,"../logger":125,"../matrix":126,"./event":134,"./event-timeline":133,"./event-timeline-set":132,"./typed-event-emitter":143}],143:[function(require,module,exports){
+},{"../NamespacedValue":79,"../ReEmitter":80,"../logger":126,"../matrix":127,"./event":135,"./event-timeline":134,"./event-timeline-set":133,"./typed-event-emitter":144}],144:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -51317,7 +51341,7 @@ class TypedEventEmitter extends events_1.EventEmitter {
     }
 }
 exports.TypedEventEmitter = TypedEventEmitter;
-},{"events":23}],144:[function(require,module,exports){
+},{"events":23}],145:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -51553,7 +51577,7 @@ exports.User = User;
  *   var newUrl = user.avatarUrl;
  * });
  */
-},{"./typed-event-emitter":143}],145:[function(require,module,exports){
+},{"./typed-event-emitter":144}],146:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -51986,7 +52010,7 @@ PushProcessor.cachedGlobToRegex = {}; // $glob: RegExp
  * @property {boolean} tweaks.sound Whether this notification should produce a
  * noise.
  */
-},{"./@types/PushRules":69,"./@types/event":71,"./logger":125,"./utils":158}],146:[function(require,module,exports){
+},{"./@types/PushRules":69,"./@types/event":71,"./logger":126,"./utils":159}],147:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 New Vector Ltd
@@ -52028,7 +52052,7 @@ function randomStringFrom(len, chars) {
     }
     return ret;
 }
-},{}],147:[function(require,module,exports){
+},{}],148:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -52212,7 +52236,7 @@ function binarySearch(array, func) {
 }
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./logger":125}],148:[function(require,module,exports){
+},{"./logger":126}],149:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -52537,7 +52561,7 @@ function debuglog(...args) {
  * @param {MatrixEvent} event The event to send.
  * @return {Promise} Resolved/rejected depending on the outcome of the request.
  */
-},{"./@types/event":71,"./logger":125,"./utils":158}],149:[function(require,module,exports){
+},{"./@types/event":71,"./logger":126,"./utils":159}],150:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2019 - 2021 The Matrix.org Foundation C.I.C.
@@ -52561,7 +52585,7 @@ var SERVICE_TYPES;
     SERVICE_TYPES["IS"] = "SERVICE_TYPE_IS";
     SERVICE_TYPES["IM"] = "SERVICE_TYPE_IM";
 })(SERVICE_TYPES = exports.SERVICE_TYPES || (exports.SERVICE_TYPES = {}));
-},{}],150:[function(require,module,exports){
+},{}],151:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -53098,7 +53122,7 @@ class LocalIndexedDBStoreBackend {
     }
 }
 exports.LocalIndexedDBStoreBackend = LocalIndexedDBStoreBackend;
-},{"../indexeddb-helpers":123,"../logger":125,"../sync-accumulator":155,"../utils":158}],151:[function(require,module,exports){
+},{"../indexeddb-helpers":124,"../logger":126,"../sync-accumulator":156,"../utils":159}],152:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -53265,7 +53289,7 @@ class RemoteIndexedDBStoreBackend {
     }
 }
 exports.RemoteIndexedDBStoreBackend = RemoteIndexedDBStoreBackend;
-},{"../logger":125,"../utils":158}],152:[function(require,module,exports){
+},{"../logger":126,"../utils":159}],153:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 Vector Creations Ltd
@@ -53602,7 +53626,7 @@ exports.IndexedDBStore = IndexedDBStore;
 function pendingEventsKey(roomId) {
     return `mx_pending_events_${roomId}`;
 }
-},{"../logger":125,"../models/event":134,"../models/typed-event-emitter":143,"../models/user":144,"./indexeddb-local-backend":150,"./indexeddb-remote-backend":151,"./memory":153}],153:[function(require,module,exports){
+},{"../logger":126,"../models/event":135,"../models/typed-event-emitter":144,"../models/user":145,"./indexeddb-local-backend":151,"./indexeddb-remote-backend":152,"./memory":154}],154:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -53995,7 +54019,7 @@ class MemoryStore {
     }
 }
 exports.MemoryStore = MemoryStore;
-},{"../models/room-state":138,"../models/user":144}],154:[function(require,module,exports){
+},{"../models/room-state":139,"../models/user":145}],155:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -54237,7 +54261,7 @@ class StubStore {
     }
 }
 exports.StubStore = StubStore;
-},{}],155:[function(require,module,exports){
+},{}],156:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -54748,7 +54772,7 @@ function setState(eventMap, event) {
     }
     eventMap[event.type][event.state_key] = event;
 }
-},{"./@types/read_receipts":75,"./logger":125,"./utils":158}],156:[function(require,module,exports){
+},{"./@types/read_receipts":75,"./logger":126,"./utils":159}],157:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -56346,7 +56370,7 @@ function createNewUser(client, userId) {
 }
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./@types/event":71,"./client":83,"./errors":118,"./filter":121,"./http-api":122,"./logger":125,"./models/beacon":129,"./models/event-timeline":133,"./models/room":140,"./models/room-member":137,"./models/room-state":138,"./models/user":144,"./pushprocessor":145,"./utils":158}],157:[function(require,module,exports){
+},{"./@types/event":71,"./client":83,"./errors":119,"./filter":122,"./http-api":123,"./logger":126,"./models/beacon":130,"./models/event-timeline":134,"./models/room":141,"./models/room-member":138,"./models/room-state":139,"./models/user":145,"./pushprocessor":146,"./utils":159}],158:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -56803,7 +56827,7 @@ class TimelineIndex {
     }
 }
 exports.TimelineIndex = TimelineIndex;
-},{"./logger":125,"./models/event-timeline":133}],158:[function(require,module,exports){
+},{"./logger":126,"./models/event-timeline":134}],159:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015, 2016 OpenMarket Ltd
@@ -57508,7 +57532,7 @@ function sortEventsByLatestContentTimestamp(left, right) {
     return getContentTimestampWithFallback(right) - getContentTimestampWithFallback(left);
 }
 exports.sortEventsByLatestContentTimestamp = sortEventsByLatestContentTimestamp;
-},{"./@types/location":73,"p-retry":55,"unhomoglyph":68}],159:[function(require,module,exports){
+},{"./@types/location":73,"p-retry":55,"unhomoglyph":68}],160:[function(require,module,exports){
 (function (process){(function (){
 "use strict";
 /*
@@ -59523,7 +59547,7 @@ function createNewMatrixCall(client, roomId, options) {
 exports.createNewMatrixCall = createNewMatrixCall;
 }).call(this)}).call(this,require('_process'))
 
-},{"../@types/event":71,"../logger":125,"../models/typed-event-emitter":143,"../randomstring":146,"../utils":158,"./callEventTypes":161,"./callFeed":162,"_process":56}],160:[function(require,module,exports){
+},{"../@types/event":71,"../logger":126,"../models/typed-event-emitter":144,"../randomstring":147,"../utils":159,"./callEventTypes":162,"./callFeed":163,"_process":56}],161:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2020 The Matrix.org Foundation C.I.C.
@@ -59815,7 +59839,7 @@ class CallEventHandler {
     }
 }
 exports.CallEventHandler = CallEventHandler;
-},{"../@types/event":71,"../client":83,"../logger":125,"../models/event":134,"../models/room":140,"../sync":156,"./call":159}],161:[function(require,module,exports){
+},{"../@types/event":71,"../client":83,"../logger":126,"../models/event":135,"../models/room":141,"../sync":157,"./call":160}],162:[function(require,module,exports){
 "use strict";
 // allow non-camelcase as these are events type that go onto the wire
 /* eslint-disable camelcase */
@@ -59829,7 +59853,7 @@ var SDPStreamMetadataPurpose;
     SDPStreamMetadataPurpose["Screenshare"] = "m.screenshare";
 })(SDPStreamMetadataPurpose = exports.SDPStreamMetadataPurpose || (exports.SDPStreamMetadataPurpose = {}));
 /* eslint-enable camelcase */
-},{}],162:[function(require,module,exports){
+},{}],163:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 Šimon Brandner <simon.bra.ag@gmail.com>
@@ -60028,7 +60052,7 @@ class CallFeed extends typed_event_emitter_1.TypedEventEmitter {
     }
 }
 exports.CallFeed = CallFeed;
-},{"../models/typed-event-emitter":143}],163:[function(require,module,exports){
+},{"../models/typed-event-emitter":144}],164:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015, 2016 OpenMarket Ltd
@@ -60311,5 +60335,5 @@ class MediaHandler {
     }
 }
 exports.MediaHandler = MediaHandler;
-},{"../logger":125,"./call":159}]},{},[82])
+},{"../logger":126,"./call":160}]},{},[82])
 //# sourceMappingURL=browser-matrix.js.map
