@@ -3,7 +3,6 @@
  * @module store/stub
  */
 import { EventType } from "../@types/event";
-import { Group } from "../models/group";
 import { Room } from "../models/room";
 import { User } from "../models/user";
 import { IEvent, MatrixEvent } from "../models/event";
@@ -11,6 +10,7 @@ import { Filter } from "../filter";
 import { ISavedSync, IStore } from "./index";
 import { RoomSummary } from "../models/room-summary";
 import { ISyncResponse } from "../sync-accumulator";
+import { IStateEventWithRoomId } from "../@types/search";
 /**
  * Construct a stub store. This does no-ops on most store methods.
  * @constructor
@@ -30,25 +30,6 @@ export declare class StubStore implements IStore {
      * @param {string} token
      */
     setSyncToken(token: string): void;
-    /**
-     * No-op.
-     * @param {Group} group
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    storeGroup(group: Group): void;
-    /**
-     * No-op.
-     * @param {string} groupId
-     * @return {null}
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    getGroup(groupId: string): Group | null;
-    /**
-     * No-op.
-     * @return {Array} An empty array.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    getGroups(): Group[];
     /**
      * No-op.
      * @param {Room} room
@@ -94,7 +75,7 @@ export declare class StubStore implements IStore {
     /**
      * No-op.
      * @param {Room} room
-     * @param {integer} limit
+     * @param {number} limit
      * @return {Array}
      */
     scrollback(room: Room, limit: number): MatrixEvent[];
@@ -179,10 +160,12 @@ export declare class StubStore implements IStore {
      * @return {Promise} An immediately resolved promise.
      */
     deleteAllData(): Promise<void>;
-    getOutOfBandMembers(): Promise<IEvent[]>;
-    setOutOfBandMembers(roomId: string, membershipEvents: IEvent[]): Promise<void>;
+    getOutOfBandMembers(): Promise<IStateEventWithRoomId[]>;
+    setOutOfBandMembers(roomId: string, membershipEvents: IStateEventWithRoomId[]): Promise<void>;
     clearOutOfBandMembers(): Promise<void>;
     getClientOptions(): Promise<object>;
     storeClientOptions(options: object): Promise<void>;
+    getPendingEvents(roomId: string): Promise<Partial<IEvent>[]>;
+    setPendingEvents(roomId: string, events: Partial<IEvent>[]): Promise<void>;
 }
 //# sourceMappingURL=stub.d.ts.map

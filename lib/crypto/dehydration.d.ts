@@ -1,6 +1,6 @@
 import { ISecretStorageKeyInfo } from "./api";
 import { Crypto } from "./index";
-declare type Signatures = Record<string, Record<string, string>>;
+import { ISignatures } from "../@types/signed";
 export interface IDehydratedDevice {
     device_id: string;
     device_data: ISecretStorageKeyInfo & {
@@ -16,12 +16,12 @@ export interface IDeviceKeys {
     device_id: string;
     user_id: string;
     keys: Record<string, string>;
-    signatures?: Signatures;
+    signatures?: ISignatures;
 }
 export interface IOneTimeKey {
     key: string;
     fallback?: boolean;
-    signatures?: Signatures;
+    signatures?: ISignatures;
 }
 export declare const DEHYDRATION_ALGORITHM = "org.matrix.msc2697.v1.olm.libolm_pickle";
 export declare class DehydrationManager {
@@ -44,5 +44,4 @@ export declare class DehydrationManager {
     dehydrateDevice(): Promise<string>;
     stop(): void;
 }
-export {};
 //# sourceMappingURL=dehydration.d.ts.map

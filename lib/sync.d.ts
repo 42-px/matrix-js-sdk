@@ -1,10 +1,27 @@
 import { Room } from "./models/room";
-import { Group } from "./models/group";
 import { IStoredClientOpts, MatrixClient } from "./client";
-import { SyncState } from "./sync.api";
-import { MatrixEvent } from "./models/event";
+import { MatrixError } from "./http-api";
+export declare enum SyncState {
+    /** Emitted after we try to sync more than `FAILED_SYNC_ERROR_THRESHOLD`
+     * times and are still failing. Or when we enounter a hard error like the
+     * token being invalid. */
+    Error = "ERROR",
+    /** Emitted after the first sync events are ready (this could even be sync
+     * events from the cache) */
+    Prepared = "PREPARED",
+    /** Emitted when the sync loop is no longer running */
+    Stopped = "STOPPED",
+    /** Emitted after each sync request happens */
+    Syncing = "SYNCING",
+    /** Emitted after a connectivity error and we're ready to start syncing again */
+    Catchup = "CATCHUP",
+    /** Emitted for each time we try reconnecting. Will switch to `Error` after
+     * we reach the `FAILED_SYNC_ERROR_THRESHOLD`
+     */
+    Reconnecting = "RECONNECTING"
+}
 export interface ISyncStateData {
-    error?: Error;
+    error?: MatrixError;
     oldSyncToken?: string;
     nextSyncToken?: string;
     catchingUp?: boolean;
@@ -46,31 +63,30 @@ export declare class SyncApi {
      */
     createRoom(roomId: string): Room;
     /**
-     * @param {string} groupId
-     * @return {Group}
-     */
-    createGroup(groupId: string): Group;
-    /**
      * @param {Room} room
      * @private
      */
     private registerStateListeners;
     /**
-     * @param {Room} room
+     * @param {RoomState} roomState The roomState to clear listeners from
      * @private
      */
     private deregisterStateListeners;
+    /** When we see the marker state change in the room, we know there is some
+     * new historical messages imported by MSC2716 `/batch_send` somewhere in
+     * the room and we need to throw away the timeline to make sure the
+     * historical messages are shown when we paginate `/messages` again.
+     * @param {Room} room The room where the marker event was sent
+     * @param {MatrixEvent} markerEvent The new marker event
+     * @param {ISetStateOptions} setStateOptions When `timelineWasEmpty` is set
+     * as `true`, the given marker event will be ignored
+    */
+    private onMarkerStateEvent;
     /**
      * Sync rooms the user has left.
      * @return {Promise} Resolved when they've been added to the store.
      */
     syncLeftRooms(): Promise<any[]>;
-    /**
-     * Split events between the ones that will end up in the main
-     * room timeline versus the one that need to be processed in a thread
-     * @experimental
-     */
-    partitionThreadedEvents(events: MatrixEvent[]): [MatrixEvent[], MatrixEvent[]];
     /**
      * Peek into a room. This will result in the room in question being synced so it
      * is accessible via getRooms(). Live updates for the room will be provided.
@@ -105,7 +121,7 @@ export declare class SyncApi {
      * @return {?Object}
      */
     getSyncStateData(): ISyncStateData;
-    recoverFromSyncStartupError(savedSyncPromise: Promise<void>, err: Error): Promise<void>;
+    recoverFromSyncStartupError(savedSyncPromise: Promise<void>, err: MatrixError): Promise<void>;
     /**
      * Is the lazy loading option different than in previous session?
      * @param {boolean} lazyLoadMembers current options for lazy loading
@@ -154,7 +170,7 @@ export declare class SyncApi {
      * Starts polling the connectivity check endpoint
      * @param {number} delay How long to delay until the first poll.
      *        defaults to a short, randomised interval (to prevent
-     *        tightlooping if /versions succeeds but /sync etc. fail).
+     *        tight-looping if /versions succeeds but /sync etc. fail).
      * @return {promise} which resolves once the connection returns
      */
     private startKeepAlives;
@@ -168,11 +184,6 @@ export declare class SyncApi {
      * @param {boolean} connDidFail True if a connectivity failure has been detected. Optional.
      */
     private pokeKeepAlive;
-    /**
-     * @param {Object} groupsSection Groups section object, eg. response.groups.invite
-     * @param {string} sectionName Which section this is ('invite', 'join' or 'leave')
-     */
-    private processGroupSyncEntry;
     /**
      * @param {Object} obj
      * @return {Object[]}
@@ -193,15 +204,11 @@ export declare class SyncApi {
      * @param {Room} room
      * @param {MatrixEvent[]} stateEventList A list of state events. This is the state
      * at the *START* of the timeline list if it is supplied.
-     * @param {MatrixEvent[]} [timelineEventList] A list of timeline events. Lower index
+     * @param {MatrixEvent[]} [timelineEventList] A list of timeline events, including threaded. Lower index
      * @param {boolean} fromCache whether the sync response came from cache
      * is earlier in time. Higher index is later.
      */
     private processRoomEvents;
-    /**
-     * @experimental
-     */
-    private processThreadEvents;
     /**
      * Takes a list of timelineEvents and adds and adds to notifEvents
      * as appropriate.

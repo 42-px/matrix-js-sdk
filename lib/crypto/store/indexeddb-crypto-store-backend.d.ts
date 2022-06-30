@@ -132,7 +132,7 @@ export declare class Backend implements CryptoStore {
     markSessionsNeedingBackup(sessions: ISession[], txn?: IDBTransaction): Promise<void>;
     addSharedHistoryInboundGroupSession(roomId: string, senderKey: string, sessionId: string, txn?: IDBTransaction): void;
     getSharedHistoryInboundGroupSessions(roomId: string, txn?: IDBTransaction): Promise<[senderKey: string, sessionId: string][]>;
-    doTxn<T>(mode: Mode, stores: Iterable<string>, func: (txn: IDBTransaction) => T, log?: PrefixedLogger): Promise<T>;
+    doTxn<T>(mode: Mode, stores: string | string[], func: (txn: IDBTransaction) => T, log?: PrefixedLogger): Promise<T>;
 }
 export declare function upgradeDatabase(db: IDBDatabase, oldVersion: number): void;
 //# sourceMappingURL=indexeddb-crypto-store-backend.d.ts.map

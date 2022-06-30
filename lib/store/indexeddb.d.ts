@@ -3,6 +3,7 @@ import { IEvent } from "../models/event";
 import { ISavedSync } from "./index";
 import { IIndexedDBBackend } from "./indexeddb-backend";
 import { ISyncResponse } from "../sync-accumulator";
+import { IStateEventWithRoomId } from "../@types/search";
 interface IOpts extends IBaseOpts {
     indexedDB: IDBFactory;
     dbName?: string;
@@ -108,7 +109,7 @@ export declare class IndexedDBStore extends MemoryStore {
      * @returns {event[]} the events, potentially an empty array if OOB loading didn't yield any new members
      * @returns {null} in case the members for this room haven't been stored yet
      */
-    getOutOfBandMembers: DegradableFn<[roomId: string], IEvent[]>;
+    getOutOfBandMembers: DegradableFn<[roomId: string], IStateEventWithRoomId[]>;
     /**
      * Stores the out-of-band membership events for this room. Note that
      * it still makes sense to store an empty array as the OOB status for the room is
@@ -117,7 +118,7 @@ export declare class IndexedDBStore extends MemoryStore {
      * @param {event[]} membershipEvents the membership events to store
      * @returns {Promise} when all members have been stored
      */
-    setOutOfBandMembers: DegradableFn<[roomId: string, membershipEvents: IEvent[]], void>;
+    setOutOfBandMembers: DegradableFn<[roomId: string, membershipEvents: IStateEventWithRoomId[]], void>;
     clearOutOfBandMembers: DegradableFn<[roomId: string], void>;
     getClientOptions: DegradableFn<[], object>;
     storeClientOptions: DegradableFn<[options: object], void>;
@@ -134,6 +135,8 @@ export declare class IndexedDBStore extends MemoryStore {
      * @returns {Function} A wrapped member function.
      */
     private degradable;
+    getPendingEvents(roomId: string): Promise<Partial<IEvent>[]>;
+    setPendingEvents(roomId: string, events: Partial<IEvent>[]): Promise<void>;
 }
 declare type DegradableFn<A extends Array<any>, T> = (...args: A) => Promise<T>;
 export {};

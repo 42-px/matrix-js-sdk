@@ -51,6 +51,7 @@ export * from './@types/requests';
 export * from './@types/search';
 export * from './models/room-summary';
 export * as ContentHelpers from "./content-helpers";
+export * from './lib';
 export {
     createNewMatrixCall,
 } from "./webrtc/call";

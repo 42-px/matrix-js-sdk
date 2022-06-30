@@ -1,11 +1,11 @@
-/// <reference types="node" />
 import { MatrixEvent } from "../models/event";
-import { EventEmitter } from "events";
 import { ICacheCallbacks } from "./CrossSigning";
 import { Crypto, IBootstrapCrossSigningOpts } from "./index";
-import { ICrossSigningKey, ICryptoCallbacks, ISignedKey, KeySignatures } from "../matrix";
+import { ClientEvent, ClientEventHandlerMap, ICrossSigningKey, ICryptoCallbacks, ISignedKey, KeySignatures } from "../matrix";
 import { ISecretStorageKeyInfo } from "./api";
 import { IKeyBackupInfo } from "./keybackup";
+import { TypedEventEmitter } from "../models/typed-event-emitter";
+import { IAccountDataClient } from "./SecretStorage";
 interface ICrossSigningKeys {
     authUpload: IBootstrapCrossSigningOpts["authUploadDeviceSigningKeys"];
     keys: Record<string, ICrossSigningKey>;
@@ -120,7 +120,7 @@ export declare class EncryptionSetupOperation {
  * Catches account data set by SecretStorage during bootstrapping by
  * implementing the methods related to account data in MatrixClient
  */
-declare class AccountDataClientAdapter extends EventEmitter {
+declare class AccountDataClientAdapter extends TypedEventEmitter<ClientEvent.AccountData, ClientEventHandlerMap> implements IAccountDataClient {
     private readonly existingValues;
     readonly values: Map<string, MatrixEvent>;
     /**

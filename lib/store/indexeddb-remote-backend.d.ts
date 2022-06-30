@@ -1,6 +1,6 @@
 import { ISavedSync } from "./index";
 import { IStartClientOpts } from "../client";
-import { IEvent, ISyncResponse } from "..";
+import { IStateEventWithRoomId, ISyncResponse } from "..";
 import { IIndexedDBBackend, UserTuple } from "./indexeddb-backend";
 export declare class RemoteIndexedDBStoreBackend implements IIndexedDBBackend {
     private readonly workerFactory;
@@ -51,7 +51,7 @@ export declare class RemoteIndexedDBStoreBackend implements IIndexedDBBackend {
      * @returns {event[]} the events, potentially an empty array if OOB loading didn't yield any new members
      * @returns {null} in case the members for this room haven't been stored yet
      */
-    getOutOfBandMembers(roomId: string): Promise<IEvent[] | null>;
+    getOutOfBandMembers(roomId: string): Promise<IStateEventWithRoomId[] | null>;
     /**
      * Stores the out-of-band membership events for this room. Note that
      * it still makes sense to store an empty array as the OOB status for the room is
@@ -60,7 +60,7 @@ export declare class RemoteIndexedDBStoreBackend implements IIndexedDBBackend {
      * @param {event[]} membershipEvents the membership events to store
      * @returns {Promise} when all members have been stored
      */
-    setOutOfBandMembers(roomId: string, membershipEvents: IEvent[]): Promise<void>;
+    setOutOfBandMembers(roomId: string, membershipEvents: IStateEventWithRoomId[]): Promise<void>;
     clearOutOfBandMembers(roomId: string): Promise<void>;
     getClientOptions(): Promise<IStartClientOpts>;
     storeClientOptions(options: IStartClientOpts): Promise<void>;

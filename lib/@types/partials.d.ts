@@ -54,4 +54,8 @@ export declare enum HistoryVisibility {
     Shared = "shared",
     WorldReadable = "world_readable"
 }
+export interface IUsageLimit {
+    limit_type: "monthly_active_user" | "hs_disabled" | string;
+    admin_contact?: string;
+}
 //# sourceMappingURL=partials.d.ts.map

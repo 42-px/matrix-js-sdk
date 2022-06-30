@@ -1,5 +1,5 @@
 import { ISavedSync } from "./index";
-import { IEvent, IStartClientOpts, ISyncResponse } from "..";
+import { IEvent, IStartClientOpts, IStateEventWithRoomId, ISyncResponse } from "..";
 export interface IIndexedDBBackend {
     connect(): Promise<void>;
     syncToDatabase(userTuples: UserTuple[]): Promise<void>;
@@ -8,8 +8,8 @@ export interface IIndexedDBBackend {
     getSavedSync(): Promise<ISavedSync>;
     getNextBatchToken(): Promise<string>;
     clearDatabase(): Promise<void>;
-    getOutOfBandMembers(roomId: string): Promise<IEvent[] | null>;
-    setOutOfBandMembers(roomId: string, membershipEvents: IEvent[]): Promise<void>;
+    getOutOfBandMembers(roomId: string): Promise<IStateEventWithRoomId[] | null>;
+    setOutOfBandMembers(roomId: string, membershipEvents: IStateEventWithRoomId[]): Promise<void>;
     clearOutOfBandMembers(roomId: string): Promise<void>;
     getUserPresenceEvents(): Promise<UserTuple[]>;
     getClientOptions(): Promise<IStartClientOpts>;

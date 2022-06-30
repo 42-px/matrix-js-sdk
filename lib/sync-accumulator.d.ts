@@ -7,6 +7,7 @@ interface IOpts {
 export interface IMinimalEvent {
     content: IContent;
     type: EventType | string;
+    unsigned?: IUnsigned;
 }
 export interface IEphemeral {
     events: IMinimalEvent[];
@@ -19,7 +20,6 @@ export interface IRoomEvent extends IMinimalEvent {
     event_id: string;
     sender: string;
     origin_server_ts: number;
-    unsigned?: IUnsigned;
     /** @deprecated - legacy field */
     age?: number;
 }
@@ -83,11 +83,6 @@ interface IDeviceLists {
     changed: string[];
     left: string[];
 }
-export interface IGroups {
-    [Category.Join]: object;
-    [Category.Invite]: object;
-    [Category.Leave]: object;
-}
 export interface ISyncResponse {
     next_batch: string;
     rooms: IRooms;
@@ -96,7 +91,6 @@ export interface ISyncResponse {
     to_device?: IToDevice;
     device_lists?: IDeviceLists;
     device_one_time_keys_count?: Record<string, number>;
-    groups: IGroups;
 }
 export declare enum Category {
     Invite = "invite",
@@ -107,7 +101,6 @@ export interface ISyncData {
     nextBatch: string;
     accountData: IMinimalEvent[];
     roomsData: IRooms;
-    groupsData: IGroups;
 }
 /**
  * The purpose of this class is to accumulate /sync responses such that a
@@ -125,7 +118,6 @@ export declare class SyncAccumulator {
     private inviteRooms;
     private joinRooms;
     private nextBatch;
-    private groups;
     /**
      * @param {Object} opts
      * @param {Number=} opts.maxTimelineEntries The ideal maximum number of
@@ -147,12 +139,6 @@ export declare class SyncAccumulator {
     private accumulateRoom;
     private accumulateInviteState;
     private accumulateJoinState;
-    /**
-     * Accumulate incremental /sync group data.
-     * @param {Object} syncResponse the complete /sync JSON
-     */
-    private accumulateGroups;
-    private accumulateGroup;
     /**
      * Return everything under the 'rooms' key from a /sync response which
      * represents all room data that should be stored. This should be paired

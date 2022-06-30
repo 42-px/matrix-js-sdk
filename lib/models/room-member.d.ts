@@ -1,12 +1,20 @@
-/// <reference types="node" />
-/**
- * @module models/room-member
- */
-import { EventEmitter } from "events";
 import { User } from "./user";
 import { MatrixEvent } from "./event";
 import { RoomState } from "./room-state";
-export declare class RoomMember extends EventEmitter {
+import { TypedEventEmitter } from "./typed-event-emitter";
+export declare enum RoomMemberEvent {
+    Membership = "RoomMember.membership",
+    Name = "RoomMember.name",
+    PowerLevel = "RoomMember.powerLevel",
+    Typing = "RoomMember.typing"
+}
+export declare type RoomMemberEventHandlerMap = {
+    [RoomMemberEvent.Membership]: (event: MatrixEvent, member: RoomMember, oldMembership: string | null) => void;
+    [RoomMemberEvent.Name]: (event: MatrixEvent, member: RoomMember, oldName: string | null) => void;
+    [RoomMemberEvent.PowerLevel]: (event: MatrixEvent, member: RoomMember) => void;
+    [RoomMemberEvent.Typing]: (event: MatrixEvent, member: RoomMember) => void;
+};
+export declare class RoomMember extends TypedEventEmitter<RoomMemberEvent, RoomMemberEventHandlerMap> {
     readonly roomId: string;
     readonly userId: string;
     private _isOutOfBand;

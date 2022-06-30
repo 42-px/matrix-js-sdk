@@ -1,21 +1,57 @@
-/// <reference types="node" />
 /**
  * @module models/room-state
  */
-import { EventEmitter } from "events";
 import { RoomMember } from "./room-member";
 import { EventType } from "../@types/event";
 import { MatrixEvent } from "./event";
 import { MatrixClient } from "../client";
 import { GuestAccess, HistoryVisibility, JoinRule } from "../@types/partials";
+import { TypedEventEmitter } from "./typed-event-emitter";
+import { Beacon, BeaconEvent, BeaconEventHandlerMap, BeaconIdentifier } from "./beacon";
+import { TypedReEmitter } from "../ReEmitter";
+export interface IMarkerFoundOptions {
+    /** Whether the timeline was empty before the marker event arrived in the
+     *  room. This could be happen in a variety of cases:
+     *  1. From the initial sync
+     *  2. It's the first state we're seeing after joining the room
+     *  3. Or whether it's coming from `syncFromCache`
+     *
+     * A marker event refers to `UNSTABLE_MSC2716_MARKER` and indicates that
+     * history was imported somewhere back in time. It specifically points to an
+     * MSC2716 insertion event where the history was imported at. Marker events
+     * are sent as state events so they are easily discoverable by clients and
+     * homeservers and don't get lost in timeline gaps.
+     */
+    timelineWasEmpty?: boolean;
+}
 declare enum OobStatus {
     NotStarted = 0,
     InProgress = 1,
     Finished = 2
 }
-export declare class RoomState extends EventEmitter {
+export declare enum RoomStateEvent {
+    Events = "RoomState.events",
+    Members = "RoomState.members",
+    NewMember = "RoomState.newMember",
+    Update = "RoomState.update",
+    BeaconLiveness = "RoomState.BeaconLiveness",
+    Marker = "RoomState.Marker"
+}
+export declare type RoomStateEventHandlerMap = {
+    [RoomStateEvent.Events]: (event: MatrixEvent, state: RoomState, lastStateEvent: MatrixEvent | null) => void;
+    [RoomStateEvent.Members]: (event: MatrixEvent, state: RoomState, member: RoomMember) => void;
+    [RoomStateEvent.NewMember]: (event: MatrixEvent, state: RoomState, member: RoomMember) => void;
+    [RoomStateEvent.Update]: (state: RoomState) => void;
+    [RoomStateEvent.BeaconLiveness]: (state: RoomState, hasLiveBeacons: boolean) => void;
+    [RoomStateEvent.Marker]: (event: MatrixEvent, setStateOptions: IMarkerFoundOptions) => void;
+    [BeaconEvent.New]: (event: MatrixEvent, beacon: Beacon) => void;
+};
+declare type EmittedEvents = RoomStateEvent | BeaconEvent;
+declare type EventHandlerMap = RoomStateEventHandlerMap & BeaconEventHandlerMap;
+export declare class RoomState extends TypedEventEmitter<EmittedEvents, EventHandlerMap> {
     readonly roomId: string;
     private oobMemberFlags;
+    readonly reEmitter: TypedReEmitter<EmittedEvents, EventHandlerMap>;
     private sentinels;
     private displayNameToUserIds;
     private userIdsToDisplayNames;
@@ -28,6 +64,8 @@ export declare class RoomState extends EventEmitter {
     members: Record<string, RoomMember>;
     events: Map<string, Map<string, MatrixEvent>>;
     paginationToken: string;
+    readonly beacons: Map<string, Beacon>;
+    private _liveBeaconIds;
     /**
      * Construct room state.
      *
@@ -124,6 +162,8 @@ export declare class RoomState extends EventEmitter {
      */
     getStateEvents(eventType: EventType | string): MatrixEvent[];
     getStateEvents(eventType: EventType | string, stateKey: string): MatrixEvent;
+    get hasLiveBeacons(): boolean;
+    get liveBeaconIds(): BeaconIdentifier[];
     /**
      * Creates a copy of this room state so that mutations to either won't affect the other.
      * @return {RoomState} the copy of the room state
@@ -138,16 +178,20 @@ export declare class RoomState extends EventEmitter {
      */
     setUnknownStateEvents(events: MatrixEvent[]): void;
     /**
-     * Add an array of one or more state MatrixEvents, overwriting
-     * any existing state with the same {type, stateKey} tuple. Will fire
-     * "RoomState.events" for every event added. May fire "RoomState.members"
-     * if there are <code>m.room.member</code> events.
+     * Add an array of one or more state MatrixEvents, overwriting any existing
+     * state with the same {type, stateKey} tuple. Will fire "RoomState.events"
+     * for every event added. May fire "RoomState.members" if there are
+     * <code>m.room.member</code> events. May fire "RoomStateEvent.Marker" if there are
+     * <code>UNSTABLE_MSC2716_MARKER</code> events.
      * @param {MatrixEvent[]} stateEvents a list of state events for this room.
+     * @param {IMarkerFoundOptions} markerFoundOptions
      * @fires module:client~MatrixClient#event:"RoomState.members"
      * @fires module:client~MatrixClient#event:"RoomState.newMember"
      * @fires module:client~MatrixClient#event:"RoomState.events"
+     * @fires module:client~MatrixClient#event:"RoomStateEvent.Marker"
      */
-    setStateEvents(stateEvents: MatrixEvent[]): void;
+    setStateEvents(stateEvents: MatrixEvent[], markerFoundOptions?: IMarkerFoundOptions): void;
+    processBeaconEvents(events: MatrixEvent[], matrixClient: MatrixClient): void;
     /**
      * Looks up a member by the given userId, and if it doesn't exist,
      * create it and emit the `RoomState.newMember` event.
@@ -160,6 +204,16 @@ export declare class RoomState extends EventEmitter {
      */
     private getOrCreateMember;
     private setStateEvent;
+    /**
+     * @experimental
+     */
+    private setBeacon;
+    /**
+     * @experimental
+     * Check liveness of room beacons
+     * emit RoomStateEvent.BeaconLiveness event
+     */
+    private onBeaconLivenessChange;
     private getStateEventMatching;
     private updateMember;
     /**
@@ -253,14 +307,14 @@ export declare class RoomState extends EventEmitter {
      */
     maySendEvent(eventType: EventType | string, userId: string): boolean;
     /**
-     * Returns true if the given MatrixClient has permission to send a state
-     * event of type `stateEventType` into this room.
-     * @param {string} stateEventType The type of state events to test
-     * @param {MatrixClient} cli The client to test permission for
-     * @return {boolean} true if the given client should be permitted to send
-     *                        the given type of state event into this room,
-     *                        according to the room's state.
-     */
+      * Returns true if the given MatrixClient has permission to send a state
+      * event of type `stateEventType` into this room.
+      * @param {string} stateEventType The type of state events to test
+      * @param {MatrixClient} cli The client to test permission for
+      * @return {boolean} true if the given client should be permitted to send
+      *                        the given type of state event into this room,
+      *                        according to the room's state.
+      */
     mayClientSendStateEvent(stateEventType: EventType | string, cli: MatrixClient): boolean;
     /**
      * Returns true if the given user ID has permission to send a state

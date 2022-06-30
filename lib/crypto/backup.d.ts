@@ -6,7 +6,8 @@
 import { MatrixClient } from "../client";
 import { DeviceInfo } from "./deviceinfo";
 import { DeviceTrustLevel } from './CrossSigning';
-import { ICurve25519AuthData, IAes256AuthData, IKeyBackupInfo, IKeyBackupSession } from "./keybackup";
+import { IAes256AuthData, ICurve25519AuthData, IKeyBackupInfo, IKeyBackupSession } from "./keybackup";
+import { IMegolmSessionData } from "./index";
 declare type AuthData = IKeyBackupInfo["auth_data"];
 declare type SigInfo = {
     deviceId: string;
@@ -42,7 +43,7 @@ interface BackupAlgorithmClass {
 interface BackupAlgorithm {
     untrusted: boolean;
     encryptSession(data: Record<string, any>): Promise<any>;
-    decryptSessions(ciphertexts: Record<string, IKeyBackupSession>): Promise<Record<string, any>[]>;
+    decryptSessions(ciphertexts: Record<string, IKeyBackupSession>): Promise<IMegolmSessionData[]>;
     authData: AuthData;
     keyMatches(key: ArrayLike<number>): Promise<boolean>;
     free(): void;
@@ -66,6 +67,7 @@ export declare class BackupManager {
     backupInfo: IKeyBackupInfo | undefined;
     checkedForBackup: boolean;
     private sendingBackups;
+    private sessionLastCheckAttemptedTime;
     constructor(baseApis: MatrixClient, getKey: GetKey);
     get version(): string | undefined;
     /**
@@ -103,6 +105,11 @@ export declare class BackupManager {
      */
     checkKeyBackup(): Promise<IKeyBackupCheck>;
     /**
+     * Attempts to retrieve a session from a key backup, if enough time
+     * has elapsed since the last check for this session id.
+     */
+    queryKeyBackupRateLimited(targetRoomId: string | undefined, targetSessionId: string | undefined): Promise<void>;
+    /**
      * Check if the given backup info is trusted.
      *
      * @param {IKeyBackupInfo} backupInfo key backup info dict from /room_keys/version
@@ -127,10 +134,10 @@ export declare class BackupManager {
      * Take some e2e keys waiting to be backed up and send them
      * to the backup.
      *
-     * @param {integer} limit Maximum number of keys to back up
-     * @returns {integer} Number of sessions backed up
+     * @param {number} limit Maximum number of keys to back up
+     * @returns {number} Number of sessions backed up
      */
-    private backupPendingKeys;
+    backupPendingKeys(limit: number): Promise<number>;
     backupGroupSession(senderKey: string, sessionId: string): Promise<void>;
     /**
      * Marks all group sessions as needing to be backed up and schedules them to
@@ -162,7 +169,7 @@ export declare class Curve25519 implements BackupAlgorithm {
     static checkBackupVersion(info: IKeyBackupInfo): void;
     get untrusted(): boolean;
     encryptSession(data: Record<string, any>): Promise<any>;
-    decryptSessions(sessions: Record<string, IKeyBackupSession>): Promise<Record<string, any>[]>;
+    decryptSessions(sessions: Record<string, IKeyBackupSession>): Promise<IMegolmSessionData[]>;
     keyMatches(key: Uint8Array): Promise<boolean>;
     free(): void;
 }
@@ -176,7 +183,7 @@ export declare class Aes256 implements BackupAlgorithm {
     static checkBackupVersion(info: IKeyBackupInfo): void;
     get untrusted(): boolean;
     encryptSession(data: Record<string, any>): Promise<any>;
-    decryptSessions(sessions: Record<string, IKeyBackupSession>): Promise<Record<string, any>[]>;
+    decryptSessions(sessions: Record<string, IKeyBackupSession>): Promise<IMegolmSessionData[]>;
     keyMatches(key: Uint8Array): Promise<boolean>;
     free(): void;
 }

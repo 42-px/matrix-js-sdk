@@ -1,45 +1,34 @@
-/// <reference types="request" />
-/// <reference types="node" />
-/**
- * This is an internal module. See {@link MatrixClient} for the public class.
- * @module client
- */
-import { EventEmitter } from "events";
-import { ISyncStateData, SyncApi } from "./sync";
-import { IContent, IDecryptOptions, IEvent, MatrixEvent } from "./models/event";
-import { MatrixCall } from "./webrtc/call";
+import { ISyncStateData, SyncApi, SyncState } from "./sync";
+import { IContent, IDecryptOptions, IEvent, MatrixEvent, MatrixEventEvent, MatrixEventHandlerMap } from "./models/event";
+import { CallEvent, CallEventHandlerMap, MatrixCall } from "./webrtc/call";
 import { Filter, IFilterDefinition } from "./filter";
-import { CallEventHandler } from './webrtc/callEventHandler';
-import { Group } from "./models/group";
+import { CallEventHandlerEvent, CallEventHandler, CallEventHandlerEventHandlerMap } from './webrtc/callEventHandler';
 import { Direction, EventTimeline } from "./models/event-timeline";
 import { IActionsObject, PushProcessor } from "./pushprocessor";
 import { AutoDiscoveryAction } from "./autodiscovery";
 import { IExportedDevice as IOlmDevice } from "./crypto/OlmDevice";
-import { ReEmitter } from './ReEmitter';
+import { TypedReEmitter } from './ReEmitter';
 import { IRoomEncryption, RoomList } from './crypto/RoomList';
 import { SERVICE_TYPES } from './service-types';
-import { MatrixError, MatrixHttpApi } from "./http-api";
-import { Crypto, IBootstrapCrossSigningOpts, ICheckOwnCrossSigningTrustOpts, IMegolmSessionData, VerificationMethod } from './crypto';
+import { FileType, HttpApiEvent, HttpApiEventHandlerMap, IHttpOpts, IUpload, MatrixError, MatrixHttpApi, UploadContentResponseType } from "./http-api";
+import { Crypto, CryptoEvent, CryptoEventHandlerMap, IBootstrapCrossSigningOpts, ICheckOwnCrossSigningTrustOpts, IMegolmSessionData, VerificationMethod } from './crypto';
 import { DeviceInfo, IDevice } from "./crypto/deviceinfo";
-import { User } from "./models/user";
+import { User, UserEvent, UserEventHandlerMap } from "./models/user";
 import { IDehydratedDevice, IDehydratedDeviceKeyInfo, IDeviceKeys, IOneTimeKey } from "./crypto/dehydration";
 import { IKeyBackupInfo, IKeyBackupPrepareOpts, IKeyBackupRestoreOpts, IKeyBackupRestoreResult } from "./crypto/keybackup";
 import { IIdentityServerProvider } from "./@types/IIdentityServerProvider";
 import { MatrixScheduler } from "./scheduler";
-import { ICryptoCallbacks, IMinimalEvent, IRoomEvent, IStateEvent } from "./matrix";
+import { IAuthData, ICryptoCallbacks, IMinimalEvent, IRoomEvent, IStateEvent, BeaconEvent, BeaconEventHandlerMap, RoomEvent, RoomEventHandlerMap, RoomMemberEvent, RoomMemberEventHandlerMap, RoomStateEvent, RoomStateEventHandlerMap, ITagsResponse, IStatusResponse, IPushRule, IAuthDict } from "./matrix";
 import { CrossSigningKey, IAddSecretStorageKeyOpts, ICreateSecretStorageOpts, IEncryptedEventInfo, IImportRoomKeysOpts, IRecoveryKey, ISecretStorageKeyInfo } from "./crypto/api";
-import { SyncState } from "./sync.api";
 import { EventTimelineSet } from "./models/event-timeline-set";
 import { VerificationRequest } from "./crypto/verification/request/VerificationRequest";
 import { VerificationBase as Verification } from "./crypto/verification/Base";
 import { CrossSigningInfo, DeviceTrustLevel, ICacheCallbacks, UserTrustLevel } from "./crypto/CrossSigning";
 import { Room } from "./models/room";
-import { IAddThreePidOnlyBody, IBindThreePidBody, ICreateRoomOpts, IEventSearchOpts, IGuestAccessOpts, IJoinRoomOpts, IPaginateOpts, IPresenceOpts, IRedactOpts, IRoomDirectoryOptions, ISearchOpts, ISendEventResponse, IUploadOpts } from "./@types/requests";
-import { EventType, RoomType } from "./@types/event";
+import { IAddThreePidOnlyBody, IBindThreePidBody, ICreateRoomOpts, IEventSearchOpts, IGuestAccessOpts, IJoinRoomOpts, IPaginateOpts, IPresenceOpts, IRedactOpts, IRelationsRequestOpts, IRelationsResponse, IRoomDirectoryOptions, ISearchOpts, ISendEventResponse, IUploadOpts } from "./@types/requests";
+import { EventType, RelationType, RoomType } from "./@types/event";
 import { IAbortablePromise, IdServerUnbindResult, IImageInfo, Preset, Visibility } from "./@types/partials";
 import { EventMapper, MapperOpts } from "./event-mapper";
-import { ReadStream } from "fs";
-import { WebStorageSessionStore } from "./store/session/webstorage";
 import { IKeyBackup, IKeyBackupCheck, IPreparedKeyBackupVersion, TrustInfo } from "./crypto/backup";
 import { MSC3089TreeSpace } from "./models/MSC3089TreeSpace";
 import { ISignatures } from "./@types/signed";
@@ -47,14 +36,17 @@ import { IStore } from "./store";
 import { ISecretRequest } from "./crypto/SecretStorage";
 import { IEventWithRoomId, ISearchRequestBody, ISearchResponse, ISearchResults, IStateEventWithRoomId } from "./@types/search";
 import { ISynapseAdminDeactivateResponse, ISynapseAdminWhoisResponse } from "./@types/synapse";
-import { IHierarchyRoom, ISpaceSummaryEvent, ISpaceSummaryRoom } from "./@types/spaces";
+import { IHierarchyRoom } from "./@types/spaces";
 import { IPusher, IPusherRequest, IPushRules, PushRuleAction, PushRuleKind, RuleId } from "./@types/PushRules";
 import { IThreepid } from "./@types/threepids";
 import { CryptoStore } from "./crypto/store/base";
 import { MediaHandler } from "./webrtc/mediaHandler";
+import { IRefreshTokenResponse } from "./@types/auth";
+import { TypedEventEmitter } from "./models/typed-event-emitter";
+import { ReceiptType } from "./@types/read_receipts";
+import { MBeaconInfoEventContent } from "./@types/beacon";
 export declare type Store = IStore;
-export declare type SessionStore = WebStorageSessionStore;
-export declare type Callback = (err: Error | any | null, data?: any) => void;
+export declare type Callback<T = any> = (err: Error | any | null, data?: T) => void;
 export declare type ResetTimelineCallback = (roomId: string) => boolean;
 export declare const CRYPTO_ENABLED: boolean;
 interface IExportedDevice {
@@ -95,7 +87,7 @@ export interface ICreateClientOpts {
      * </code> as it returns a function which meets the required interface. See
      * {@link requestFunction} for more information.
      */
-    request?: Request;
+    request?: IHttpOpts["request"];
     userId?: string;
     /**
      * A unique identifier for this device; used for tracking things like crypto
@@ -136,7 +128,7 @@ export interface ICreateClientOpts {
      * to all requests with this client. Useful for application services which require
      * <code>?user_id=</code>.
      */
-    queryParams?: Record<string, unknown>;
+    queryParams?: Record<string, string>;
     /**
      * Device data exported with
      * "exportDevice" method that must be imported to recreate this device.
@@ -149,19 +141,6 @@ export interface ICreateClientOpts {
      * Key used to pickle olm objects or other sensitive data.
      */
     pickleKey?: string;
-    /**
-     * A store to be used for end-to-end crypto session data. Most data has been
-     * migrated out of here to `cryptoStore` instead. If not specified,
-     * end-to-end crypto will be disabled. The `createClient` helper
-     * _will not_ create this store at the moment.
-     */
-    sessionStore?: SessionStore;
-    /**
-     * Set to true to enable client-side aggregation of event relations
-     * via `EventTimelineSet#getRelationsForEvent`.
-     * This feature is currently unstable and the API may change without notice.
-     */
-    unstableClientRelationAggregation?: boolean;
     verificationMethods?: Array<VerificationMethod>;
     /**
      * Whether relaying calls through a TURN server should be forced. Default false.
@@ -261,13 +240,18 @@ export interface IRoomVersionsCapability {
     available: Record<string, RoomVersionStability>;
     "org.matrix.msc3244.room_capabilities"?: Record<string, IRoomCapability>;
 }
-export interface IChangePasswordCapability {
+export interface ICapability {
     enabled: boolean;
+}
+export interface IChangePasswordCapability extends ICapability {
+}
+export interface IThreadsCapability extends ICapability {
 }
 interface ICapabilities {
     [key: string]: any;
     "m.change_password"?: IChangePasswordCapability;
     "m.room_versions"?: IRoomVersionsCapability;
+    "io.element.thread"?: IThreadsCapability;
 }
 export interface ICrossSigningKey {
     keys: {
@@ -291,7 +275,7 @@ export interface ISignedKey {
     device_id: string;
 }
 export declare type KeySignatures = Record<string, Record<string, ICrossSigningKey | ISignedKey>>;
-interface IUploadKeySignaturesResponse {
+export interface IUploadKeySignaturesResponse {
     failures: Record<string, Record<string, {
         errcode: string;
         error: string;
@@ -321,7 +305,7 @@ interface ITurnServer {
     credential: string;
 }
 interface IServerVersions {
-    versions: string;
+    versions: string[];
     unstable_features: Record<string, boolean>;
 }
 export interface IClientWellKnown {
@@ -359,13 +343,9 @@ export interface IRequestMsisdnTokenResponse extends IRequestTokenResponse {
     success: boolean;
     intl_fmt: string;
 }
-interface IUploadKeysRequest {
+export interface IUploadKeysRequest {
     device_keys?: Required<IDeviceKeys>;
-    one_time_keys?: {
-        [userId: string]: {
-            [deviceId: string]: number;
-        };
-    };
+    one_time_keys?: Record<string, IOneTimeKey>;
     "org.matrix.msc2732.fallback_keys"?: Record<string, IOneTimeKey>;
 }
 interface IOpenIDToken {
@@ -398,6 +378,18 @@ interface IJoinedMembersResponse {
         };
     };
 }
+export interface IRegisterRequestParams {
+    auth?: IAuthData;
+    username?: string;
+    password?: string;
+    refresh_token?: boolean;
+    guest_access_token?: string;
+    x_show_msisdn?: boolean;
+    bind_msisdn?: boolean;
+    bind_email?: boolean;
+    inhibit_login?: boolean;
+    initial_device_display_name?: string;
+}
 export interface IPublicRoomsChunkRoom {
     room_id: string;
     name?: string;
@@ -429,7 +421,7 @@ export interface IMyDevice {
     last_seen_ip?: string;
     last_seen_ts?: number;
 }
-interface IDownloadKeyResult {
+export interface IDownloadKeyResult {
     failures: {
         [serverName: string]: object;
     };
@@ -442,14 +434,48 @@ interface IDownloadKeyResult {
             };
         };
     };
+    master_keys?: {
+        [userId: string]: {
+            keys: {
+                [keyId: string]: string;
+            };
+            usage: string[];
+            user_id: string;
+        };
+    };
+    self_signing_keys?: {
+        [userId: string]: {
+            keys: {
+                [keyId: string]: string;
+            };
+            signatures: ISignatures;
+            usage: string[];
+            user_id: string;
+        };
+    };
+    user_signing_keys?: {
+        [userId: string]: {
+            keys: {
+                [keyId: string]: string;
+            };
+            signatures: ISignatures;
+            usage: string[];
+            user_id: string;
+        };
+    };
 }
-interface IClaimOTKsResult {
+export interface IClaimOTKsResult {
     failures: {
         [serverName: string]: object;
     };
     one_time_keys: {
         [userId: string]: {
-            [deviceId: string]: string;
+            [deviceId: string]: {
+                [keyId: string]: {
+                    key: string;
+                    signatures: ISignatures;
+                };
+            };
         };
     };
 }
@@ -486,14 +512,49 @@ interface IRoomSummary extends Omit<IPublicRoomsChunkRoom, "canonical_alias" | "
     membership?: string;
     is_encrypted: boolean;
 }
+interface IRoomHierarchy {
+    rooms: IHierarchyRoom[];
+    next_batch?: string;
+}
+interface ITimestampToEventResponse {
+    event_id: string;
+    origin_server_ts: string;
+}
+export declare enum ClientEvent {
+    Sync = "sync",
+    Event = "event",
+    ToDeviceEvent = "toDeviceEvent",
+    AccountData = "accountData",
+    Room = "Room",
+    DeleteRoom = "deleteRoom",
+    SyncUnexpectedError = "sync.unexpectedError",
+    ClientWellKnown = "WellKnown.client"
+}
+declare type RoomEvents = RoomEvent.Name | RoomEvent.Redaction | RoomEvent.RedactionCancelled | RoomEvent.Receipt | RoomEvent.Tags | RoomEvent.LocalEchoUpdated | RoomEvent.HistoryImportedWithinTimeline | RoomEvent.AccountData | RoomEvent.MyMembership | RoomEvent.Timeline | RoomEvent.TimelineReset;
+declare type RoomStateEvents = RoomStateEvent.Events | RoomStateEvent.Members | RoomStateEvent.NewMember | RoomStateEvent.Update | RoomStateEvent.Marker;
+declare type CryptoEvents = CryptoEvent.KeySignatureUploadFailure | CryptoEvent.KeyBackupStatus | CryptoEvent.KeyBackupFailed | CryptoEvent.KeyBackupSessionsRemaining | CryptoEvent.RoomKeyRequest | CryptoEvent.RoomKeyRequestCancellation | CryptoEvent.VerificationRequest | CryptoEvent.DeviceVerificationChanged | CryptoEvent.UserTrustStatusChanged | CryptoEvent.KeysChanged | CryptoEvent.Warning | CryptoEvent.DevicesUpdated | CryptoEvent.WillUpdateDevices;
+declare type MatrixEventEvents = MatrixEventEvent.Decrypted | MatrixEventEvent.Replaced | MatrixEventEvent.VisibilityChange;
+declare type RoomMemberEvents = RoomMemberEvent.Name | RoomMemberEvent.Typing | RoomMemberEvent.PowerLevel | RoomMemberEvent.Membership;
+declare type UserEvents = UserEvent.AvatarUrl | UserEvent.DisplayName | UserEvent.Presence | UserEvent.CurrentlyActive | UserEvent.LastPresenceTs;
+declare type EmittedEvents = ClientEvent | RoomEvents | RoomStateEvents | CryptoEvents | MatrixEventEvents | RoomMemberEvents | UserEvents | CallEvent | CallEventHandlerEvent.Incoming | HttpApiEvent.SessionLoggedOut | HttpApiEvent.NoConsent | BeaconEvent;
+export declare type ClientEventHandlerMap = {
+    [ClientEvent.Sync]: (state: SyncState, lastState?: SyncState, data?: ISyncStateData) => void;
+    [ClientEvent.Event]: (event: MatrixEvent) => void;
+    [ClientEvent.ToDeviceEvent]: (event: MatrixEvent) => void;
+    [ClientEvent.AccountData]: (event: MatrixEvent, lastEvent?: MatrixEvent) => void;
+    [ClientEvent.Room]: (room: Room) => void;
+    [ClientEvent.DeleteRoom]: (roomId: string) => void;
+    [ClientEvent.SyncUnexpectedError]: (error: Error) => void;
+    [ClientEvent.ClientWellKnown]: (data: IClientWellKnown) => void;
+} & RoomEventHandlerMap & RoomStateEventHandlerMap & CryptoEventHandlerMap & MatrixEventHandlerMap & RoomMemberEventHandlerMap & UserEventHandlerMap & CallEventHandlerEventHandlerMap & CallEventHandlerMap & HttpApiEventHandlerMap & BeaconEventHandlerMap;
 /**
  * Represents a Matrix Client. Only directly construct this if you want to use
  * custom modules. Normally, {@link createClient} should be used
  * as it specifies 'sensible' defaults for these modules.
  */
-export declare class MatrixClient extends EventEmitter {
+export declare class MatrixClient extends TypedEventEmitter<EmittedEvents, ClientEventHandlerMap> {
     static readonly RESTORE_BACKUP_ERROR_BAD_KEY = "RESTORE_BACKUP_ERROR_BAD_KEY";
-    reEmitter: ReEmitter;
+    reEmitter: TypedReEmitter<EmittedEvents, ClientEventHandlerMap>;
     olmVersion: [number, number, number];
     usingExternalCrypto: boolean;
     store: Store;
@@ -508,9 +569,7 @@ export declare class MatrixClient extends EventEmitter {
     urlPreviewCache: {
         [key: string]: Promise<IPreviewUrlResponse>;
     };
-    unstableClientRelationAggregation: boolean;
     identityServer: IIdentityServerProvider;
-    sessionStore: SessionStore;
     http: MatrixHttpApi;
     crypto: Crypto;
     cryptoCallbacks: ICryptoCallbacks;
@@ -535,15 +594,15 @@ export declare class MatrixClient extends EventEmitter {
     protected fallbackICEServerAllowed: boolean;
     protected roomList: RoomList;
     protected syncApi: SyncApi;
-    pushRules: any;
+    pushRules: IPushRules;
     protected syncLeftRoomsPromise: Promise<Room[]>;
     protected syncedLeftRooms: boolean;
     protected clientOpts: IStoredClientOpts;
-    protected clientWellKnownIntervalID: number;
+    protected clientWellKnownIntervalID: ReturnType<typeof setInterval>;
     protected canResetTimelineCallback: ResetTimelineCallback;
     protected pushProcessor: PushProcessor;
     protected serverVersionsPromise: Promise<IServerVersions>;
-    protected cachedCapabilities: {
+    cachedCapabilities: {
         capabilities: ICapabilities;
         expiration: number;
     };
@@ -551,10 +610,11 @@ export declare class MatrixClient extends EventEmitter {
     protected clientWellKnownPromise: Promise<IClientWellKnown>;
     protected turnServers: ITurnServer[];
     protected turnServersExpiry: number;
-    protected checkTurnServersIntervalID: number;
+    protected checkTurnServersIntervalID: ReturnType<typeof setInterval>;
     protected exportedOlmDeviceToImport: IOlmDevice;
     protected txnCtr: number;
     protected mediaHandler: MediaHandler;
+    protected pendingEventEncryption: Map<string, Promise<void>>;
     constructor(opts: IMatrixClientCreateOpts);
     /**
      * High level helper method to begin syncing and poll for new events. To listen for these
@@ -563,7 +623,7 @@ export declare class MatrixClient extends EventEmitter {
      * state change events.
      * @param {Object=} opts Options to apply when syncing.
      */
-    startClient(opts: IStartClientOpts): Promise<void>;
+    startClient(opts?: IStartClientOpts): Promise<void>;
     /**
      * High level helper method to stop the client from polling and allow a
      * clean shutdown.
@@ -879,7 +939,7 @@ export declare class MatrixClient extends EventEmitter {
      * @returns {Verification} a verification object
      * @deprecated Use `requestVerification` instead.
      */
-    beginKeyVerification(method: string, userId: string, deviceId: string): Verification;
+    beginKeyVerification(method: string, userId: string, deviceId: string): Verification<any, any>;
     checkSecretStorageKey(key: Uint8Array, info: ISecretStorageKeyInfo): Promise<boolean>;
     /**
      * Set the global override for whether the client should ever send encrypted
@@ -953,6 +1013,15 @@ export declare class MatrixClient extends EventEmitter {
      * @returns {DeviceTrustLevel}
      */
     checkDeviceTrust(userId: string, deviceId: string): DeviceTrustLevel;
+    /**
+     * Check whether one of our own devices is cross-signed by our
+     * user's stored keys, regardless of whether we trust those keys yet.
+     *
+     * @param {string} deviceId The ID of the device to check
+     *
+     * @returns {boolean} true if the device is cross-signed
+     */
+    checkIfOwnDeviceCrossSigned(deviceId: string): boolean;
     /**
      * Check the copy of our cross-signing key that we have in the device list and
      * see if we can get the private key. If so, mark it as trusted.
@@ -1138,14 +1207,11 @@ export declare class MatrixClient extends EventEmitter {
      * The Secure Secret Storage API is currently UNSTABLE and may change without notice.
      *
      * @param {string} name the name of the secret
-     * @param {boolean} checkKey check if the secret is encrypted by a trusted
-     *     key
-     *
      * @return {object?} map of key name to key info the secret is encrypted
      *     with, or null if it is not present or not encrypted with a trusted
      *     key
      */
-    isSecretStored(name: string, checkKey: boolean): Promise<Record<string, ISecretStorageKeyInfo>>;
+    isSecretStored(name: string): Promise<Record<string, ISecretStorageKeyInfo> | null>;
     /**
      * Request a secret from another device.
      *
@@ -1164,7 +1230,7 @@ export declare class MatrixClient extends EventEmitter {
      *
      * @return {string} The default key ID or null if no default key ID is set
      */
-    getDefaultSecretStorageKeyId(): Promise<string>;
+    getDefaultSecretStorageKeyId(): Promise<string | null>;
     /**
      * Set the current default key ID for encrypting secrets.
      *
@@ -1265,9 +1331,9 @@ export declare class MatrixClient extends EventEmitter {
     checkKeyBackup(): Promise<IKeyBackupCheck>;
     /**
      * Get information about the current key backup.
-     * @returns {Promise} Information object from API or null
+     * @returns {Promise<IKeyBackupInfo | null>} Information object from API or null
      */
-    getKeyBackupVersion(): Promise<IKeyBackupInfo>;
+    getKeyBackupVersion(): Promise<IKeyBackupInfo | null>;
     /**
      * @param {object} info key backup info dict from getKeyBackupVersion()
      * @return {object} {
@@ -1318,7 +1384,7 @@ export declare class MatrixClient extends EventEmitter {
      *     encrypted with, or null if it is not present or not encrypted with a
      *     trusted key
      */
-    isKeyBackupKeyStored(): Promise<Record<string, ISecretStorageKeyInfo>>;
+    isKeyBackupKeyStored(): Promise<Record<string, ISecretStorageKeyInfo> | null>;
     /**
      * Create a new key backup version and enable it, using the information return
      * from prepareKeyBackupVersion.
@@ -1338,6 +1404,8 @@ export declare class MatrixClient extends EventEmitter {
      * @return {Promise} a promise that will resolve when the keys
      * are uploaded
      */
+    sendKeyBackup(roomId: undefined, sessionId: undefined, version: string, data: IKeyBackup): Promise<void>;
+    sendKeyBackup(roomId: string, sessionId: undefined, version: string, data: IKeyBackup): Promise<void>;
     sendKeyBackup(roomId: string, sessionId: string, version: string, data: IKeyBackup): Promise<void>;
     /**
      * Marks all group sessions as needing to be backed up and schedules them to
@@ -1385,6 +1453,8 @@ export declare class MatrixClient extends EventEmitter {
      * @return {Promise<object>} Status of restoration with `total` and `imported`
      * key counts.
      */
+    restoreKeyBackupWithPassword(password: string, targetRoomId: undefined, targetSessionId: undefined, backupInfo: IKeyBackupInfo, opts: IKeyBackupRestoreOpts): Promise<IKeyBackupRestoreResult>;
+    restoreKeyBackupWithPassword(password: string, targetRoomId: string, targetSessionId: undefined, backupInfo: IKeyBackupInfo, opts: IKeyBackupRestoreOpts): Promise<IKeyBackupRestoreResult>;
     restoreKeyBackupWithPassword(password: string, targetRoomId: string, targetSessionId: string, backupInfo: IKeyBackupInfo, opts: IKeyBackupRestoreOpts): Promise<IKeyBackupRestoreResult>;
     /**
      * Restore from an existing key backup via a private key stored in secret
@@ -1414,9 +1484,15 @@ export declare class MatrixClient extends EventEmitter {
      * @return {Promise<object>} Status of restoration with `total` and `imported`
      * key counts.
      */
+    restoreKeyBackupWithRecoveryKey(recoveryKey: string, targetRoomId: undefined, targetSessionId: undefined, backupInfo: IKeyBackupInfo, opts: IKeyBackupRestoreOpts): Promise<IKeyBackupRestoreResult>;
+    restoreKeyBackupWithRecoveryKey(recoveryKey: string, targetRoomId: string, targetSessionId: undefined, backupInfo: IKeyBackupInfo, opts: IKeyBackupRestoreOpts): Promise<IKeyBackupRestoreResult>;
     restoreKeyBackupWithRecoveryKey(recoveryKey: string, targetRoomId: string, targetSessionId: string, backupInfo: IKeyBackupInfo, opts: IKeyBackupRestoreOpts): Promise<IKeyBackupRestoreResult>;
+    restoreKeyBackupWithCache(targetRoomId: undefined, targetSessionId: undefined, backupInfo: IKeyBackupInfo, opts?: IKeyBackupRestoreOpts): Promise<IKeyBackupRestoreResult>;
+    restoreKeyBackupWithCache(targetRoomId: string, targetSessionId: undefined, backupInfo: IKeyBackupInfo, opts?: IKeyBackupRestoreOpts): Promise<IKeyBackupRestoreResult>;
     restoreKeyBackupWithCache(targetRoomId: string, targetSessionId: string, backupInfo: IKeyBackupInfo, opts?: IKeyBackupRestoreOpts): Promise<IKeyBackupRestoreResult>;
     private restoreKeyBackup;
+    deleteKeysFromBackup(roomId: undefined, sessionId: undefined, version: string): Promise<void>;
+    deleteKeysFromBackup(roomId: string, sessionId: undefined, version: string): Promise<void>;
     deleteKeysFromBackup(roomId: string, sessionId: string, version: string): Promise<void>;
     /**
      * Share shared-history decryption keys with the given users.
@@ -1426,21 +1502,6 @@ export declare class MatrixClient extends EventEmitter {
      *     all of the user's current devices.
      */
     sendSharedHistoryKeys(roomId: string, userIds: string[]): Promise<void>;
-    /**
-     * Get the group for the given group ID.
-     * This function will return a valid group for any group for which a Group event
-     * has been emitted.
-     * @param {string} groupId The group ID
-     * @return {Group} The Group or null if the group is not known or there is no data store.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    getGroup(groupId: string): Group;
-    /**
-     * Retrieve all known groups.
-     * @return {Group[]} A list of groups, or an empty list if there is no data store.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    getGroups(): Group[];
     /**
      * Get the config for the media repository.
      * @param {module:client.callback} callback Optional.
@@ -1453,9 +1514,9 @@ export declare class MatrixClient extends EventEmitter {
      * has been emitted. Note in particular that other events, eg. RoomState.members
      * will be emitted for a room before this function will return the given room.
      * @param {string} roomId The room ID
-     * @return {Room} The Room or null if it doesn't exist or there is no data store.
+     * @return {Room|null} The Room or null if it doesn't exist or there is no data store.
      */
-    getRoom(roomId: string): Room;
+    getRoom(roomId: string): Room | null;
     /**
      * Retrieve all known rooms.
      * @return {Room[]} A list of rooms, or an empty list if there is no data store.
@@ -1506,7 +1567,9 @@ export declare class MatrixClient extends EventEmitter {
      * data event.
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    getAccountDataFromServer(eventType: string): Promise<Record<string, any>>;
+    getAccountDataFromServer<T extends {
+        [k: string]: any;
+    }>(eventType: string): Promise<T>;
     /**
      * Gets the users that are ignored by this client
      * @returns {string[]} The array of users that are ignored (empty if none)
@@ -1553,7 +1616,7 @@ export declare class MatrixClient extends EventEmitter {
      * Cancel a queued or unsent event.
      *
      * @param {MatrixEvent} event   Event to cancel
-     * @throws Error if the event is not in QUEUED or NOT_SENT state
+     * @throws Error if the event is not in QUEUED, NOT_SENT or ENCRYPTING state
      */
     cancelPendingEvent(event: MatrixEvent): void;
     /**
@@ -1567,18 +1630,20 @@ export declare class MatrixClient extends EventEmitter {
     /**
      * @param {string} roomId
      * @param {string} topic
+     * @param {string} htmlTopic Optional.
      * @param {module:client.callback} callback Optional.
      * @return {Promise} Resolves: TODO
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
+    setRoomTopic(roomId: string, topic: string, htmlTopic?: string): Promise<ISendEventResponse>;
     setRoomTopic(roomId: string, topic: string, callback?: Callback): Promise<ISendEventResponse>;
     /**
      * @param {string} roomId
      * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: TODO
+     * @return {Promise} Resolves: to an object keyed by tagId with objects containing a numeric order field.
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    getRoomTags(roomId: string, callback?: Callback): Promise<unknown>;
+    getRoomTags(roomId: string, callback?: Callback): Promise<ITagsResponse>;
     /**
      * @param {string} roomId
      * @param {string} tagName name of room tag to be set
@@ -1592,7 +1657,7 @@ export declare class MatrixClient extends EventEmitter {
      * @param {string} roomId
      * @param {string} tagName name of room tag to be removed
      * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: TODO
+     * @return {Promise} Resolves: void
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     deleteRoomTag(roomId: string, tagName: string, callback?: Callback): Promise<void>;
@@ -1617,20 +1682,38 @@ export declare class MatrixClient extends EventEmitter {
      */
     setPowerLevel(roomId: string, userId: string, powerLevel: number, event: MatrixEvent, callback?: Callback): Promise<ISendEventResponse>;
     /**
+     * Create an m.beacon_info event
      * @param {string} roomId
+     * @param {MBeaconInfoEventContent} beaconInfoContent
+     * @returns {ISendEventResponse}
+     */
+    unstable_createLiveBeacon(roomId: Room["roomId"], beaconInfoContent: MBeaconInfoEventContent): Promise<ISendEventResponse>;
+    /**
+     * Upsert a live beacon event
+     * using a specific m.beacon_info.* event variable type
+     * @param {string} roomId string
+     * @param {MBeaconInfoEventContent} beaconInfoContent
+     * @returns {ISendEventResponse}
+     */
+    unstable_setLiveBeacon(roomId: string, beaconInfoContent: MBeaconInfoEventContent): Promise<ISendEventResponse>;
+    /**
+     * @param {string} roomId
+     * @param {string} threadId
      * @param {string} eventType
      * @param {Object} content
      * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     sendEvent(roomId: string, eventType: string, content: IContent, txnId?: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendEvent(roomId: string, threadId: string | null, eventType: string, content: IContent, txnId?: string, callback?: Callback): Promise<ISendEventResponse>;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {object} eventObject An object with the partial structure of an event, to which event_id, user_id, room_id and origin_server_ts will be added.
      * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
@@ -1648,7 +1731,6 @@ export declare class MatrixClient extends EventEmitter {
     /**
      * Returns the eventType that should be used taking encryption into account
      * for a given eventType.
-     * @param {MatrixClient} client the client
      * @param {string} roomId the room for the events `eventType` relates to
      * @param {string} eventType the event type
      * @return {string} the event type taking encryption into account
@@ -1663,118 +1745,132 @@ export declare class MatrixClient extends EventEmitter {
      *    supplied.
      * @param {object|module:client.callback} cbOrOpts
      *    Options to pass on, may contain `reason`.
-     *    Can be callback for backwards compatibility.
+     *    Can be callback for backwards compatibility. Deprecated
      * @return {Promise} Resolves: TODO
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    redactEvent(roomId: string, eventId: string, txnId?: string, cbOrOpts?: Callback | IRedactOpts): Promise<ISendEventResponse>;
+    redactEvent(roomId: string, eventId: string, txnId?: string | undefined, cbOrOpts?: Callback | IRedactOpts): Promise<ISendEventResponse>;
+    redactEvent(roomId: string, threadId: string | null, eventId: string, txnId?: string | undefined, cbOrOpts?: Callback | IRedactOpts): Promise<ISendEventResponse>;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {Object} content
      * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to an ISendEventResponse object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     sendMessage(roomId: string, content: IContent, txnId?: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendMessage(roomId: string, threadId: string | null, content: IContent, txnId?: string, callback?: Callback): Promise<ISendEventResponse>;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {string} body
      * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     sendTextMessage(roomId: string, body: string, txnId?: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendTextMessage(roomId: string, threadId: string | null, body: string, txnId?: string, callback?: Callback): Promise<ISendEventResponse>;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {string} body
      * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to a ISendEventResponse object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     sendNotice(roomId: string, body: string, txnId?: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendNotice(roomId: string, threadId: string | null, body: string, txnId?: string, callback?: Callback): Promise<ISendEventResponse>;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {string} body
      * @param {string} txnId Optional.
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to a ISendEventResponse object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     sendEmoteMessage(roomId: string, body: string, txnId?: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendEmoteMessage(roomId: string, threadId: string | null, body: string, txnId?: string, callback?: Callback): Promise<ISendEventResponse>;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {string} url
      * @param {Object} info
      * @param {string} text
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to a ISendEventResponse object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     sendImageMessage(roomId: string, url: string, info?: IImageInfo, text?: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendImageMessage(roomId: string, threadId: string | null, url: string, info?: IImageInfo, text?: string, callback?: Callback): Promise<ISendEventResponse>;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {string} url
      * @param {Object} info
      * @param {string} text
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to a ISendEventResponse object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     sendStickerMessage(roomId: string, url: string, info?: IImageInfo, text?: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendStickerMessage(roomId: string, threadId: string | null, url: string, info?: IImageInfo, text?: string, callback?: Callback): Promise<ISendEventResponse>;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {string} body
      * @param {string} htmlBody
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to a ISendEventResponse object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     sendHtmlMessage(roomId: string, body: string, htmlBody: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendHtmlMessage(roomId: string, threadId: string | null, body: string, htmlBody: string, callback?: Callback): Promise<ISendEventResponse>;
     /**
      * @param {string} roomId
      * @param {string} body
      * @param {string} htmlBody
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to a ISendEventResponse object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     sendHtmlNotice(roomId: string, body: string, htmlBody: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendHtmlNotice(roomId: string, threadId: string | null, body: string, htmlBody: string, callback?: Callback): Promise<ISendEventResponse>;
     /**
      * @param {string} roomId
+     * @param {string} threadId
      * @param {string} body
      * @param {string} htmlBody
-     * @param {module:client.callback} callback Optional.
+     * @param {module:client.callback} callback Optional. Deprecated
      * @return {Promise} Resolves: to a ISendEventResponse object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     sendHtmlEmote(roomId: string, body: string, htmlBody: string, callback?: Callback): Promise<ISendEventResponse>;
+    sendHtmlEmote(roomId: string, threadId: string | null, body: string, htmlBody: string, callback?: Callback): Promise<ISendEventResponse>;
     /**
      * Send a receipt.
      * @param {Event} event The event being acknowledged
-     * @param {string} receiptType The kind of receipt e.g. "m.read"
+     * @param {ReceiptType} receiptType The kind of receipt e.g. "m.read". Other than
+     * ReceiptType.Read are experimental!
      * @param {object} body Additional content to send alongside the receipt.
      * @param {module:client.callback} callback Optional.
      * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    sendReceipt(event: MatrixEvent, receiptType: string, body: any, callback?: Callback): Promise<{}>;
+    sendReceipt(event: MatrixEvent, receiptType: ReceiptType, body: any, callback?: Callback): Promise<{}>;
     /**
      * Send a read receipt.
      * @param {Event} event The event that has been read.
-     * @param {object} opts The options for the read receipt.
-     * @param {boolean} opts.hidden True to prevent the receipt from being sent to
-     * other users and homeservers. Default false (send to everyone). <b>This
-     * property is unstable and may change in the future.</b>
+     * @param {ReceiptType} receiptType other than ReceiptType.Read are experimental! Optional.
      * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: to an empty object
+     * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    sendReadReceipt(event: MatrixEvent, opts?: {
-        hidden?: boolean;
-    }, callback?: Callback): Promise<{}>;
+    sendReadReceipt(event: MatrixEvent, receiptType?: ReceiptType, callback?: Callback): Promise<{}>;
     /**
      * Set a marker to indicate the point in a room before which the user has read every
      * event. This can be retrieved from room account data (the event type is `m.fully_read`)
@@ -1785,14 +1881,11 @@ export declare class MatrixClient extends EventEmitter {
      * @param {MatrixEvent} rrEvent the event tracked by the read receipt. This is here for
      * convenience because the RR and the RM are commonly updated at the same time as each
      * other. The local echo of this receipt will be done if set. Optional.
-     * @param {object} opts Options for the read markers
-     * @param {object} opts.hidden True to hide the receipt from other users and homeservers.
-     * <b>This property is unstable and may change in the future.</b>
+     * @param {MatrixEvent} rpEvent the m.read.private read receipt event for when we don't
+     * want other users to see the read receipts. This is experimental. Optional.
      * @return {Promise} Resolves: the empty object, {}.
      */
-    setRoomReadMarkers(roomId: string, rmEventId: string, rrEvent: MatrixEvent, opts: {
-        hidden?: boolean;
-    }): Promise<{}>;
+    setRoomReadMarkers(roomId: string, rmEventId: string, rrEvent?: MatrixEvent, rpEvent?: MatrixEvent): Promise<{}>;
     /**
      * Get a preview of the given URL as of (roughly) the given point in time,
      * described as an object with OpenGraph keys and associated values.
@@ -1917,26 +2010,16 @@ export declare class MatrixClient extends EventEmitter {
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     kick(roomId: string, userId: string, reason?: string, callback?: Callback): Promise<{}>;
-    /**
-     * This is an internal method.
-     * @param {MatrixClient} client
-     * @param {string} roomId
-     * @param {string} userId
-     * @param {string} membershipValue
-     * @param {string} reason
-     * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: TODO
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     */
-    private setMembershipState;
     private membershipChange;
     /**
      * Obtain a dict of actions which should be performed for this event according
      * to the push rules for this user.  Caches the dict on the event.
      * @param {MatrixEvent} event The event to get push actions for.
+     * @param {boolean} forceRecalculate forces to recalculate actions for an event
+     * Useful when an event just got decrypted
      * @return {module:pushprocessor~PushAction} A dict of actions to perform.
      */
-    getPushActionsForEvent(event: MatrixEvent): IActionsObject;
+    getPushActionsForEvent(event: MatrixEvent, forceRecalculate?: boolean): IActionsObject;
     /**
      * @param {string} info The kind of info to set (e.g. 'avatar_url')
      * @param {Object} data The JSON object to set.
@@ -1979,14 +2062,6 @@ export declare class MatrixClient extends EventEmitter {
      */
     mxcUrlToHttp(mxcUrl: string, width?: number, height?: number, resizeMethod?: string, allowDirectLinks?: boolean): string | null;
     /**
-     * Sets a new status message for the user. The message may be null/falsey
-     * to clear the message.
-     * @param {string} newMessage The new message to set.
-     * @return {Promise} Resolves: to nothing
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     */
-    _unstable_setStatusMessage(newMessage: string): Promise<void>;
-    /**
      * @param {Object} opts Options to apply
      * @param {string} opts.presence One of "online", "offline" or "unavailable"
      * @param {string} opts.status_msg The status message to attach.
@@ -2002,7 +2077,7 @@ export declare class MatrixClient extends EventEmitter {
      * @return {Promise} Resolves: The presence state for this user.
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    getPresence(userId: string, callback?: Callback): Promise<unknown>;
+    getPresence(userId: string, callback?: Callback): Promise<IStatusResponse>;
     /**
      * Retrieve older messages from the given room and put them in the timeline.
      *
@@ -2012,7 +2087,7 @@ export declare class MatrixClient extends EventEmitter {
      * when there is no connection).
      *
      * @param {Room} room The room to get older messages in.
-     * @param {Integer} limit Optional. The maximum number of previous events to
+     * @param {number} limit Optional. The maximum number of previous events to
      * pull in. Default: 30.
      * @param {module:client.callback} callback Optional.
      * @return {Promise} Resolves: Room. If you are at the beginning
@@ -2020,7 +2095,7 @@ export declare class MatrixClient extends EventEmitter {
      * <code>null</code>.
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    scrollback(room: Room, limit: number, callback?: Callback): Promise<Room>;
+    scrollback(room: Room, limit?: number, callback?: Callback): Promise<Room>;
     /**
      * @param {object} [options]
      * @param {boolean} options.preventReEmit don't re-emit events emitted on an event mapped by this mapper on the client
@@ -2034,15 +2109,26 @@ export declare class MatrixClient extends EventEmitter {
      * <p>If the EventTimelineSet object already has the given event in its store, the
      * corresponding timeline will be returned. Otherwise, a /context request is
      * made, and used to construct an EventTimeline.
+     * If the event does not belong to this EventTimelineSet then undefined will be returned.
      *
-     * @param {EventTimelineSet} timelineSet  The timelineSet to look for the event in
+     * @param {EventTimelineSet} timelineSet  The timelineSet to look for the event in, must be bound to a room
      * @param {string} eventId  The ID of the event to look for
      *
      * @return {Promise} Resolves:
-     *    {@link module:models/event-timeline~EventTimeline} including the given
-     *    event
+     *    {@link module:models/event-timeline~EventTimeline} including the given event
      */
-    getEventTimeline(timelineSet: EventTimelineSet, eventId: string): Promise<EventTimeline>;
+    getEventTimeline(timelineSet: EventTimelineSet, eventId: string): Promise<EventTimeline | undefined>;
+    /**
+     * Get an EventTimeline for the latest events in the room. This will just
+     * call `/messages` to get the latest message in the room, then use
+     * `client.getEventTimeline(...)` to construct a new timeline from it.
+     *
+     * @param {EventTimelineSet} timelineSet  The timelineSet to find or add the timeline to
+     *
+     * @return {Promise} Resolves:
+     *    {@link module:models/event-timeline~EventTimeline} timeline with the latest events in the room
+     */
+    getLatestTimeline(timelineSet: EventTimelineSet): Promise<EventTimeline>;
     /**
      * Makes a request to /messages with the appropriate lazy loading filter set.
      * XXX: if we do get rid of scrollback (as it's not used at the moment),
@@ -2055,7 +2141,7 @@ export declare class MatrixClient extends EventEmitter {
      * @param {Filter} timelineFilter the timeline filter to pass
      * @return {Promise}
      */
-    createMessagesRequest(roomId: string, fromToken: string, limit: number, dir: Direction, timelineFilter?: Filter): Promise<IMessagesResponse>;
+    createMessagesRequest(roomId: string, fromToken: string | null, limit: number, dir: Direction, timelineFilter?: Filter): Promise<IMessagesResponse>;
     /**
      * Take an EventTimeline, and back/forward-fill results.
      *
@@ -2213,7 +2299,7 @@ export declare class MatrixClient extends EventEmitter {
      * @param {string} roomId the id of the room.
      * @return {object} the rule or undefined.
      */
-    getRoomPushRule(scope: string, roomId: string): any;
+    getRoomPushRule(scope: string, roomId: string): IPushRule | undefined;
     /**
      * Set a room-kind muting push rule in a room.
      * The operation also updates MatrixClient.pushRules at the end.
@@ -2387,11 +2473,11 @@ export declare class MatrixClient extends EventEmitter {
     /**
      * Check if a particular spec version is supported by the server.
      * @param {string} version The spec version (such as "r0.5.0") to check for.
-     * @return {Promise<bool>} Whether it is supported
+     * @return {Promise<boolean>} Whether it is supported
      */
     isVersionSupported(version: string): Promise<boolean>;
     /**
-     * Query the server to see if it support members lazy loading
+     * Query the server to see if it supports members lazy loading
      * @return {Promise<boolean>} true if server supports lazy loading
      */
     doesServerSupportLazyLoading(): Promise<boolean>;
@@ -2430,6 +2516,15 @@ export declare class MatrixClient extends EventEmitter {
      * for the preset.
      */
     doesServerForceEncryptionForPreset(presetName: Preset): Promise<boolean>;
+    doesServerSupportThread(): Promise<{
+        serverSupport: boolean;
+        stable: boolean;
+    } | null>;
+    /**
+     * Query the server to see if it supports the MSC2457 `logout_devices` parameter when setting password
+     * @return {Promise<boolean>} true if server supports the `logout_devices` parameter
+     */
+    doesServerSupportLogoutDevices(): Promise<boolean>;
     /**
      * Get if lazy loading members is being used.
      * @return {boolean} Whether or not members are lazy loaded by this client
@@ -2459,15 +2554,13 @@ export declare class MatrixClient extends EventEmitter {
      * @param {string} relationType the rel_type of the relations requested
      * @param {string} eventType the event type of the relations requested
      * @param {Object} opts options with optional values for the request.
-     * @param {Object} opts.from the pagination token returned from a previous request as `nextBatch` to return following relations.
      * @return {Object} an object with `events` as `MatrixEvent[]` and optionally `nextBatch` if more relations are available.
      */
-    relations(roomId: string, eventId: string, relationType: string, eventType: string, opts: {
-        from: string;
-    }): Promise<{
+    relations(roomId: string, eventId: string, relationType?: RelationType | string | null, eventType?: EventType | string | null, opts?: IRelationsRequestOpts): Promise<{
         originalEvent: MatrixEvent;
         events: MatrixEvent[];
         nextBatch?: string;
+        prevBatch?: string;
     }>;
     /**
      * The app may wish to see if we have a key cached without
@@ -2513,6 +2606,11 @@ export declare class MatrixClient extends EventEmitter {
      */
     getAccessToken(): string;
     /**
+     * Set the access token associated with this account.
+     * @param {string} token The new access token.
+     */
+    setAccessToken(token: string): void;
+    /**
      * @return {boolean} true if there is a valid access_token for this client.
      */
     isLoggedIn(): boolean;
@@ -2526,9 +2624,9 @@ export declare class MatrixClient extends EventEmitter {
      * Check whether a username is available prior to registration. An error response
      * indicates an invalid/unavailable username.
      * @param {string} username The username to check the availability of.
-     * @return {Promise} Resolves: to `true`.
+     * @return {Promise} Resolves: to boolean of whether the username is available.
      */
-    isUsernameAvailable(username: string): Promise<true>;
+    isUsernameAvailable(username: string): Promise<boolean>;
     /**
      * @param {string} username
      * @param {string} password
@@ -2549,7 +2647,7 @@ export declare class MatrixClient extends EventEmitter {
     }, bindThreepids?: boolean | null | {
         email?: boolean;
         msisdn?: boolean;
-    }, guestAccessToken?: string, inhibitLogin?: boolean, callback?: Callback): Promise<any>;
+    }, guestAccessToken?: string, inhibitLogin?: boolean, callback?: Callback): Promise<IAuthData>;
     /**
      * Register a guest account.
      * This method returns the auth info needed to create a new authenticated client,
@@ -2583,7 +2681,19 @@ export declare class MatrixClient extends EventEmitter {
      * @return {Promise} Resolves: to the /register response
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    registerRequest(data: any, kind?: string, callback?: Callback): Promise<any>;
+    registerRequest(data: IRegisterRequestParams, kind?: string, callback?: Callback): Promise<IAuthData>;
+    /**
+     * Refreshes an access token using a provided refresh token. The refresh token
+     * must be valid for the current access token known to the client instance.
+     *
+     * Note that this function will not cause a logout if the token is deemed
+     * unknown by the server - the caller is responsible for managing logout
+     * actions on error.
+     * @param {string} refreshToken The refresh token.
+     * @return {Promise<IRefreshTokenResponse>} Resolves to the new token.
+     * @return {module:http-api.MatrixError} Rejects with an error response.
+     */
+    refreshToken(refreshToken: string): Promise<IRefreshTokenResponse>;
     /**
      * @param {module:client.callback} callback Optional.
      * @return {Promise} Resolves: TODO
@@ -2642,9 +2752,10 @@ export declare class MatrixClient extends EventEmitter {
      * it is up to the caller to either reset or destroy the MatrixClient after
      * this method succeeds.
      * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: On success, the empty object
+     * @param {boolean} stopClient whether to stop the client before calling /logout to prevent invalid token errors.
+     * @return {Promise} Resolves: On success, the empty object {}
      */
-    logout(callback?: Callback): Promise<{}>;
+    logout(callback?: Callback, stopClient?: boolean): Promise<{}>;
     /**
      * Deactivates the logged-in account.
      * Obviously, further calls that require authorisation should fail after this
@@ -2687,15 +2798,12 @@ export declare class MatrixClient extends EventEmitter {
      * Fetches relations for a given event
      * @param {string} roomId the room of the event
      * @param {string} eventId the id of the event
-     * @param {string} relationType the rel_type of the relations requested
-     * @param {string} eventType the event type of the relations requested
-     * @param {Object} opts options with optional values for the request.
-     * @param {Object} opts.from the pagination token returned from a previous request as `next_batch` to return following relations.
-     * @return {Object} the response, with chunk and next_batch.
+     * @param {string} [relationType] the rel_type of the relations requested
+     * @param {string} [eventType] the event type of the relations requested
+     * @param {Object} [opts] options with optional values for the request.
+    * @return {Object} the response, with chunk, prev_batch and, next_batch.
      */
-    fetchRelations(roomId: string, eventId: string, relationType: string, eventType: string, opts: {
-        from: string;
-    }): Promise<any>;
+    fetchRelations(roomId: string, eventId: string, relationType?: RelationType | string | null, eventType?: EventType | string | null, opts?: IRelationsRequestOpts): Promise<IRelationsResponse>;
     /**
      * @param {string} roomId
      * @param {module:client.callback} callback Optional.
@@ -2722,8 +2830,8 @@ export declare class MatrixClient extends EventEmitter {
      * @return {Promise} Resolves: dictionary of userid to profile information
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    members(roomId: string, includeMembership?: string[], excludeMembership?: string[], atEventId?: string, callback?: Callback): Promise<{
-        [userId: string]: IStateEventWithRoomId;
+    members(roomId: string, includeMembership?: string, excludeMembership?: string, atEventId?: string, callback?: Callback): Promise<{
+        [userId: string]: IStateEventWithRoomId[];
     }>;
     /**
      * Upgrades a room to a new protocol version
@@ -2744,7 +2852,7 @@ export declare class MatrixClient extends EventEmitter {
      * @return {Promise} Resolves: TODO
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    getStateEvent(roomId: string, eventType: string, stateKey: string, callback?: Callback): Promise<IStateEventWithRoomId>;
+    getStateEvent(roomId: string, eventType: string, stateKey: string, callback?: Callback): Promise<Record<string, any>>;
     /**
      * @param {string} roomId
      * @param {string} eventType
@@ -2773,14 +2881,11 @@ export declare class MatrixClient extends EventEmitter {
      * @param {string} rrEventId ID of the event tracked by the read receipt. This is here
      * for convenience because the RR and the RM are commonly updated at the same time as
      * each other. Optional.
-     * @param {object} opts Options for the read markers.
-     * @param {object} opts.hidden True to hide the read receipt from other users. <b>This
-     * property is currently unstable and may change in the future.</b>
+     * @param {string} rpEventId rpEvent the m.read.private read receipt event for when we
+     * don't want other users to see the read receipts. This is experimental. Optional.
      * @return {Promise} Resolves: the empty object, {}.
      */
-    setRoomReadMarkersHttpRequest(roomId: string, rmEventId: string, rrEventId: string, opts: {
-        hidden?: boolean;
-    }): Promise<{}>;
+    setRoomReadMarkersHttpRequest(roomId: string, rmEventId: string, rrEventId: string, rpEventId: string): Promise<{}>;
     /**
      * @return {Promise} Resolves: A list of the user's current rooms
      * @return {module:http-api.MatrixError} Rejects: with an error response.
@@ -2818,21 +2923,22 @@ export declare class MatrixClient extends EventEmitter {
      */
     createAlias(alias: string, roomId: string, callback?: Callback): Promise<{}>;
     /**
-     * Delete an alias to room ID mapping.  This alias must be on your local server
+     * Delete an alias to room ID mapping. This alias must be on your local server,
      * and you must have sufficient access to do this operation.
      * @param {string} alias The room alias to delete.
      * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: an empty object.
+     * @return {Promise} Resolves: an empty object {}.
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     deleteAlias(alias: string, callback?: Callback): Promise<{}>;
     /**
-     * @param {string} roomId
-     * @param {module:client.callback} callback Optional.
+     * Gets the local aliases for the room. Note: this includes all local aliases, unlike the
+     * curated list from the m.room.canonical_alias state event.
+     * @param {string} roomId The room ID to get local aliases for.
      * @return {Promise} Resolves: an object with an `aliases` property, containing an array of local aliases
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    unstableGetLocalAliases(roomId: string, callback?: Callback): Promise<{
+    getLocalAliases(roomId: string): Promise<{
         aliases: string[];
     }>;
     /**
@@ -2873,7 +2979,7 @@ export declare class MatrixClient extends EventEmitter {
      *                 in the public directory, or "private" to make
      *                 it invisible.
      * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: result object
+     * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     setRoomDirectoryVisibility(roomId: string, visibility: Visibility, callback?: Callback): Promise<{}>;
@@ -2943,7 +3049,7 @@ export declare class MatrixClient extends EventEmitter {
      *    determined by this.opts.onlyData, opts.rawResponse, and
      *    opts.onlyContentUri.  Rejects with an error (usually a MatrixError).
      */
-    uploadContent(file: File | String | Buffer | ReadStream | Blob, opts?: IUploadOpts): IAbortablePromise<any>;
+    uploadContent<O extends IUploadOpts>(file: FileType, opts?: O): IAbortablePromise<UploadContentResponseType<O>>;
     /**
      * Cancel a file upload in progress
      * @param {Promise} promise The promise returned from uploadContent
@@ -2958,11 +3064,7 @@ export declare class MatrixClient extends EventEmitter {
      *  - loaded: Number of bytes uploaded
      *  - total: Total number of bytes to upload
      */
-    getCurrentUploads(): {
-        promise: Promise<any>;
-        loaded: number;
-        total: number;
-    }[];
+    getCurrentUploads(): IUpload[];
     /**
      * @param {string} userId
      * @param {string} info The kind of info to retrieve (e.g. 'displayname',
@@ -3006,7 +3108,7 @@ export declare class MatrixClient extends EventEmitter {
      *
      * @param {Object} data A object with 3PID validation data from having called
      * `account/3pid/<medium>/requestToken` on the homeserver.
-     * @return {Promise} Resolves: on success
+     * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     addThreePidOnly(data: IAddThreePidOnlyBody): Promise<{}>;
@@ -3021,7 +3123,7 @@ export declare class MatrixClient extends EventEmitter {
      * @param {Object} data A object with 3PID validation data from having called
      * `validate/<medium>/requestToken` on the identity server. It should also
      * contain `id_server` and `id_access_token` fields as well.
-     * @return {Promise} Resolves: on success
+     * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     bindThreePid(data: IBindThreePidBody): Promise<{}>;
@@ -3054,11 +3156,13 @@ export declare class MatrixClient extends EventEmitter {
      * Make a request to change your password.
      * @param {Object} authDict
      * @param {string} newPassword The new desired password.
+     * @param {boolean} logoutDevices Should all sessions be logged out after the password change. Defaults to true.
      * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: TODO
+     * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    setPassword(authDict: any, newPassword: string, callback?: Callback): Promise<any>;
+    setPassword(authDict: any, newPassword: string, callback?: Callback): Promise<{}>;
+    setPassword(authDict: any, newPassword: string, logoutDevices: boolean, callback?: Callback): Promise<{}>;
     /**
      * Gets all devices recorded for the logged-in user
      * @return {Promise} Resolves: result object
@@ -3079,7 +3183,7 @@ export declare class MatrixClient extends EventEmitter {
      *
      * @param {string} deviceId  device to update
      * @param {Object} body       body of request
-     * @return {Promise} Resolves: result object
+     * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     setDeviceDetails(deviceId: string, body: {
@@ -3093,7 +3197,7 @@ export declare class MatrixClient extends EventEmitter {
      * @return {Promise} Resolves: result object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    deleteDevice(deviceId: string, auth?: any): Promise<any>;
+    deleteDevice(deviceId: string, auth?: IAuthDict): Promise<IAuthData | {}>;
     /**
      * Delete multiple device
      *
@@ -3102,7 +3206,7 @@ export declare class MatrixClient extends EventEmitter {
      * @return {Promise} Resolves: result object
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    deleteMultipleDevices(devices: string[], auth?: any): Promise<any>;
+    deleteMultipleDevices(devices: string[], auth?: IAuthDict): Promise<IAuthData | {}>;
     /**
      * Gets all pushers registered for the logged-in user
      *
@@ -3138,7 +3242,7 @@ export declare class MatrixClient extends EventEmitter {
      * @return {Promise} Resolves: an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    addPushRule(scope: string, kind: PushRuleKind, ruleId: Exclude<string, RuleId>, body: any, callback?: Callback): Promise<any>;
+    addPushRule(scope: string, kind: PushRuleKind, ruleId: Exclude<string, RuleId>, body: Pick<IPushRule, "actions" | "conditions" | "pattern">, callback?: Callback): Promise<{}>;
     /**
      * @param {string} scope
      * @param {string} kind
@@ -3147,7 +3251,7 @@ export declare class MatrixClient extends EventEmitter {
      * @return {Promise} Resolves: an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
-    deletePushRule(scope: string, kind: PushRuleKind, ruleId: Exclude<string, RuleId>, callback?: Callback): Promise<any>;
+    deletePushRule(scope: string, kind: PushRuleKind, ruleId: Exclude<string, RuleId>, callback?: Callback): Promise<{}>;
     /**
      * Enable or disable a push notification rule.
      * @param {string} scope
@@ -3155,7 +3259,7 @@ export declare class MatrixClient extends EventEmitter {
      * @param {string} ruleId
      * @param {boolean} enabled
      * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: result object
+     * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     setPushRuleEnabled(scope: string, kind: PushRuleKind, ruleId: RuleId | string, enabled: boolean, callback?: Callback): Promise<{}>;
@@ -3166,7 +3270,7 @@ export declare class MatrixClient extends EventEmitter {
      * @param {string} ruleId
      * @param {array} actions
      * @param {module:client.callback} callback Optional.
-     * @return {Promise} Resolves: result object
+     * @return {Promise} Resolves: to an empty object {}
      * @return {module:http-api.MatrixError} Rejects: with an error response.
      */
     setPushRuleActions(scope: string, kind: PushRuleKind, ruleId: RuleId | string, actions: PushRuleAction[], callback?: Callback): Promise<{}>;
@@ -3228,7 +3332,7 @@ export declare class MatrixClient extends EventEmitter {
      * @return {Promise} Resolves: result object. Rejects: with
      *     an error response ({@link module:http-api.MatrixError}).
      */
-    claimOneTimeKeys(devices: string[], keyAlgorithm?: string, timeout?: number): Promise<IClaimOTKsResult>;
+    claimOneTimeKeys(devices: [string, string][], keyAlgorithm?: string, timeout?: number): Promise<IClaimOTKsResult>;
     /**
      * Ask the server for a list of users who have changed their device lists
      * between a pair of sync tokens
@@ -3243,7 +3347,7 @@ export declare class MatrixClient extends EventEmitter {
         changed: string[];
         left: string[];
     }>;
-    uploadDeviceSigningKeys(auth: any, keys?: CrossSigningKeys): Promise<{}>;
+    uploadDeviceSigningKeys(auth?: IAuthData, keys?: CrossSigningKeys): Promise<{}>;
     /**
      * Register with an identity server using the OpenID token from the user's
      * Homeserver, which can be retrieved via
@@ -3419,7 +3523,7 @@ export declare class MatrixClient extends EventEmitter {
      *    content to send. Map from user_id to device_id to content object.
      * @param {string=} txnId     transaction id. One will be made up if not
      *    supplied.
-     * @return {Promise} Resolves to the result object
+     * @return {Promise} Resolves: to an empty object {}
      */
     sendToDevice(eventType: string, contentMap: {
         [userId: string]: {
@@ -3466,21 +3570,6 @@ export declare class MatrixClient extends EventEmitter {
      */
     reportEvent(roomId: string, eventId: string, score: number, reason: string): Promise<{}>;
     /**
-     * Fetches or paginates a summary of a space as defined by an initial version of MSC2946
-     * @param {string} roomId The ID of the space-room to use as the root of the summary.
-     * @param {number?} maxRoomsPerSpace The maximum number of rooms to return per subspace.
-     * @param {boolean?} suggestedOnly Whether to only return rooms with suggested=true.
-     * @param {boolean?} autoJoinOnly Whether to only return rooms with auto_join=true.
-     * @param {number?} limit The maximum number of rooms to return in total.
-     * @param {string?} batch The opaque token to paginate a previous summary request.
-     * @returns {Promise} the response, with next_token, rooms fields.
-     * @deprecated in favour of `getRoomHierarchy` due to the MSC changing paths.
-     */
-    getSpaceSummary(roomId: string, maxRoomsPerSpace?: number, suggestedOnly?: boolean, autoJoinOnly?: boolean, limit?: number, batch?: string): Promise<{
-        rooms: ISpaceSummaryRoom[];
-        events: ISpaceSummaryEvent[];
-    }>;
-    /**
      * Fetches or paginates a room hierarchy as defined by MSC2946.
      * Falls back gracefully to sourcing its data from `getSpaceSummary` if this API is not yet supported by the server.
      * @param {string} roomId The ID of the space-room to use as the root of the summary.
@@ -3490,10 +3579,7 @@ export declare class MatrixClient extends EventEmitter {
      * @param {string?} fromToken The opaque token to paginate a previous request.
      * @returns {Promise} the response, with next_batch & rooms fields.
      */
-    getRoomHierarchy(roomId: string, limit?: number, maxDepth?: number, suggestedOnly?: boolean, fromToken?: string): Promise<{
-        rooms: IHierarchyRoom[];
-        next_batch?: string;
-    }>;
+    getRoomHierarchy(roomId: string, limit?: number, maxDepth?: number, suggestedOnly?: boolean, fromToken?: string): Promise<IRoomHierarchy>;
     /**
      * Creates a new file tree space with the given name. The client will pick
      * defaults for how it expects to be able to support the remaining API offered
@@ -3514,201 +3600,6 @@ export declare class MatrixClient extends EventEmitter {
      */
     unstableGetFileTreeSpace(roomId: string): MSC3089TreeSpace;
     /**
-     * @param {string} groupId
-     * @return {Promise} Resolves: Group summary object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    getGroupSummary(groupId: string): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @return {Promise} Resolves: Group profile object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    getGroupProfile(groupId: string): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @param {Object} profile The group profile object
-     * @param {string=} profile.name Name of the group
-     * @param {string=} profile.avatar_url MXC avatar URL
-     * @param {string=} profile.short_description A short description of the room
-     * @param {string=} profile.long_description A longer HTML description of the room
-     * @return {Promise} Resolves: Empty object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    setGroupProfile(groupId: string, profile: any): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @param {object} policy The join policy for the group. Must include at
-     *     least a 'type' field which is 'open' if anyone can join the group
-     *     the group without prior approval, or 'invite' if an invite is
-     *     required to join.
-     * @return {Promise} Resolves: Empty object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    setGroupJoinPolicy(groupId: string, policy: any): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @return {Promise} Resolves: Group users list object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    getGroupUsers(groupId: string): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @return {Promise} Resolves: Group users list object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    getGroupInvitedUsers(groupId: string): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @return {Promise} Resolves: Group rooms list object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    getGroupRooms(groupId: string): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @param {string} userId
-     * @return {Promise} Resolves: Empty object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    inviteUserToGroup(groupId: string, userId: string): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @param {string} userId
-     * @return {Promise} Resolves: Empty object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    removeUserFromGroup(groupId: string, userId: string): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @param {string} userId
-     * @param {string} roleId Optional.
-     * @return {Promise} Resolves: Empty object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    addUserToGroupSummary(groupId: string, userId: string, roleId: string): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @param {string} userId
-     * @return {Promise} Resolves: Empty object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    removeUserFromGroupSummary(groupId: string, userId: string): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @param {string} roomId
-     * @param {string} categoryId Optional.
-     * @return {Promise} Resolves: Empty object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    addRoomToGroupSummary(groupId: string, roomId: string, categoryId: string): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @param {string} roomId
-     * @return {Promise} Resolves: Empty object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    removeRoomFromGroupSummary(groupId: string, roomId: string): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @param {string} roomId
-     * @param {boolean} isPublic Whether the room-group association is visible to non-members
-     * @return {Promise} Resolves: Empty object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    addRoomToGroup(groupId: string, roomId: string, isPublic: boolean): Promise<any>;
-    /**
-     * Configure the visibility of a room-group association.
-     * @param {string} groupId
-     * @param {string} roomId
-     * @param {boolean} isPublic Whether the room-group association is visible to non-members
-     * @return {Promise} Resolves: Empty object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    updateGroupRoomVisibility(groupId: string, roomId: string, isPublic: boolean): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @param {string} roomId
-     * @return {Promise} Resolves: Empty object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    removeRoomFromGroup(groupId: string, roomId: string): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @param {Object} opts Additional options to send alongside the acceptance.
-     * @return {Promise} Resolves: Empty object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    acceptGroupInvite(groupId: string, opts?: any): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @return {Promise} Resolves: Empty object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    joinGroup(groupId: string): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @return {Promise} Resolves: Empty object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    leaveGroup(groupId: string): Promise<any>;
-    /**
-     * @return {Promise} Resolves: The groups to which the user is joined
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    getJoinedGroups(): Promise<any>;
-    /**
-     * @param {Object} content Request content
-     * @param {string} content.localpart The local part of the desired group ID
-     * @param {Object} content.profile Group profile object
-     * @return {Promise} Resolves: Object with key group_id: id of the created group
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    createGroup(content: any): Promise<any>;
-    /**
-     * @param {string[]} userIds List of user IDs
-     * @return {Promise} Resolves: Object as exmaple below
-     *
-     *     {
-     *         "users": {
-     *             "@bob:example.com": {
-     *                 "+example:example.com"
-     *             }
-     *         }
-     *     }
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    getPublicisedGroups(userIds: string[]): Promise<any>;
-    /**
-     * @param {string} groupId
-     * @param {boolean} isPublic Whether the user's membership of this group is made public
-     * @return {Promise} Resolves: Empty object
-     * @return {module:http-api.MatrixError} Rejects: with an error response.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    setGroupPublicity(groupId: string, isPublic: boolean): Promise<any>;
-    /**
      * @experimental
      */
     supportsExperimentalThreads(): boolean;
@@ -3719,6 +3610,24 @@ export declare class MatrixClient extends EventEmitter {
      * @param {string[]?} via The list of servers which know about the room if only an ID was provided.
      */
     getRoomSummary(roomIdOrAlias: string, via?: string[]): Promise<IRoomSummary>;
+    /**
+     * @experimental
+     */
+    processThreadEvents(room: Room, threadedEvents: MatrixEvent[], toStartOfTimeline: boolean): void;
+    processBeaconEvents(room: Room, events?: MatrixEvent[]): void;
+    /**
+     * Fetches the user_id of the configured access token.
+     */
+    whoami(): Promise<{
+        user_id: string;
+    }>;
+    /**
+     * Find the event_id closest to the given timestamp in the given direction.
+     * @return {Promise} A promise of an object containing the event_id and
+     *    origin_server_ts of the closest event to the timestamp in the given
+     *    direction
+     */
+    timestampToEvent(roomId: string, timestamp: number, dir: Direction): Promise<ITimestampToEventResponse>;
 }
 export {};
 /**
@@ -3863,17 +3772,6 @@ export {};
  *       var rooms = matrixClient.getRooms();
  *       break;
  *   }
- * });
- */
-/**
- * Fires whenever the sdk learns about a new group. <strong>This event
- * is experimental and may change.</strong>
- * @event module:client~MatrixClient#"Group"
- * @param {Group} group The newly created, fully populated group.
- * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
- * @example
- * matrixClient.on("Group", function(group){
- *   var groupId = group.groupId;
  * });
  */
 /**

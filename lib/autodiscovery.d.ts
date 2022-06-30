@@ -107,7 +107,7 @@ export declare class AutoDiscovery {
      * the following properties:
      *   raw: The JSON object returned by the server.
      *   action: One of SUCCESS, IGNORE, or FAIL_PROMPT.
-     *   reason: Relatively human readable description of what went wrong.
+     *   reason: Relatively human-readable description of what went wrong.
      *   error: The actual Error, if one exists.
      * @param {string} url The URL to fetch a JSON object from.
      * @return {Promise<object>} Resolves to the returned state.

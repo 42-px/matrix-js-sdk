@@ -1,15 +1,10 @@
-/// <reference types="node" />
-/**
- * @module crypto/DeviceList
- *
- * Manages the list of other users' devices
- */
-import { EventEmitter } from 'events';
 import { DeviceInfo, IDevice } from './deviceinfo';
 import { CrossSigningInfo, ICrossSigningInfo } from './CrossSigning';
 import { MatrixClient } from "../client";
 import { OlmDevice } from "./OlmDevice";
 import { CryptoStore } from "./store/base";
+import { TypedEventEmitter } from "../models/typed-event-emitter";
+import { CryptoEvent, CryptoEventHandlerMap } from "./index";
 export declare enum TrackingStatus {
     NotTracked = 0,
     PendingDownload = 1,
@@ -17,10 +12,11 @@ export declare enum TrackingStatus {
     UpToDate = 3
 }
 export declare type DeviceInfoMap = Record<string, Record<string, DeviceInfo>>;
+declare type EmittedEvents = CryptoEvent.WillUpdateDevices | CryptoEvent.DevicesUpdated | CryptoEvent.UserCrossSigningUpdated;
 /**
  * @alias module:crypto/DeviceList
  */
-export declare class DeviceList extends EventEmitter {
+export declare class DeviceList extends TypedEventEmitter<EmittedEvents, CryptoEventHandlerMap> {
     private readonly cryptoStore;
     readonly keyDownloadChunkSize: number;
     private devices;
@@ -227,4 +223,5 @@ export declare class DeviceList extends EventEmitter {
      */
     private doKeyDownload;
 }
+export {};
 //# sourceMappingURL=DeviceList.d.ts.map

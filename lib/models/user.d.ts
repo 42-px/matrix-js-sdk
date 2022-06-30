@@ -1,10 +1,23 @@
-/// <reference types="node" />
 /**
  * @module models/user
  */
-import { EventEmitter } from "events";
 import { MatrixEvent } from "./event";
-export declare class User extends EventEmitter {
+import { TypedEventEmitter } from "./typed-event-emitter";
+export declare enum UserEvent {
+    DisplayName = "User.displayName",
+    AvatarUrl = "User.avatarUrl",
+    Presence = "User.presence",
+    CurrentlyActive = "User.currentlyActive",
+    LastPresenceTs = "User.lastPresenceTs"
+}
+export declare type UserEventHandlerMap = {
+    [UserEvent.DisplayName]: (event: MatrixEvent | undefined, user: User) => void;
+    [UserEvent.AvatarUrl]: (event: MatrixEvent | undefined, user: User) => void;
+    [UserEvent.Presence]: (event: MatrixEvent | undefined, user: User) => void;
+    [UserEvent.CurrentlyActive]: (event: MatrixEvent | undefined, user: User) => void;
+    [UserEvent.LastPresenceTs]: (event: MatrixEvent | undefined, user: User) => void;
+};
+export declare class User extends TypedEventEmitter<UserEvent, UserEventHandlerMap> {
     readonly userId: string;
     private modified;
     displayName: string;
@@ -19,7 +32,6 @@ export declare class User extends EventEmitter {
         presence?: MatrixEvent;
         profile?: MatrixEvent;
     };
-    unstable_statusMessage: string;
     /**
      * Construct a new User. A User must have an ID and can optionally have extra
      * information associated with it.
@@ -39,9 +51,6 @@ export declare class User extends EventEmitter {
      *                when a user was last active.
      * @prop {Boolean} currentlyActive Whether we should consider lastActiveAgo to be
      *               an approximation and that the user should be seen as active 'now'
-     * @prop {string} unstable_statusMessage The status message for the user, if known. This is
-     *                different from the presenceStatusMsg in that this is not tied to
-     *                the user's presence, and should be represented differently.
      * @prop {Object} events The events describing this user.
      * @prop {MatrixEvent} events.presence The m.presence event for this user.
      */
@@ -91,12 +100,6 @@ export declare class User extends EventEmitter {
      * @return {number} The timestamp
      */
     getLastActiveTs(): number;
-    /**
-     * Manually set the user's status message.
-     * @param {MatrixEvent} event The <code>im.vector.user_status</code> event.
-     * @fires module:client~MatrixClient#event:"User.unstable_statusMessage"
-     */
-    unstable_updateStatusMessage(event: MatrixEvent): void;
 }
 /**
  * Fires whenever any user's lastPresenceTs changes,

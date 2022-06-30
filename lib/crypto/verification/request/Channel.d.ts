@@ -13,5 +13,6 @@ export interface IVerificationChannel {
     sendCompleted(type: string, content: Record<string, any>): Promise<void>;
     completedContentFromEvent(event: MatrixEvent): Record<string, any>;
     canCreateRequest(type: string): boolean;
+    handleEvent(event: MatrixEvent, request: VerificationRequest, isLiveEvent: boolean): Promise<void>;
 }
 //# sourceMappingURL=Channel.d.ts.map

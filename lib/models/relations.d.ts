@@ -1,8 +1,18 @@
-/// <reference types="node" />
-import { EventEmitter } from 'events';
 import { MatrixEvent } from './event';
-import { Room } from './room';
 import { RelationType } from "../@types/event";
+import { TypedEventEmitter } from "./typed-event-emitter";
+import { MatrixClient } from "../client";
+import { Room } from "./room";
+export declare enum RelationsEvent {
+    Add = "Relations.add",
+    Remove = "Relations.remove",
+    Redaction = "Relations.redaction"
+}
+export declare type EventHandlerMap = {
+    [RelationsEvent.Add]: (event: MatrixEvent) => void;
+    [RelationsEvent.Remove]: (event: MatrixEvent) => void;
+    [RelationsEvent.Redaction]: (event: MatrixEvent) => void;
+};
 /**
  * A container for relation events that supports easy access to common ways of
  * aggregating such events. Each instance holds events that of a single relation
@@ -11,10 +21,9 @@ import { RelationType } from "../@types/event";
  * The typical way to get one of these containers is via
  * EventTimelineSet#getRelationsForEvent.
  */
-export declare class Relations extends EventEmitter {
+export declare class Relations extends TypedEventEmitter<RelationsEvent, EventHandlerMap> {
     readonly relationType: RelationType | string;
     readonly eventType: string;
-    private readonly room;
     private relationEventIds;
     private relations;
     private annotationsByKey;
@@ -22,17 +31,17 @@ export declare class Relations extends EventEmitter {
     private sortedAnnotationsByKey;
     private targetEvent;
     private creationEmitted;
+    private readonly client;
     /**
      * @param {RelationType} relationType
      * The type of relation involved, such as "m.annotation", "m.reference",
      * "m.replace", etc.
      * @param {String} eventType
      * The relation event's type, such as "m.reaction", etc.
-     * @param {?Room} room
-     * Room for this container. May be null for non-room cases, such as the
-     * notification timeline.
+     * @param {MatrixClient|Room} client
+     * The client which created this instance. For backwards compatibility also accepts a Room.
      */
-    constructor(relationType: RelationType | string, eventType: string, room: Room);
+    constructor(relationType: RelationType | string, eventType: string, client: MatrixClient | Room);
     /**
      * Add relation events to this collection.
      *

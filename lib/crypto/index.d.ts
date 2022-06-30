@@ -1,25 +1,34 @@
-/// <reference types="node" />
-import { EventEmitter } from 'events';
 import { IExportedDevice, OlmDevice } from "./OlmDevice";
 import * as olmlib from "./olmlib";
 import { DeviceInfoMap, DeviceList } from "./DeviceList";
 import { DeviceInfo } from "./deviceinfo";
+import type { DecryptionAlgorithm } from "./algorithms";
 import { CrossSigningInfo, DeviceTrustLevel, UserTrustLevel } from './CrossSigning';
-import { SecretStorage, SecretStorageKeyTuple, ISecretRequest, SecretStorageKeyObject } from './SecretStorage';
-import { IAddSecretStorageKeyOpts, IImportRoomKeysOpts, ISecretStorageKeyInfo } from "./api";
+import { ISecretRequest, SecretStorage, SecretStorageKeyObject, SecretStorageKeyTuple } from './SecretStorage';
+import { IAddSecretStorageKeyOpts, ICreateSecretStorageOpts, IEncryptedEventInfo, IImportRoomKeysOpts, IRecoveryKey, ISecretStorageKeyInfo } from "./api";
+import { VerificationBase } from "./verification/Base";
+import { ReciprocateQRCode } from './verification/QRCode';
+import { SAS as SASVerification } from './verification/SAS';
 import { VerificationRequest } from "./verification/request/VerificationRequest";
 import { InRoomRequests } from "./verification/request/InRoomChannel";
+import { IllegalMethod } from "./verification/IllegalMethod";
 import { DehydrationManager } from './dehydration';
 import { BackupManager } from "./backup";
 import { IStore } from "../store";
-import { Room } from "../models/room";
-import { MatrixEvent } from "../models/event";
-import { MatrixClient, IKeysUploadResponse, SessionStore } from "../client";
-import type { DecryptionAlgorithm } from "./algorithms/base";
+import { Room, RoomEvent } from "../models/room";
+import { RoomMemberEvent } from "../models/room-member";
+import { IClearEvent, MatrixEvent, MatrixEventEvent } from "../models/event";
+import { ClientEvent, IKeysUploadResponse, IUploadKeySignaturesResponse, MatrixClient } from "../client";
 import type { IRoomEncryption, RoomList } from "./RoomList";
-import { IRecoveryKey, IEncryptedEventInfo } from "./api";
 import { ISyncStateData } from "../sync";
 import { CryptoStore } from "./store/base";
+import { IVerificationChannel } from "./verification/request/Channel";
+import { TypedEventEmitter } from "../models/typed-event-emitter";
+declare const defaultVerificationMethods: {
+    [x: string]: typeof SASVerification | typeof ReciprocateQRCode | typeof IllegalMethod;
+    "m.qr_code.show.v1": typeof IllegalMethod;
+    "m.qr_code.scan.v1": typeof IllegalMethod;
+};
 /**
  * verification method names
  */
@@ -35,17 +44,7 @@ interface IInitOpts {
 }
 export interface IBootstrapCrossSigningOpts {
     setupNewCrossSigning?: boolean;
-    authUploadDeviceSigningKeys?(makeRequest: (authData: any) => {}): Promise<void>;
-}
-interface IBootstrapSecretStorageOpts {
-    keyBackupInfo?: any;
-    setupNewKeyBackup?: boolean;
-    setupNewSecretStorage?: boolean;
-    createSecretStorageKey?(): Promise<{
-        keyInfo?: any;
-        privateKey?: Uint8Array;
-    }>;
-    getKeyBackupPassphrase?(): Promise<Uint8Array | null>;
+    authUploadDeviceSigningKeys?(makeRequest: (authData: any) => Promise<{}>): Promise<void>;
 }
 interface IRoomKey {
     room_id: string;
@@ -95,15 +94,54 @@ interface ISignableObject {
     unsigned?: object;
 }
 export interface IEventDecryptionResult {
-    clearEvent: object;
+    clearEvent: IClearEvent;
+    forwardingCurve25519KeyChain?: string[];
     senderCurve25519Key?: string;
     claimedEd25519Key?: string;
-    forwardingCurve25519KeyChain?: string[];
     untrusted?: boolean;
 }
-export declare class Crypto extends EventEmitter {
+export interface IRequestsMap {
+    getRequest(event: MatrixEvent): VerificationRequest;
+    getRequestByChannel(channel: IVerificationChannel): VerificationRequest;
+    setRequest(event: MatrixEvent, request: VerificationRequest): void;
+    setRequestByChannel(channel: IVerificationChannel, request: VerificationRequest): void;
+}
+export declare enum CryptoEvent {
+    DeviceVerificationChanged = "deviceVerificationChanged",
+    UserTrustStatusChanged = "userTrustStatusChanged",
+    UserCrossSigningUpdated = "userCrossSigningUpdated",
+    RoomKeyRequest = "crypto.roomKeyRequest",
+    RoomKeyRequestCancellation = "crypto.roomKeyRequestCancellation",
+    KeyBackupStatus = "crypto.keyBackupStatus",
+    KeyBackupFailed = "crypto.keyBackupFailed",
+    KeyBackupSessionsRemaining = "crypto.keyBackupSessionsRemaining",
+    KeySignatureUploadFailure = "crypto.keySignatureUploadFailure",
+    VerificationRequest = "crypto.verification.request",
+    Warning = "crypto.warning",
+    WillUpdateDevices = "crypto.willUpdateDevices",
+    DevicesUpdated = "crypto.devicesUpdated",
+    KeysChanged = "crossSigning.keysChanged"
+}
+export declare type CryptoEventHandlerMap = {
+    [CryptoEvent.DeviceVerificationChanged]: (userId: string, deviceId: string, device: DeviceInfo) => void;
+    [CryptoEvent.UserTrustStatusChanged]: (userId: string, trustLevel: UserTrustLevel) => void;
+    [CryptoEvent.RoomKeyRequest]: (request: IncomingRoomKeyRequest) => void;
+    [CryptoEvent.RoomKeyRequestCancellation]: (request: IncomingRoomKeyRequestCancellation) => void;
+    [CryptoEvent.KeyBackupStatus]: (enabled: boolean) => void;
+    [CryptoEvent.KeyBackupFailed]: (errcode: string) => void;
+    [CryptoEvent.KeyBackupSessionsRemaining]: (remaining: number) => void;
+    [CryptoEvent.KeySignatureUploadFailure]: (failures: IUploadKeySignaturesResponse["failures"], source: "checkOwnCrossSigningTrust" | "afterCrossSigningLocalKeyChange" | "setDeviceVerification", upload: (opts: {
+        shouldEmit: boolean;
+    }) => Promise<void>) => void;
+    [CryptoEvent.VerificationRequest]: (request: VerificationRequest<any>) => void;
+    [CryptoEvent.Warning]: (type: string) => void;
+    [CryptoEvent.KeysChanged]: (data: {}) => void;
+    [CryptoEvent.WillUpdateDevices]: (users: string[], initialFetch: boolean) => void;
+    [CryptoEvent.DevicesUpdated]: (users: string[], initialFetch: boolean) => void;
+    [CryptoEvent.UserCrossSigningUpdated]: (userId: string) => void;
+};
+export declare class Crypto extends TypedEventEmitter<CryptoEvent, CryptoEventHandlerMap> {
     readonly baseApis: MatrixClient;
-    readonly sessionStore: SessionStore;
     readonly userId: string;
     private readonly deviceId;
     private readonly clientStore;
@@ -142,6 +180,7 @@ export declare class Crypto extends EventEmitter {
     private sendKeyRequestsImmediately;
     private oneTimeKeyCount;
     private needsNewFallback;
+    private fallbackCleanup?;
     /**
      * Cryptography bits
      *
@@ -153,9 +192,6 @@ export declare class Crypto extends EventEmitter {
      * @internal
      *
      * @param {MatrixClient} baseApis base matrix api interface
-     *
-     * @param {module:store/session/webstorage~WebStorageSessionStore} sessionStore
-     *    Store to be used for end-to-end crypto session data
      *
      * @param {string} userId The user ID for the local user
      *
@@ -172,7 +208,7 @@ export declare class Crypto extends EventEmitter {
      *    Each element can either be a string from MatrixClient.verificationMethods
      *    or a class that implements a verification method.
      */
-    constructor(baseApis: MatrixClient, sessionStore: SessionStore, userId: string, deviceId: string, clientStore: IStore, cryptoStore: CryptoStore, roomList: RoomList, verificationMethods: any[]);
+    constructor(baseApis: MatrixClient, userId: string, deviceId: string, clientStore: IStore, cryptoStore: CryptoStore, roomList: RoomList, verificationMethods: Array<keyof typeof defaultVerificationMethods | typeof VerificationBase>);
     /**
      * Initialise the crypto module so that it is ready for use
      *
@@ -298,15 +334,15 @@ export declare class Crypto extends EventEmitter {
      *     {Promise} A promise which resolves to key creation data for
      *     SecretStorage#addKey: an object with `passphrase` etc fields.
      */
-    bootstrapSecretStorage({ createSecretStorageKey, keyBackupInfo, setupNewKeyBackup, setupNewSecretStorage, getKeyBackupPassphrase, }?: IBootstrapSecretStorageOpts): Promise<void>;
+    bootstrapSecretStorage({ createSecretStorageKey, keyBackupInfo, setupNewKeyBackup, setupNewSecretStorage, getKeyBackupPassphrase, }?: ICreateSecretStorageOpts): Promise<void>;
     addSecretStorageKey(algorithm: string, opts: IAddSecretStorageKeyOpts, keyID: string): Promise<SecretStorageKeyObject>;
     hasSecretStorageKey(keyID: string): Promise<boolean>;
     getSecretStorageKey(keyID?: string): Promise<SecretStorageKeyTuple>;
     storeSecret(name: string, secret: string, keys?: string[]): Promise<void>;
     getSecret(name: string): Promise<string>;
-    isSecretStored(name: string, checkKey?: boolean): Promise<Record<string, ISecretStorageKeyInfo>>;
+    isSecretStored(name: string): Promise<Record<string, ISecretStorageKeyInfo> | null>;
     requestSecret(name: string, devices: string[]): ISecretRequest;
-    getDefaultSecretStorageKeyId(): Promise<string>;
+    getDefaultSecretStorageKeyId(): Promise<string | null>;
     setDefaultSecretStorageKeyId(k: string): Promise<void>;
     checkSecretStorageKey(key: Uint8Array, info: ISecretStorageKeyInfo): Promise<boolean>;
     /**
@@ -407,6 +443,15 @@ export declare class Crypto extends EventEmitter {
      * @returns {DeviceTrustLevel}
      */
     checkDeviceInfoTrust(userId: string, device: DeviceInfo): DeviceTrustLevel;
+    /**
+     * Check whether one of our own devices is cross-signed by our
+     * user's stored keys, regardless of whether we trust those keys yet.
+     *
+     * @param {string} deviceId The ID of the device to check
+     *
+     * @returns {boolean} true if the device is cross-signed
+     */
+    checkIfOwnDeviceCrossSigned(deviceId: string): boolean;
     private onDeviceListUserCrossSigningUpdated;
     /**
      * Check the copy of our cross-signing key that we have in the device list and
@@ -426,7 +471,6 @@ export declare class Crypto extends EventEmitter {
      * @param {string} userId the user ID whose key should be checked
      */
     private checkDeviceVerifications;
-    setTrustedBackupPubKey(trustedPubKey: string): Promise<void>;
     /**
      */
     enableLazyLoading(): void;
@@ -437,7 +481,7 @@ export declare class Crypto extends EventEmitter {
      * @param {external:EventEmitter} eventEmitter event source where we can register
      *    for event notifications
      */
-    registerEventHandlers(eventEmitter: EventEmitter): void;
+    registerEventHandlers(eventEmitter: TypedEventEmitter<RoomMemberEvent.Membership | ClientEvent.ToDeviceEvent | RoomEvent.Timeline | MatrixEventEvent.Decrypted, any>): void;
     /** Start background processes related to crypto */
     start(): void;
     /** Stop background processes related to crypto */
@@ -565,7 +609,7 @@ export declare class Crypto extends EventEmitter {
     requestVerificationDM(userId: string, roomId: string): Promise<VerificationRequest>;
     requestVerification(userId: string, devices: string[]): Promise<VerificationRequest>;
     private requestVerificationWithChannel;
-    beginKeyVerification(method: string, userId: string, deviceId: string, transactionId?: string): any;
+    beginKeyVerification(method: string, userId: string, deviceId: string, transactionId?: string): VerificationBase<any, any>;
     legacyDeviceVerification(userId: string, deviceId: string, method: VerificationMethod): Promise<VerificationRequest>;
     /**
      * Get information on the active olm sessions with a user
@@ -640,12 +684,13 @@ export declare class Crypto extends EventEmitter {
      * the given users.
      *
      * @param {string[]} users list of user ids
+     * @param {boolean} force If true, force a new Olm session to be created. Default false.
      *
      * @return {Promise} resolves once the sessions are complete, to
      *    an Object mapping from userId to deviceId to
      *    {@link module:crypto~OlmSessionResult}
      */
-    ensureOlmSessionsForUsers(users: string[]): Promise<Record<string, Record<string, olmlib.IOlmSessionResult>>>;
+    ensureOlmSessionsForUsers(users: string[], force?: boolean): Promise<Record<string, Record<string, olmlib.IOlmSessionResult>>>;
     /**
      * Get a list containing all of the room keys
      *
@@ -660,7 +705,7 @@ export declare class Crypto extends EventEmitter {
      * @param {Function} opts.progressCallback called with an object which has a stage param
      * @return {Promise} a promise which resolves once the keys have been imported
      */
-    importRoomKeys(keys: IMegolmSessionData[], opts?: IImportRoomKeysOpts): Promise<any>;
+    importRoomKeys(keys: IMegolmSessionData[], opts?: IImportRoomKeysOpts): Promise<void>;
     /**
      * Counts the number of end to end session keys that are waiting to be backed up
      * @returns {Promise<number>} Resolves to the number of sessions requiring backup
@@ -769,6 +814,7 @@ export declare class Crypto extends EventEmitter {
      * @returns {module:models.Room[]}
      */
     private getTrackedE2eRooms;
+    private onMembership;
     private onToDeviceEvent;
     /**
      * Handle a key event
@@ -916,6 +962,19 @@ export declare class IncomingRoomKeyRequest {
     readonly requestId: string;
     readonly requestBody: IRoomKeyRequestBody;
     share: () => void;
+    constructor(event: MatrixEvent);
+}
+/**
+ * Represents a received m.room_key_request cancellation
+ *
+ * @property {string} userId    user requesting the cancellation
+ * @property {string} deviceId  device requesting the cancellation
+ * @property {string} requestId unique id for the request to be cancelled
+ */
+declare class IncomingRoomKeyRequestCancellation {
+    readonly userId: string;
+    readonly deviceId: string;
+    readonly requestId: string;
     constructor(event: MatrixEvent);
 }
 export {};
