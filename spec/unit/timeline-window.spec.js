@@ -1,6 +1,6 @@
 import { EventTimeline } from "../../src/models/event-timeline";
 import { TimelineIndex, TimelineWindow } from "../../src/timeline-window";
-import * as utils from "../test-utils";
+import * as utils from "../test-utils/test-utils";
 
 const ROOM_ID = "roomId";
 const USER_ID = "userId";
@@ -35,13 +35,14 @@ function createTimeline(numEvents, baseIndex) {
     return timeline;
 }
 
-function addEventsToTimeline(timeline, numEvents, atStart) {
+function addEventsToTimeline(timeline, numEvents, toStartOfTimeline) {
     for (let i = 0; i < numEvents; i++) {
         timeline.addEvent(
             utils.mkMessage({
                 room: ROOM_ID, user: USER_ID,
                 event: true,
-            }), atStart,
+            }),
+            { toStartOfTimeline },
         );
     }
 }
