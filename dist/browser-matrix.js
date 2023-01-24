@@ -7,8 +7,7 @@ function _assertThisInitialized(self) {
   return self;
 }
 
-module.exports = _assertThisInitialized;
-module.exports["default"] = module.exports, module.exports.__esModule = true;
+module.exports = _assertThisInitialized, module.exports.__esModule = true, module.exports["default"] = module.exports;
 },{}],2:[function(require,module,exports){
 function _classCallCheck(instance, Constructor) {
   if (!(instance instanceof Constructor)) {
@@ -16,8 +15,7 @@ function _classCallCheck(instance, Constructor) {
   }
 }
 
-module.exports = _classCallCheck;
-module.exports["default"] = module.exports, module.exports.__esModule = true;
+module.exports = _classCallCheck, module.exports.__esModule = true, module.exports["default"] = module.exports;
 },{}],3:[function(require,module,exports){
 var setPrototypeOf = require("./setPrototypeOf.js");
 
@@ -25,8 +23,7 @@ var isNativeReflectConstruct = require("./isNativeReflectConstruct.js");
 
 function _construct(Parent, args, Class) {
   if (isNativeReflectConstruct()) {
-    module.exports = _construct = Reflect.construct;
-    module.exports["default"] = module.exports, module.exports.__esModule = true;
+    module.exports = _construct = Reflect.construct.bind(), module.exports.__esModule = true, module.exports["default"] = module.exports;
   } else {
     module.exports = _construct = function _construct(Parent, args, Class) {
       var a = [null];
@@ -35,28 +32,44 @@ function _construct(Parent, args, Class) {
       var instance = new Constructor();
       if (Class) setPrototypeOf(instance, Class.prototype);
       return instance;
-    };
-
-    module.exports["default"] = module.exports, module.exports.__esModule = true;
+    }, module.exports.__esModule = true, module.exports["default"] = module.exports;
   }
 
   return _construct.apply(null, arguments);
 }
 
-module.exports = _construct;
-module.exports["default"] = module.exports, module.exports.__esModule = true;
-},{"./isNativeReflectConstruct.js":8,"./setPrototypeOf.js":10}],4:[function(require,module,exports){
+module.exports = _construct, module.exports.__esModule = true, module.exports["default"] = module.exports;
+},{"./isNativeReflectConstruct.js":9,"./setPrototypeOf.js":11}],4:[function(require,module,exports){
+function _defineProperties(target, props) {
+  for (var i = 0; i < props.length; i++) {
+    var descriptor = props[i];
+    descriptor.enumerable = descriptor.enumerable || false;
+    descriptor.configurable = true;
+    if ("value" in descriptor) descriptor.writable = true;
+    Object.defineProperty(target, descriptor.key, descriptor);
+  }
+}
+
+function _createClass(Constructor, protoProps, staticProps) {
+  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+  if (staticProps) _defineProperties(Constructor, staticProps);
+  Object.defineProperty(Constructor, "prototype", {
+    writable: false
+  });
+  return Constructor;
+}
+
+module.exports = _createClass, module.exports.__esModule = true, module.exports["default"] = module.exports;
+},{}],5:[function(require,module,exports){
 function _getPrototypeOf(o) {
-  module.exports = _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+  module.exports = _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf.bind() : function _getPrototypeOf(o) {
     return o.__proto__ || Object.getPrototypeOf(o);
-  };
-  module.exports["default"] = module.exports, module.exports.__esModule = true;
+  }, module.exports.__esModule = true, module.exports["default"] = module.exports;
   return _getPrototypeOf(o);
 }
 
-module.exports = _getPrototypeOf;
-module.exports["default"] = module.exports, module.exports.__esModule = true;
-},{}],5:[function(require,module,exports){
+module.exports = _getPrototypeOf, module.exports.__esModule = true, module.exports["default"] = module.exports;
+},{}],6:[function(require,module,exports){
 var setPrototypeOf = require("./setPrototypeOf.js");
 
 function _inherits(subClass, superClass) {
@@ -71,28 +84,28 @@ function _inherits(subClass, superClass) {
       configurable: true
     }
   });
+  Object.defineProperty(subClass, "prototype", {
+    writable: false
+  });
   if (superClass) setPrototypeOf(subClass, superClass);
 }
 
-module.exports = _inherits;
-module.exports["default"] = module.exports, module.exports.__esModule = true;
-},{"./setPrototypeOf.js":10}],6:[function(require,module,exports){
+module.exports = _inherits, module.exports.__esModule = true, module.exports["default"] = module.exports;
+},{"./setPrototypeOf.js":11}],7:[function(require,module,exports){
 function _interopRequireDefault(obj) {
   return obj && obj.__esModule ? obj : {
     "default": obj
   };
 }
 
-module.exports = _interopRequireDefault;
-module.exports["default"] = module.exports, module.exports.__esModule = true;
-},{}],7:[function(require,module,exports){
+module.exports = _interopRequireDefault, module.exports.__esModule = true, module.exports["default"] = module.exports;
+},{}],8:[function(require,module,exports){
 function _isNativeFunction(fn) {
   return Function.toString.call(fn).indexOf("[native code]") !== -1;
 }
 
-module.exports = _isNativeFunction;
-module.exports["default"] = module.exports, module.exports.__esModule = true;
-},{}],8:[function(require,module,exports){
+module.exports = _isNativeFunction, module.exports.__esModule = true, module.exports["default"] = module.exports;
+},{}],9:[function(require,module,exports){
 function _isNativeReflectConstruct() {
   if (typeof Reflect === "undefined" || !Reflect.construct) return false;
   if (Reflect.construct.sham) return false;
@@ -106,10 +119,9 @@ function _isNativeReflectConstruct() {
   }
 }
 
-module.exports = _isNativeReflectConstruct;
-module.exports["default"] = module.exports, module.exports.__esModule = true;
-},{}],9:[function(require,module,exports){
-var _typeof = require("@babel/runtime/helpers/typeof")["default"];
+module.exports = _isNativeReflectConstruct, module.exports.__esModule = true, module.exports["default"] = module.exports;
+},{}],10:[function(require,module,exports){
+var _typeof = require("./typeof.js")["default"];
 
 var assertThisInitialized = require("./assertThisInitialized.js");
 
@@ -123,45 +135,30 @@ function _possibleConstructorReturn(self, call) {
   return assertThisInitialized(self);
 }
 
-module.exports = _possibleConstructorReturn;
-module.exports["default"] = module.exports, module.exports.__esModule = true;
-},{"./assertThisInitialized.js":1,"@babel/runtime/helpers/typeof":11}],10:[function(require,module,exports){
+module.exports = _possibleConstructorReturn, module.exports.__esModule = true, module.exports["default"] = module.exports;
+},{"./assertThisInitialized.js":1,"./typeof.js":12}],11:[function(require,module,exports){
 function _setPrototypeOf(o, p) {
-  module.exports = _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+  module.exports = _setPrototypeOf = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function _setPrototypeOf(o, p) {
     o.__proto__ = p;
     return o;
-  };
-
-  module.exports["default"] = module.exports, module.exports.__esModule = true;
+  }, module.exports.__esModule = true, module.exports["default"] = module.exports;
   return _setPrototypeOf(o, p);
 }
 
-module.exports = _setPrototypeOf;
-module.exports["default"] = module.exports, module.exports.__esModule = true;
-},{}],11:[function(require,module,exports){
+module.exports = _setPrototypeOf, module.exports.__esModule = true, module.exports["default"] = module.exports;
+},{}],12:[function(require,module,exports){
 function _typeof(obj) {
   "@babel/helpers - typeof";
 
-  if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
-    module.exports = _typeof = function _typeof(obj) {
-      return typeof obj;
-    };
-
-    module.exports["default"] = module.exports, module.exports.__esModule = true;
-  } else {
-    module.exports = _typeof = function _typeof(obj) {
-      return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
-    };
-
-    module.exports["default"] = module.exports, module.exports.__esModule = true;
-  }
-
-  return _typeof(obj);
+  return (module.exports = _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) {
+    return typeof obj;
+  } : function (obj) {
+    return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+  }, module.exports.__esModule = true, module.exports["default"] = module.exports), _typeof(obj);
 }
 
-module.exports = _typeof;
-module.exports["default"] = module.exports, module.exports.__esModule = true;
-},{}],12:[function(require,module,exports){
+module.exports = _typeof, module.exports.__esModule = true, module.exports["default"] = module.exports;
+},{}],13:[function(require,module,exports){
 var getPrototypeOf = require("./getPrototypeOf.js");
 
 var setPrototypeOf = require("./setPrototypeOf.js");
@@ -199,15 +196,12 @@ function _wrapNativeSuper(Class) {
       }
     });
     return setPrototypeOf(Wrapper, Class);
-  };
-
-  module.exports["default"] = module.exports, module.exports.__esModule = true;
+  }, module.exports.__esModule = true, module.exports["default"] = module.exports;
   return _wrapNativeSuper(Class);
 }
 
-module.exports = _wrapNativeSuper;
-module.exports["default"] = module.exports, module.exports.__esModule = true;
-},{"./construct.js":3,"./getPrototypeOf.js":4,"./isNativeFunction.js":7,"./setPrototypeOf.js":10}],13:[function(require,module,exports){
+module.exports = _wrapNativeSuper, module.exports.__esModule = true, module.exports["default"] = module.exports;
+},{"./construct.js":3,"./getPrototypeOf.js":5,"./isNativeFunction.js":8,"./setPrototypeOf.js":11}],14:[function(require,module,exports){
 /* Copyright 2015 Mark Haines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -302,7 +296,7 @@ function stringifyObject(object) {
 /** */
 module.exports = {stringify: stringify};
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 'use strict'
 // base-x encoding / decoding
 // Copyright (c) 2018 base-x contributors
@@ -371,8 +365,6 @@ function base (ALPHABET) {
     if (typeof source !== 'string') { throw new TypeError('Expected String') }
     if (source.length === 0) { return _Buffer.alloc(0) }
     var psz = 0
-        // Skip leading spaces.
-    if (source[psz] === ' ') { return }
         // Skip and count leading '1's.
     var zeroes = 0
     var length = 0
@@ -399,8 +391,6 @@ function base (ALPHABET) {
       length = i
       psz++
     }
-        // Skip trailing spaces.
-    if (source[psz] === ' ') { return }
         // Skip leading zeroes in b256.
     var it4 = size - length
     while (it4 !== size && b256[it4] === 0) {
@@ -427,7 +417,7 @@ function base (ALPHABET) {
 }
 module.exports = base
 
-},{"safe-buffer":65}],15:[function(require,module,exports){
+},{"safe-buffer":66}],16:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -579,7 +569,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 // Browser Request
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -1075,15 +1065,15 @@ function b64_enc (data) {
 }));
 //UMD FOOTER END
 
-},{}],17:[function(require,module,exports){
-
 },{}],18:[function(require,module,exports){
+
+},{}],19:[function(require,module,exports){
 var basex = require('base-x')
 var ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
 module.exports = basex(ALPHABET)
 
-},{"base-x":14}],19:[function(require,module,exports){
+},{"base-x":15}],20:[function(require,module,exports){
 (function (Buffer){(function (){
 /*!
  * The buffer module from node.js, for the browser.
@@ -2865,7 +2855,7 @@ function numberIsNaN (obj) {
 
 }).call(this)}).call(this,require("buffer").Buffer)
 
-},{"base64-js":15,"buffer":19,"ieee754":30}],20:[function(require,module,exports){
+},{"base64-js":16,"buffer":20,"ieee754":31}],21:[function(require,module,exports){
 'use strict';
 
 var GetIntrinsic = require('get-intrinsic');
@@ -2882,7 +2872,7 @@ module.exports = function callBoundIntrinsic(name, allowMissing) {
 	return intrinsic;
 };
 
-},{"./":21,"get-intrinsic":26}],21:[function(require,module,exports){
+},{"./":22,"get-intrinsic":27}],22:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
@@ -2931,7 +2921,7 @@ if ($defineProperty) {
 	module.exports.apply = applyBind;
 }
 
-},{"function-bind":25,"get-intrinsic":26}],22:[function(require,module,exports){
+},{"function-bind":26,"get-intrinsic":27}],23:[function(require,module,exports){
 /*!
  * content-type
  * Copyright(c) 2015 Douglas Christopher Wilson
@@ -3155,7 +3145,7 @@ function ContentType (type) {
   this.type = type
 }
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3654,7 +3644,7 @@ function eventTargetAgnosticAddListener(emitter, name, listener, flags) {
   }
 }
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 'use strict';
 
 /* eslint no-invalid-this: 1 */
@@ -3708,14 +3698,14 @@ module.exports = function bind(that) {
     return bound;
 };
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 'use strict';
 
 var implementation = require('./implementation');
 
 module.exports = Function.prototype.bind || implementation;
 
-},{"./implementation":24}],26:[function(require,module,exports){
+},{"./implementation":25}],27:[function(require,module,exports){
 'use strict';
 
 var undefined;
@@ -3920,6 +3910,7 @@ var $concat = bind.call(Function.call, Array.prototype.concat);
 var $spliceApply = bind.call(Function.apply, Array.prototype.splice);
 var $replace = bind.call(Function.call, String.prototype.replace);
 var $strSlice = bind.call(Function.call, String.prototype.slice);
+var $exec = bind.call(Function.call, RegExp.prototype.exec);
 
 /* adapted from https://github.com/lodash/lodash/blob/4.17.15/dist/lodash.js#L6735-L6744 */
 var rePropName = /[^%.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|%$))/g;
@@ -3975,6 +3966,9 @@ module.exports = function GetIntrinsic(name, allowMissing) {
 		throw new $TypeError('"allowMissing" argument must be a boolean');
 	}
 
+	if ($exec(/^%?[^%]*%?$/g, name) === null) {
+		throw new $SyntaxError('`%` may not be present anywhere but at the beginning and end of the intrinsic name');
+	}
 	var parts = stringToPath(name);
 	var intrinsicBaseName = parts.length > 0 ? parts[0] : '';
 
@@ -4047,7 +4041,7 @@ module.exports = function GetIntrinsic(name, allowMissing) {
 	return value;
 };
 
-},{"function-bind":25,"has":29,"has-symbols":27}],27:[function(require,module,exports){
+},{"function-bind":26,"has":30,"has-symbols":28}],28:[function(require,module,exports){
 'use strict';
 
 var origSymbol = typeof Symbol !== 'undefined' && Symbol;
@@ -4062,7 +4056,7 @@ module.exports = function hasNativeSymbols() {
 	return hasSymbolSham();
 };
 
-},{"./shams":28}],28:[function(require,module,exports){
+},{"./shams":29}],29:[function(require,module,exports){
 'use strict';
 
 /* eslint complexity: [2, 18], max-statements: [2, 33] */
@@ -4106,14 +4100,14 @@ module.exports = function hasSymbols() {
 	return true;
 };
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 'use strict';
 
 var bind = require('function-bind');
 
 module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
 
-},{"function-bind":25}],30:[function(require,module,exports){
+},{"function-bind":26}],31:[function(require,module,exports){
 /*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
@@ -4200,7 +4194,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 /*
 * loglevel - https://github.com/pimterry/loglevel
 *
@@ -4321,6 +4315,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
     function Logger(name, defaultLevel, factory) {
       var self = this;
       var currentLevel;
+      defaultLevel = defaultLevel == null ? "WARN" : defaultLevel;
 
       var storageKey = "loglevel";
       if (typeof name === "string") {
@@ -4376,6 +4371,22 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
           return storedLevel;
       }
 
+      function clearPersistedLevel() {
+          if (typeof window === undefinedType || !storageKey) return;
+
+          // Use localStorage if available
+          try {
+              window.localStorage.removeItem(storageKey);
+              return;
+          } catch (ignore) {}
+
+          // Use session cookie as fallback
+          try {
+              window.document.cookie =
+                encodeURIComponent(storageKey) + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+          } catch (ignore) {}
+      }
+
       /*
        *
        * Public logger API - see https://github.com/pimterry/loglevel for details
@@ -4412,9 +4423,15 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
       };
 
       self.setDefaultLevel = function (level) {
+          defaultLevel = level;
           if (!getPersistedLevel()) {
               self.setLevel(level, false);
           }
+      };
+
+      self.resetLevel = function () {
+          self.setLevel(defaultLevel, false);
+          clearPersistedLevel();
       };
 
       self.enableAll = function(persist) {
@@ -4428,7 +4445,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
       // Initialize with the right level
       var initialLevel = getPersistedLevel();
       if (initialLevel == null) {
-          initialLevel = defaultLevel == null ? "WARN" : defaultLevel;
+          initialLevel = defaultLevel;
       }
       self.setLevel(initialLevel, false);
     }
@@ -4476,7 +4493,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
     return defaultLogger;
 }));
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -4666,13 +4683,13 @@ var ExtensibleEvents = /*#__PURE__*/function () {
 exports.ExtensibleEvents = ExtensibleEvents;
 
 _defineProperty(ExtensibleEvents, "_defaultInstance", new ExtensibleEvents());
-},{"./InvalidEventError":34,"./NamespacedMap":35,"./events/message_types":44,"./events/poll_types":45,"./interpreters/legacy/MRoomMessage":48,"./interpreters/modern/MMessage":49,"./interpreters/modern/MPoll":50}],33:[function(require,module,exports){
+},{"./InvalidEventError":35,"./NamespacedMap":36,"./events/message_types":45,"./events/poll_types":46,"./interpreters/legacy/MRoomMessage":49,"./interpreters/modern/MMessage":50,"./interpreters/modern/MPoll":51}],34:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -4742,7 +4759,7 @@ var InvalidEventError = /*#__PURE__*/function (_Error) {
 }( /*#__PURE__*/_wrapNativeSuper(Error));
 
 exports.InvalidEventError = InvalidEventError;
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -4892,7 +4909,7 @@ var NamespacedMap = /*#__PURE__*/function () {
 }();
 
 exports.NamespacedMap = NamespacedMap;
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -5059,7 +5076,7 @@ var UnstableValue = /*#__PURE__*/function (_NamespacedValue) {
 }(NamespacedValue);
 
 exports.UnstableValue = UnstableValue;
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -5159,7 +5176,7 @@ var EmoteEvent = /*#__PURE__*/function (_MessageEvent) {
 }(_MessageEvent2.MessageEvent);
 
 exports.EmoteEvent = EmoteEvent;
-},{"../utility/events":53,"./MessageEvent":39,"./message_types":44}],38:[function(require,module,exports){
+},{"../utility/events":54,"./MessageEvent":40,"./message_types":45}],39:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -5220,7 +5237,7 @@ var ExtensibleEvent = /*#__PURE__*/function () {
 }();
 
 exports.ExtensibleEvent = ExtensibleEvent;
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -5435,7 +5452,7 @@ var MessageEvent = /*#__PURE__*/function (_ExtensibleEvent) {
 }(_ExtensibleEvent2.ExtensibleEvent);
 
 exports.MessageEvent = MessageEvent;
-},{"../InvalidEventError":34,"../types":51,"../utility/events":53,"./ExtensibleEvent":38,"./message_types":44}],40:[function(require,module,exports){
+},{"../InvalidEventError":35,"../types":52,"../utility/events":54,"./ExtensibleEvent":39,"./message_types":45}],41:[function(require,module,exports){
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -5535,7 +5552,7 @@ var NoticeEvent = /*#__PURE__*/function (_MessageEvent) {
 }(_MessageEvent2.MessageEvent);
 
 exports.NoticeEvent = NoticeEvent;
-},{"../utility/events":53,"./MessageEvent":39,"./message_types":44}],41:[function(require,module,exports){
+},{"../utility/events":54,"./MessageEvent":40,"./message_types":45}],42:[function(require,module,exports){
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -5674,7 +5691,7 @@ var PollEndEvent = /*#__PURE__*/function (_ExtensibleEvent) {
 }(_ExtensibleEvent2.ExtensibleEvent);
 
 exports.PollEndEvent = PollEndEvent;
-},{"../InvalidEventError":34,"../utility/events":53,"./ExtensibleEvent":38,"./MessageEvent":39,"./message_types":44,"./poll_types":45,"./relationship_types":46}],42:[function(require,module,exports){
+},{"../InvalidEventError":35,"../utility/events":54,"./ExtensibleEvent":39,"./MessageEvent":40,"./message_types":45,"./poll_types":46,"./relationship_types":47}],43:[function(require,module,exports){
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -5873,7 +5890,7 @@ var PollResponseEvent = /*#__PURE__*/function (_ExtensibleEvent) {
 }(_ExtensibleEvent2.ExtensibleEvent);
 
 exports.PollResponseEvent = PollResponseEvent;
-},{"../InvalidEventError":34,"../utility/events":53,"./ExtensibleEvent":38,"./poll_types":45,"./relationship_types":46}],43:[function(require,module,exports){
+},{"../InvalidEventError":35,"../utility/events":54,"./ExtensibleEvent":39,"./poll_types":46,"./relationship_types":47}],44:[function(require,module,exports){
 "use strict";
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
@@ -6161,7 +6178,7 @@ function makeId() {
     return LETTERS.charAt(Math.floor(Math.random() * LETTERS.length));
   }).join('');
 }
-},{"../InvalidEventError":34,"../NamespacedValue":36,"../utility/events":53,"./ExtensibleEvent":38,"./MessageEvent":39,"./message_types":44,"./poll_types":45}],44:[function(require,module,exports){
+},{"../InvalidEventError":35,"../NamespacedValue":37,"../utility/events":54,"./ExtensibleEvent":39,"./MessageEvent":40,"./message_types":45,"./poll_types":46}],45:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6236,7 +6253,7 @@ var M_NOTICE = new _NamespacedValue.UnstableValue("m.notice", "org.matrix.msc176
  */
 
 exports.M_NOTICE = M_NOTICE;
-},{"../NamespacedValue":36}],45:[function(require,module,exports){
+},{"../NamespacedValue":37}],46:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6307,7 +6324,7 @@ var M_POLL_END = new _NamespacedValue.UnstableValue("m.poll.end", "org.matrix.ms
  */
 
 exports.M_POLL_END = M_POLL_END;
-},{"../NamespacedValue":36}],46:[function(require,module,exports){
+},{"../NamespacedValue":37}],47:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6342,7 +6359,7 @@ var REFERENCE_RELATION = new _NamespacedValue.NamespacedValue("m.reference");
  */
 
 exports.REFERENCE_RELATION = REFERENCE_RELATION;
-},{"../NamespacedValue":36}],47:[function(require,module,exports){
+},{"../NamespacedValue":37}],48:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6621,7 +6638,7 @@ Object.keys(_PollEndEvent).forEach(function (key) {
     }
   });
 });
-},{"./ExtensibleEvents":32,"./IPartialEvent":33,"./InvalidEventError":34,"./NamespacedMap":35,"./NamespacedValue":36,"./events/EmoteEvent":37,"./events/ExtensibleEvent":38,"./events/MessageEvent":39,"./events/NoticeEvent":40,"./events/PollEndEvent":41,"./events/PollResponseEvent":42,"./events/PollStartEvent":43,"./events/message_types":44,"./events/poll_types":45,"./events/relationship_types":46,"./interpreters/legacy/MRoomMessage":48,"./interpreters/modern/MMessage":49,"./interpreters/modern/MPoll":50,"./types":51,"./utility/MessageMatchers":52,"./utility/events":53}],48:[function(require,module,exports){
+},{"./ExtensibleEvents":33,"./IPartialEvent":34,"./InvalidEventError":35,"./NamespacedMap":36,"./NamespacedValue":37,"./events/EmoteEvent":38,"./events/ExtensibleEvent":39,"./events/MessageEvent":40,"./events/NoticeEvent":41,"./events/PollEndEvent":42,"./events/PollResponseEvent":43,"./events/PollStartEvent":44,"./events/message_types":45,"./events/poll_types":46,"./events/relationship_types":47,"./interpreters/legacy/MRoomMessage":49,"./interpreters/modern/MMessage":50,"./interpreters/modern/MPoll":51,"./types":52,"./utility/MessageMatchers":53,"./utility/events":54}],49:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6684,7 +6701,7 @@ function parseMRoomMessage(wireEvent) {
     return null;
   }
 }
-},{"../../NamespacedValue":36,"../../events/EmoteEvent":37,"../../events/MessageEvent":39,"../../events/NoticeEvent":40,"../../events/message_types":44}],49:[function(require,module,exports){
+},{"../../NamespacedValue":37,"../../events/EmoteEvent":38,"../../events/MessageEvent":40,"../../events/NoticeEvent":41,"../../events/message_types":45}],50:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6725,7 +6742,7 @@ function parseMMessage(wireEvent) {
 
   return new _MessageEvent.MessageEvent(wireEvent);
 }
-},{"../../events/EmoteEvent":37,"../../events/MessageEvent":39,"../../events/NoticeEvent":40,"../../events/message_types":44}],50:[function(require,module,exports){
+},{"../../events/EmoteEvent":38,"../../events/MessageEvent":40,"../../events/NoticeEvent":41,"../../events/message_types":45}],51:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6767,7 +6784,7 @@ function parseMPoll(wireEvent) {
 
   return null; // not a poll event
 }
-},{"../../events/PollEndEvent":41,"../../events/PollResponseEvent":42,"../../events/PollStartEvent":43,"../../events/poll_types":45}],51:[function(require,module,exports){
+},{"../../events/PollEndEvent":42,"../../events/PollResponseEvent":43,"../../events/PollStartEvent":44,"../../events/poll_types":46}],52:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6817,7 +6834,7 @@ function isProvided(s) {
 /**
  * Represents either just T1, just T2, or T1 and T2 mixed.
  */
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6877,7 +6894,7 @@ function isEventLike(event, msgtype) {
 
   return false;
 }
-},{"../events/message_types":44}],53:[function(require,module,exports){
+},{"../events/message_types":45}],54:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -6929,7 +6946,7 @@ function isEventTypeSame(given, expected) {
     }
   }
 }
-},{}],54:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 var hasMap = typeof Map === 'function' && Map.prototype;
 var mapSizeDescriptor = Object.getOwnPropertyDescriptor && hasMap ? Object.getOwnPropertyDescriptor(Map.prototype, 'size') : null;
 var mapSize = hasMap && mapSizeDescriptor && typeof mapSizeDescriptor.get === 'function' ? mapSizeDescriptor.get : null;
@@ -7443,7 +7460,7 @@ function arrObjKeys(obj, inspect) {
     return xs;
 }
 
-},{"./util.inspect":17}],55:[function(require,module,exports){
+},{"./util.inspect":18}],56:[function(require,module,exports){
 'use strict';
 const retry = require('retry');
 
@@ -7530,7 +7547,7 @@ module.exports.default = pRetry;
 
 module.exports.AbortError = AbortError;
 
-},{"retry":62}],56:[function(require,module,exports){
+},{"retry":63}],57:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -7716,7 +7733,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],57:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 'use strict';
 
 var replace = String.prototype.replace;
@@ -7741,7 +7758,7 @@ module.exports = {
     RFC3986: Format.RFC3986
 };
 
-},{}],58:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 'use strict';
 
 var stringify = require('./stringify');
@@ -7754,7 +7771,7 @@ module.exports = {
     stringify: stringify
 };
 
-},{"./formats":57,"./parse":59,"./stringify":60}],59:[function(require,module,exports){
+},{"./formats":58,"./parse":60,"./stringify":61}],60:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -7893,7 +7910,7 @@ var parseObject = function (chain, val, options, valuesParsed) {
             ) {
                 obj = [];
                 obj[index] = leaf;
-            } else {
+            } else if (cleanRoot !== '__proto__') {
                 obj[cleanRoot] = leaf;
             }
         }
@@ -8019,7 +8036,7 @@ module.exports = function (str, opts) {
     return utils.compact(obj);
 };
 
-},{"./utils":61}],60:[function(require,module,exports){
+},{"./utils":62}],61:[function(require,module,exports){
 'use strict';
 
 var getSideChannel = require('side-channel');
@@ -8041,6 +8058,7 @@ var arrayPrefixGenerators = {
 };
 
 var isArray = Array.isArray;
+var split = String.prototype.split;
 var push = Array.prototype.push;
 var pushToArray = function (arr, valueOrArray) {
     push.apply(arr, isArray(valueOrArray) ? valueOrArray : [valueOrArray]);
@@ -8077,10 +8095,13 @@ var isNonNullishPrimitive = function isNonNullishPrimitive(v) {
         || typeof v === 'bigint';
 };
 
+var sentinel = {};
+
 var stringify = function stringify(
     object,
     prefix,
     generateArrayPrefix,
+    commaRoundTrip,
     strictNullHandling,
     skipNulls,
     encoder,
@@ -8096,8 +8117,23 @@ var stringify = function stringify(
 ) {
     var obj = object;
 
-    if (sideChannel.has(object)) {
-        throw new RangeError('Cyclic object value');
+    var tmpSc = sideChannel;
+    var step = 0;
+    var findFlag = false;
+    while ((tmpSc = tmpSc.get(sentinel)) !== void undefined && !findFlag) {
+        // Where object last appeared in the ref tree
+        var pos = tmpSc.get(object);
+        step += 1;
+        if (typeof pos !== 'undefined') {
+            if (pos === step) {
+                throw new RangeError('Cyclic object value');
+            } else {
+                findFlag = true; // Break while
+            }
+        }
+        if (typeof tmpSc.get(sentinel) === 'undefined') {
+            step = 0;
+        }
     }
 
     if (typeof filter === 'function') {
@@ -8124,6 +8160,14 @@ var stringify = function stringify(
     if (isNonNullishPrimitive(obj) || utils.isBuffer(obj)) {
         if (encoder) {
             var keyValue = encodeValuesOnly ? prefix : encoder(prefix, defaults.encoder, charset, 'key', format);
+            if (generateArrayPrefix === 'comma' && encodeValuesOnly) {
+                var valuesArray = split.call(String(obj), ',');
+                var valuesJoined = '';
+                for (var i = 0; i < valuesArray.length; ++i) {
+                    valuesJoined += (i === 0 ? '' : ',') + formatter(encoder(valuesArray[i], defaults.encoder, charset, 'value', format));
+                }
+                return [formatter(keyValue) + (commaRoundTrip && isArray(obj) && valuesArray.length === 1 ? '[]' : '') + '=' + valuesJoined];
+            }
             return [formatter(keyValue) + '=' + formatter(encoder(obj, defaults.encoder, charset, 'value', format))];
         }
         return [formatter(prefix) + '=' + formatter(String(obj))];
@@ -8138,7 +8182,7 @@ var stringify = function stringify(
     var objKeys;
     if (generateArrayPrefix === 'comma' && isArray(obj)) {
         // we need to join elements in
-        objKeys = [{ value: obj.length > 0 ? obj.join(',') || null : undefined }];
+        objKeys = [{ value: obj.length > 0 ? obj.join(',') || null : void undefined }];
     } else if (isArray(filter)) {
         objKeys = filter;
     } else {
@@ -8146,24 +8190,28 @@ var stringify = function stringify(
         objKeys = sort ? keys.sort(sort) : keys;
     }
 
-    for (var i = 0; i < objKeys.length; ++i) {
-        var key = objKeys[i];
-        var value = typeof key === 'object' && key.value !== undefined ? key.value : obj[key];
+    var adjustedPrefix = commaRoundTrip && isArray(obj) && obj.length === 1 ? prefix + '[]' : prefix;
+
+    for (var j = 0; j < objKeys.length; ++j) {
+        var key = objKeys[j];
+        var value = typeof key === 'object' && typeof key.value !== 'undefined' ? key.value : obj[key];
 
         if (skipNulls && value === null) {
             continue;
         }
 
         var keyPrefix = isArray(obj)
-            ? typeof generateArrayPrefix === 'function' ? generateArrayPrefix(prefix, key) : prefix
-            : prefix + (allowDots ? '.' + key : '[' + key + ']');
+            ? typeof generateArrayPrefix === 'function' ? generateArrayPrefix(adjustedPrefix, key) : adjustedPrefix
+            : adjustedPrefix + (allowDots ? '.' + key : '[' + key + ']');
 
-        sideChannel.set(object, true);
+        sideChannel.set(object, step);
         var valueSideChannel = getSideChannel();
+        valueSideChannel.set(sentinel, sideChannel);
         pushToArray(values, stringify(
             value,
             keyPrefix,
             generateArrayPrefix,
+            commaRoundTrip,
             strictNullHandling,
             skipNulls,
             encoder,
@@ -8187,7 +8235,7 @@ var normalizeStringifyOptions = function normalizeStringifyOptions(opts) {
         return defaults;
     }
 
-    if (opts.encoder !== null && opts.encoder !== undefined && typeof opts.encoder !== 'function') {
+    if (opts.encoder !== null && typeof opts.encoder !== 'undefined' && typeof opts.encoder !== 'function') {
         throw new TypeError('Encoder has to be a function.');
     }
 
@@ -8260,6 +8308,10 @@ module.exports = function (object, opts) {
     }
 
     var generateArrayPrefix = arrayPrefixGenerators[arrayFormat];
+    if (opts && 'commaRoundTrip' in opts && typeof opts.commaRoundTrip !== 'boolean') {
+        throw new TypeError('`commaRoundTrip` must be a boolean, or absent');
+    }
+    var commaRoundTrip = generateArrayPrefix === 'comma' && opts && opts.commaRoundTrip;
 
     if (!objKeys) {
         objKeys = Object.keys(obj);
@@ -8280,6 +8332,7 @@ module.exports = function (object, opts) {
             obj[key],
             key,
             generateArrayPrefix,
+            commaRoundTrip,
             options.strictNullHandling,
             options.skipNulls,
             options.encode ? options.encoder : null,
@@ -8311,7 +8364,7 @@ module.exports = function (object, opts) {
     return joined.length > 0 ? prefix + joined : '';
 };
 
-},{"./formats":57,"./utils":61,"side-channel":66}],61:[function(require,module,exports){
+},{"./formats":58,"./utils":62,"side-channel":67}],62:[function(require,module,exports){
 'use strict';
 
 var formats = require('./formats');
@@ -8491,6 +8544,7 @@ var encode = function encode(str, defaultEncoder, charset, kind, format) {
 
         i += 1;
         c = 0x10000 + (((c & 0x3FF) << 10) | (string.charCodeAt(i) & 0x3FF));
+        /* eslint operator-linebreak: [2, "before"] */
         out += hexTable[0xF0 | (c >> 18)]
             + hexTable[0x80 | ((c >> 12) & 0x3F)]
             + hexTable[0x80 | ((c >> 6) & 0x3F)]
@@ -8564,9 +8618,9 @@ module.exports = {
     merge: merge
 };
 
-},{"./formats":57}],62:[function(require,module,exports){
+},{"./formats":58}],63:[function(require,module,exports){
 module.exports = require('./lib/retry');
-},{"./lib/retry":63}],63:[function(require,module,exports){
+},{"./lib/retry":64}],64:[function(require,module,exports){
 var RetryOperation = require('./retry_operation');
 
 exports.operation = function(options) {
@@ -8668,7 +8722,7 @@ exports.wrap = function(obj, options, methods) {
   }
 };
 
-},{"./retry_operation":64}],64:[function(require,module,exports){
+},{"./retry_operation":65}],65:[function(require,module,exports){
 function RetryOperation(timeouts, options) {
   // Compatibility for the old (timeouts, retryForever) signature
   if (typeof options === 'boolean') {
@@ -8832,7 +8886,7 @@ RetryOperation.prototype.mainError = function() {
   return mainError;
 };
 
-},{}],65:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 /*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
 /* eslint-disable node/no-deprecated-api */
 var buffer = require('buffer')
@@ -8899,7 +8953,7 @@ SafeBuffer.allocUnsafeSlow = function (size) {
   return buffer.SlowBuffer(size)
 }
 
-},{"buffer":19}],66:[function(require,module,exports){
+},{"buffer":20}],67:[function(require,module,exports){
 'use strict';
 
 var GetIntrinsic = require('get-intrinsic');
@@ -9025,7 +9079,7 @@ module.exports = function getSideChannel() {
 	return channel;
 };
 
-},{"call-bind/callBound":20,"get-intrinsic":26,"object-inspect":54}],67:[function(require,module,exports){
+},{"call-bind/callBound":21,"get-intrinsic":27,"object-inspect":55}],68:[function(require,module,exports){
 module.exports={
   "0": "O",
   "1": "l",
@@ -11618,7 +11672,7 @@ module.exports={
   "𝜐": "u",
   "𝝊": "u",
   "𝞄": "u",
-  "𝞾": "u",
+  "����": "u",
   "ս": "u",
   "𐓶": "u",
   "𑣘": "u",
@@ -15339,7 +15393,7 @@ module.exports={
   "⻳": "龟",
   "⿕": "龠"
 }
-},{}],68:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 'use strict';
 
 
@@ -15361,7 +15415,7 @@ function unhomoglyph(str) {
 
 module.exports = unhomoglyph;
 
-},{"./data.json":67}],69:[function(require,module,exports){
+},{"./data.json":68}],70:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -15438,7 +15492,8 @@ var RuleId;
     RuleId["Tombstone"] = ".m.rule.tombstone";
 })(RuleId = exports.RuleId || (exports.RuleId = {}));
 /* eslint-enable camelcase */
-},{}],70:[function(require,module,exports){
+
+},{}],71:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2022 The Matrix.org Foundation C.I.C.
@@ -15502,7 +15557,8 @@ const NamespacedValue_1 = require("../NamespacedValue");
  */
 exports.M_BEACON_INFO = new NamespacedValue_1.UnstableValue("m.beacon_info", "org.matrix.msc3672.beacon_info");
 exports.M_BEACON = new NamespacedValue_1.UnstableValue("m.beacon", "org.matrix.msc3672.beacon");
-},{"../NamespacedValue":79}],71:[function(require,module,exports){
+
+},{"../NamespacedValue":80}],72:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2020 The Matrix.org Foundation C.I.C.
@@ -15678,7 +15734,8 @@ exports.UNSTABLE_ELEMENT_FUNCTIONAL_USERS = new NamespacedValue_1.UnstableValue(
  * @experimental
  */
 exports.EVENT_VISIBILITY_CHANGE_TYPE = new NamespacedValue_1.UnstableValue("m.visibility", "org.matrix.msc3531.visibility");
-},{"../NamespacedValue":79}],72:[function(require,module,exports){
+
+},{"../NamespacedValue":80}],73:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -15700,7 +15757,8 @@ exports.TEXT_NODE_TYPE = void 0;
 // Types for MSC1767: Extensible events in Matrix
 const NamespacedValue_1 = require("../NamespacedValue");
 exports.TEXT_NODE_TYPE = new NamespacedValue_1.UnstableValue("m.text", "org.matrix.msc1767.text");
-},{"../NamespacedValue":79}],73:[function(require,module,exports){
+
+},{"../NamespacedValue":80}],74:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -15729,7 +15787,8 @@ var LocationAssetType;
 exports.M_ASSET = new NamespacedValue_1.UnstableValue("m.asset", "org.matrix.msc3488.asset");
 exports.M_TIMESTAMP = new NamespacedValue_1.UnstableValue("m.ts", "org.matrix.msc3488.ts");
 exports.M_LOCATION = new NamespacedValue_1.UnstableValue("m.location", "org.matrix.msc3488.location");
-},{"../NamespacedValue":79,"./extensible_events":72}],74:[function(require,module,exports){
+
+},{"../NamespacedValue":80,"./extensible_events":73}],75:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -15787,7 +15846,8 @@ var HistoryVisibility;
     HistoryVisibility["Shared"] = "shared";
     HistoryVisibility["WorldReadable"] = "world_readable";
 })(HistoryVisibility = exports.HistoryVisibility || (exports.HistoryVisibility = {}));
-},{}],75:[function(require,module,exports){
+
+},{}],76:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2022 Šimon Brandner <simon.bra.ag@gmail.com>
@@ -15812,7 +15872,8 @@ var ReceiptType;
     ReceiptType["FullyRead"] = "m.fully_read";
     ReceiptType["ReadPrivate"] = "org.matrix.msc2285.read.private";
 })(ReceiptType = exports.ReceiptType || (exports.ReceiptType = {}));
-},{}],76:[function(require,module,exports){
+
+},{}],77:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -15831,7 +15892,8 @@ limitations under the License.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
 /* eslint-enable camelcase */
-},{}],77:[function(require,module,exports){
+
+},{}],78:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -15861,7 +15923,8 @@ var SearchOrderBy;
     SearchOrderBy["Rank"] = "rank";
 })(SearchOrderBy = exports.SearchOrderBy || (exports.SearchOrderBy = {}));
 /* eslint-enable camelcase */
-},{}],78:[function(require,module,exports){
+
+},{}],79:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2022 The Matrix.org Foundation C.I.C.
@@ -15906,7 +15969,8 @@ const NamespacedValue_1 = require("../NamespacedValue");
  * The event type for an m.topic event (in content)
  */
 exports.M_TOPIC = new NamespacedValue_1.UnstableValue("m.topic", "org.matrix.msc3765.topic");
-},{"../NamespacedValue":79}],79:[function(require,module,exports){
+
+},{"../NamespacedValue":80}],80:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -16014,7 +16078,8 @@ class UnstableValue extends NamespacedValue {
     }
 }
 exports.UnstableValue = UnstableValue;
-},{}],80:[function(require,module,exports){
+
+},{}],81:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015, 2016 OpenMarket Ltd
@@ -16073,7 +16138,8 @@ class TypedReEmitter extends ReEmitter {
     }
 }
 exports.TypedReEmitter = TypedReEmitter;
-},{}],81:[function(require,module,exports){
+
+},{}],82:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 New Vector Ltd
@@ -16486,7 +16552,8 @@ AutoDiscovery.PROMPT = AutoDiscoveryAction.PROMPT;
  * @constructor
  */
 AutoDiscovery.SUCCESS = AutoDiscoveryAction.SUCCESS;
-},{"./logger":126,"./matrix":127}],82:[function(require,module,exports){
+
+},{"./logger":127,"./matrix":128}],83:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 
@@ -16575,7 +16642,7 @@ global.matrixcs = matrixcs;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./matrix":127,"@babel/runtime/helpers/interopRequireDefault":6,"@babel/runtime/helpers/typeof":11,"browser-request":16,"qs":58}],83:[function(require,module,exports){
+},{"./matrix":128,"@babel/runtime/helpers/interopRequireDefault":7,"@babel/runtime/helpers/typeof":12,"browser-request":17,"qs":59}],84:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -23526,9 +23593,10 @@ MatrixClient.RESTORE_BACKUP_ERROR_BAD_KEY = 'RESTORE_BACKUP_ERROR_BAD_KEY';
  * @event module:client~MatrixClient#"WellKnown.client"
  * @param {object} data The JSON object returned by the server
  */
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./@types/PushRules":69,"./@types/beacon":70,"./@types/event":71,"./@types/partials":74,"./@types/read_receipts":75,"./@types/search":77,"./ReEmitter":80,"./autodiscovery":81,"./content-helpers":84,"./content-repo":85,"./crypto":102,"./crypto/RoomList":91,"./crypto/api":98,"./crypto/backup":99,"./crypto/dehydration":100,"./crypto/key_passphrase":103,"./crypto/olmlib":104,"./crypto/recoverykey":105,"./event-mapper":120,"./filter":122,"./http-api":123,"./logger":126,"./matrix":127,"./models/MSC3089TreeSpace":129,"./models/event":135,"./models/event-timeline":134,"./models/search-result":142,"./models/thread":143,"./models/typed-event-emitter":144,"./models/user":145,"./pushprocessor":146,"./randomstring":147,"./service-types":150,"./store/stub":155,"./sync":157,"./utils":159,"./webrtc/call":160,"./webrtc/callEventHandler":161,"./webrtc/mediaHandler":164,"matrix-events-sdk":47}],84:[function(require,module,exports){
+},{"./@types/PushRules":70,"./@types/beacon":71,"./@types/event":72,"./@types/partials":75,"./@types/read_receipts":76,"./@types/search":78,"./ReEmitter":81,"./autodiscovery":82,"./content-helpers":85,"./content-repo":86,"./crypto":103,"./crypto/RoomList":92,"./crypto/api":99,"./crypto/backup":100,"./crypto/dehydration":101,"./crypto/key_passphrase":104,"./crypto/olmlib":105,"./crypto/recoverykey":106,"./event-mapper":121,"./filter":123,"./http-api":124,"./logger":127,"./matrix":128,"./models/MSC3089TreeSpace":130,"./models/event":136,"./models/event-timeline":135,"./models/search-result":143,"./models/thread":144,"./models/typed-event-emitter":145,"./models/user":146,"./pushprocessor":147,"./randomstring":148,"./service-types":151,"./store/stub":156,"./sync":158,"./utils":160,"./webrtc/call":161,"./webrtc/callEventHandler":162,"./webrtc/mediaHandler":165,"matrix-events-sdk":48}],85:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 - 2022 The Matrix.org Foundation C.I.C.
@@ -23752,7 +23820,8 @@ const parseBeaconContent = (content) => {
     };
 };
 exports.parseBeaconContent = parseBeaconContent;
-},{"./@types/event":71,"./@types/extensible_events":72,"./@types/location":73,"./@types/topic":78,"matrix-events-sdk":47}],85:[function(require,module,exports){
+
+},{"./@types/event":72,"./@types/extensible_events":73,"./@types/location":74,"./@types/topic":79,"matrix-events-sdk":48}],86:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -23851,7 +23920,8 @@ function getHttpUriForMxc(baseUrl, mxc, width, height, resizeMethod, allowDirect
     return baseUrl + prefix + serverAndMediaId + urlParams + fragment;
 }
 exports.getHttpUriForMxc = getHttpUriForMxc;
-},{"./utils":159}],86:[function(require,module,exports){
+
+},{"./utils":160}],87:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -24586,9 +24656,10 @@ function requestKeysDuringVerification(baseApis, userId, deviceId) {
     });
 }
 exports.requestKeysDuringVerification = requestKeysDuringVerification;
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../crypto/store/indexeddb-crypto-store":107,"../logger":126,"./aes":93,"./olmlib":104,"buffer":19}],87:[function(require,module,exports){
+},{"../crypto/store/indexeddb-crypto-store":108,"../logger":127,"./aes":94,"./olmlib":105,"buffer":20}],88:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -25471,7 +25542,8 @@ function storeDeviceKeys(olmDevice, userStore, deviceResult) {
         return true;
     });
 }
-},{"../logger":126,"../models/typed-event-emitter":144,"../utils":159,"./CrossSigning":86,"./deviceinfo":101,"./index":102,"./olmlib":104,"./store/indexeddb-crypto-store":107}],88:[function(require,module,exports){
+
+},{"../logger":127,"../models/typed-event-emitter":145,"../utils":160,"./CrossSigning":87,"./deviceinfo":102,"./index":103,"./olmlib":105,"./store/indexeddb-crypto-store":108}],89:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -25821,7 +25893,8 @@ class SSSSCryptoCallbacks {
         (_b = (_a = this.delegateCryptoCallbacks) === null || _a === void 0 ? void 0 : _a.cacheSecretStorageKey) === null || _b === void 0 ? void 0 : _b.call(_a, keyId, keyInfo, privKey);
     }
 }
-},{"../http-api":123,"../logger":126,"../matrix":127,"../models/event":135,"../models/typed-event-emitter":144,"./CrossSigning":86,"./store/indexeddb-crypto-store":107}],89:[function(require,module,exports){
+
+},{"../http-api":124,"../logger":127,"../matrix":128,"../models/event":136,"../models/typed-event-emitter":145,"./CrossSigning":87,"./store/indexeddb-crypto-store":108}],90:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -27061,9 +27134,10 @@ function calculateWithheldMessage(withheld) {
         return "decryption key withheld";
     }
 }
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"../logger":126,"./algorithms":95,"./store/indexeddb-crypto-store":107}],90:[function(require,module,exports){
+},{"../logger":127,"./algorithms":96,"./store/indexeddb-crypto-store":108}],91:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -27484,7 +27558,8 @@ function stringifyRecipientList(recipients) {
         + recipients.map((r) => `${r.userId}:${r.deviceId}`).join(",")
         + ']';
 }
-},{"../@types/event":71,"../logger":126}],91:[function(require,module,exports){
+
+},{"../@types/event":72,"../logger":127}],92:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 - 2021 The Matrix.org Foundation C.I.C.
@@ -27551,7 +27626,8 @@ class RoomList {
     }
 }
 exports.RoomList = RoomList;
-},{"./store/indexeddb-crypto-store":107}],92:[function(require,module,exports){
+
+},{"./store/indexeddb-crypto-store":108}],93:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2019 - 2021 The Matrix.org Foundation C.I.C.
@@ -28082,7 +28158,8 @@ class SecretStorage {
     }
 }
 exports.SecretStorage = SecretStorage;
-},{"../logger":126,"../matrix":127,"../randomstring":147,"./aes":93,"./olmlib":104}],93:[function(require,module,exports){
+
+},{"../logger":127,"../matrix":128,"../randomstring":148,"./aes":94,"./olmlib":105}],94:[function(require,module,exports){
 (function (Buffer){(function (){
 "use strict";
 /*
@@ -28300,9 +28377,10 @@ function calculateKeyCheck(key, iv) {
     return encryptAES(ZERO_STR, key, "", iv);
 }
 exports.calculateKeyCheck = calculateKeyCheck;
+
 }).call(this)}).call(this,require("buffer").Buffer)
 
-},{"../utils":159,"./olmlib":104,"buffer":19}],94:[function(require,module,exports){
+},{"../utils":160,"./olmlib":105,"buffer":20}],95:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -28526,7 +28604,8 @@ function registerAlgorithm(algorithm, encryptor, decryptor) {
     exports.DECRYPTION_CLASSES[algorithm] = decryptor;
 }
 exports.registerAlgorithm = registerAlgorithm;
-},{}],95:[function(require,module,exports){
+
+},{}],96:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -28564,7 +28643,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("./olm");
 require("./megolm");
 __exportStar(require("./base"), exports);
-},{"./base":94,"./megolm":96,"./olm":97}],96:[function(require,module,exports){
+
+},{"./base":95,"./megolm":97,"./olm":98}],97:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -30044,7 +30124,8 @@ const PROBLEM_DESCRIPTIONS = {
     unknown: "The secure channel with the sender was corrupted.",
 };
 (0, base_1.registerAlgorithm)(olmlib.MEGOLM_ALGORITHM, MegolmEncryption, MegolmDecryption);
-},{"../../logger":126,"../OlmDevice":89,"../olmlib":104,"./base":94}],97:[function(require,module,exports){
+
+},{"../../logger":127,"../OlmDevice":90,"../olmlib":105,"./base":95}],98:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -30349,7 +30430,8 @@ class OlmDecryption extends base_1.DecryptionAlgorithm {
     }
 }
 (0, base_1.registerAlgorithm)(olmlib.OLM_ALGORITHM, OlmEncryption, OlmDecryption);
-},{"../../logger":126,"../deviceinfo":101,"../olmlib":104,"./base":94}],98:[function(require,module,exports){
+
+},{"../../logger":127,"../deviceinfo":102,"../olmlib":105,"./base":95}],99:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -30375,7 +30457,8 @@ var CrossSigningKey;
     CrossSigningKey["SelfSigning"] = "self_signing";
     CrossSigningKey["UserSigning"] = "user_signing";
 })(CrossSigningKey = exports.CrossSigningKey || (exports.CrossSigningKey = {}));
-},{}],99:[function(require,module,exports){
+
+},{}],100:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -31081,9 +31164,10 @@ exports.algorithmsByName = {
     [Aes256.algorithmName]: Aes256,
 };
 exports.DefaultAlgorithm = Curve25519;
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"../NamespacedValue":79,"../client":83,"../logger":126,"../utils":159,"./aes":93,"./index":102,"./key_passphrase":103,"./olmlib":104,"./recoverykey":105,"./store/indexeddb-crypto-store":107}],100:[function(require,module,exports){
+},{"../NamespacedValue":80,"../client":84,"../logger":127,"../utils":160,"./aes":94,"./index":103,"./key_passphrase":104,"./olmlib":105,"./recoverykey":106,"./store/indexeddb-crypto-store":108}],101:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -31313,9 +31397,10 @@ class DehydrationManager {
     }
 }
 exports.DehydrationManager = DehydrationManager;
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../crypto/store/indexeddb-crypto-store":107,"../http-api":123,"../logger":126,"./aes":93,"./olmlib":104,"another-json":13,"buffer":19}],101:[function(require,module,exports){
+},{"../crypto/store/indexeddb-crypto-store":108,"../http-api":124,"../logger":127,"./aes":94,"./olmlib":105,"another-json":14,"buffer":20}],102:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -31471,7 +31556,8 @@ DeviceInfo.DeviceVerification = {
     UNVERIFIED: DeviceVerification.Unverified,
     BLOCKED: DeviceVerification.Blocked,
 };
-},{}],102:[function(require,module,exports){
+
+},{}],103:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -34674,9 +34760,10 @@ class IncomingRoomKeyRequestCancellation {
  * @event module:client~MatrixClient#"crypto.warning"
  * @param {string} type One of the strings listed above
  */
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../ReEmitter":80,"../client":83,"../errors":119,"../logger":126,"../models/event":135,"../models/room":141,"../models/room-member":138,"../models/typed-event-emitter":144,"./CrossSigning":86,"./DeviceList":87,"./EncryptionSetup":88,"./OlmDevice":89,"./OutgoingRoomKeyRequestManager":90,"./SecretStorage":92,"./aes":93,"./algorithms":95,"./backup":99,"./dehydration":100,"./deviceinfo":101,"./key_passphrase":103,"./olmlib":104,"./recoverykey":105,"./store/indexeddb-crypto-store":107,"./verification/IllegalMethod":112,"./verification/QRCode":113,"./verification/SAS":114,"./verification/request/InRoomChannel":116,"./verification/request/ToDeviceChannel":117,"./verification/request/VerificationRequest":118,"another-json":13,"buffer":19}],103:[function(require,module,exports){
+},{"../ReEmitter":81,"../client":84,"../errors":120,"../logger":127,"../models/event":136,"../models/room":142,"../models/room-member":139,"../models/typed-event-emitter":145,"./CrossSigning":87,"./DeviceList":88,"./EncryptionSetup":89,"./OlmDevice":90,"./OutgoingRoomKeyRequestManager":91,"./SecretStorage":93,"./aes":94,"./algorithms":96,"./backup":100,"./dehydration":101,"./deviceinfo":102,"./key_passphrase":104,"./olmlib":105,"./recoverykey":106,"./store/indexeddb-crypto-store":108,"./verification/IllegalMethod":113,"./verification/QRCode":114,"./verification/SAS":115,"./verification/request/InRoomChannel":117,"./verification/request/ToDeviceChannel":118,"./verification/request/VerificationRequest":119,"another-json":14,"buffer":20}],104:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -34767,9 +34854,10 @@ function deriveKeyNode(password, salt, iterations, numBits) {
         return crypto.pbkdf2Sync(password, Buffer.from(salt, 'binary'), iterations, numBits, 'sha512');
     });
 }
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../randomstring":147,"../utils":159,"buffer":19}],104:[function(require,module,exports){
+},{"../randomstring":148,"../utils":160,"buffer":20}],105:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -35275,9 +35363,10 @@ function decodeBase64(base64) {
     return Buffer.from(base64, "base64");
 }
 exports.decodeBase64 = decodeBase64;
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../logger":126,"another-json":13,"buffer":19}],105:[function(require,module,exports){
+},{"../logger":127,"another-json":14,"buffer":20}],106:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -35358,9 +35447,10 @@ function decodeRecoveryKey(recoveryKey) {
     return Uint8Array.from(result.slice(OLM_RECOVERY_KEY_PREFIX.length, OLM_RECOVERY_KEY_PREFIX.length + global.Olm.PRIVATE_KEY_LENGTH));
 }
 exports.decodeRecoveryKey = decodeRecoveryKey;
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"bs58":18,"buffer":19}],106:[function(require,module,exports){
+},{"bs58":19,"buffer":20}],107:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -36266,7 +36356,8 @@ function promiseifyTxn(txn) {
         };
     });
 }
-},{"../../logger":126,"../../utils":159}],107:[function(require,module,exports){
+
+},{"../../logger":127,"../../utils":160}],108:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -36839,9 +36930,10 @@ IndexedDBCryptoStore.STORE_SHARED_HISTORY_INBOUND_GROUP_SESSIONS = 'shared_histo
 IndexedDBCryptoStore.STORE_DEVICE_DATA = 'device_data';
 IndexedDBCryptoStore.STORE_ROOMS = 'rooms';
 IndexedDBCryptoStore.STORE_BACKUP = 'sessions_needing_backup';
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"../../errors":119,"../../indexeddb-helpers":124,"../../logger":126,"./indexeddb-crypto-store-backend":106,"./localStorage-crypto-store":108,"./memory-crypto-store":109}],108:[function(require,module,exports){
+},{"../../errors":120,"../../indexeddb-helpers":125,"../../logger":127,"./indexeddb-crypto-store-backend":107,"./localStorage-crypto-store":109,"./memory-crypto-store":110}],109:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -37169,7 +37261,8 @@ function getJsonItem(store, key) {
 function setJsonItem(store, key, val) {
     store.setItem(key, JSON.stringify(val));
 }
-},{"../../logger":126,"./memory-crypto-store":109}],109:[function(require,module,exports){
+
+},{"../../logger":127,"./memory-crypto-store":110}],110:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -37610,7 +37703,8 @@ class MemoryCryptoStore {
     }
 }
 exports.MemoryCryptoStore = MemoryCryptoStore;
-},{"../../logger":126,"../../utils":159}],110:[function(require,module,exports){
+
+},{"../../logger":127,"../../utils":160}],111:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 New Vector Ltd
@@ -37945,7 +38039,8 @@ class VerificationBase extends typed_event_emitter_1.TypedEventEmitter {
     }
 }
 exports.VerificationBase = VerificationBase;
-},{"../../logger":126,"../../models/event":135,"../../models/typed-event-emitter":144,"../CrossSigning":86,"../deviceinfo":101,"./Error":111}],111:[function(require,module,exports){
+
+},{"../../logger":127,"../../models/event":136,"../../models/typed-event-emitter":145,"../CrossSigning":87,"../deviceinfo":102,"./Error":112}],112:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 - 2021 The Matrix.org Foundation C.I.C.
@@ -38027,7 +38122,8 @@ function errorFromEvent(event) {
     }
 }
 exports.errorFromEvent = errorFromEvent;
-},{"../../models/event":135}],112:[function(require,module,exports){
+
+},{"../../models/event":136}],113:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2020 The Matrix.org Foundation C.I.C.
@@ -38083,7 +38179,8 @@ class IllegalMethod extends Base_1.VerificationBase {
     }
 }
 exports.IllegalMethod = IllegalMethod;
-},{"./Base":110}],113:[function(require,module,exports){
+
+},{"./Base":111}],114:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -38360,9 +38457,10 @@ class QRCodeData {
     }
 }
 exports.QRCodeData = QRCodeData;
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../../logger":126,"../olmlib":104,"./Base":110,"./Error":111,"buffer":19}],114:[function(require,module,exports){
+},{"../../logger":127,"../olmlib":105,"./Base":111,"./Error":112,"buffer":20}],115:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -38835,9 +38933,10 @@ class SAS extends Base_1.VerificationBase {
     }
 }
 exports.SAS = SAS;
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"../../logger":126,"./Base":110,"./Error":111,"another-json":13}],115:[function(require,module,exports){
+},{"../../logger":127,"./Base":111,"./Error":112,"another-json":14}],116:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -38855,7 +38954,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 Object.defineProperty(exports, "__esModule", { value: true });
-},{}],116:[function(require,module,exports){
+
+},{}],117:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 New Vector Ltd
@@ -39199,7 +39299,8 @@ class InRoomRequests {
     }
 }
 exports.InRoomRequests = InRoomRequests;
-},{"../../../@types/event":71,"../../../logger":126,"./VerificationRequest":118}],117:[function(require,module,exports){
+
+},{"../../../@types/event":72,"../../../logger":127,"./VerificationRequest":119}],118:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 New Vector Ltd
@@ -39531,7 +39632,8 @@ class ToDeviceRequests {
     }
 }
 exports.ToDeviceRequests = ToDeviceRequests;
-},{"../../../logger":126,"../../../models/event":135,"../../../randomstring":147,"../Error":111,"./VerificationRequest":118}],118:[function(require,module,exports){
+
+},{"../../../logger":127,"../../../models/event":136,"../../../randomstring":148,"../Error":112,"./VerificationRequest":119}],119:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 - 2021 The Matrix.org Foundation C.I.C.
@@ -40373,7 +40475,8 @@ class VerificationRequest extends typed_event_emitter_1.TypedEventEmitter {
     }
 }
 exports.VerificationRequest = VerificationRequest;
-},{"../../../logger":126,"../../../models/typed-event-emitter":144,"../Error":111,"../QRCode":113}],119:[function(require,module,exports){
+
+},{"../../../logger":127,"../../../models/typed-event-emitter":145,"../Error":112,"../QRCode":114}],120:[function(require,module,exports){
 "use strict";
 
 var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault");
@@ -40384,6 +40487,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.InvalidCryptoStoreError = InvalidCryptoStoreError;
 exports.InvalidStoreError = InvalidStoreError;
 exports.KeySignatureUploadError = void 0;
+
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
 
 var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
 
@@ -40455,12 +40560,12 @@ var KeySignatureUploadError = /*#__PURE__*/function (_Error) {
     return _this;
   }
 
-  return KeySignatureUploadError;
+  return (0, _createClass2["default"])(KeySignatureUploadError);
 }( /*#__PURE__*/(0, _wrapNativeSuper2["default"])(Error));
 
 exports.KeySignatureUploadError = KeySignatureUploadError;
 
-},{"@babel/runtime/helpers/classCallCheck":2,"@babel/runtime/helpers/getPrototypeOf":4,"@babel/runtime/helpers/inherits":5,"@babel/runtime/helpers/interopRequireDefault":6,"@babel/runtime/helpers/possibleConstructorReturn":9,"@babel/runtime/helpers/wrapNativeSuper":12}],120:[function(require,module,exports){
+},{"@babel/runtime/helpers/classCallCheck":2,"@babel/runtime/helpers/createClass":4,"@babel/runtime/helpers/getPrototypeOf":5,"@babel/runtime/helpers/inherits":6,"@babel/runtime/helpers/interopRequireDefault":7,"@babel/runtime/helpers/possibleConstructorReturn":10,"@babel/runtime/helpers/wrapNativeSuper":13}],121:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -40528,7 +40633,8 @@ function eventMapperFor(client, options) {
     return mapper;
 }
 exports.eventMapperFor = eventMapperFor;
-},{"./models/event":135}],121:[function(require,module,exports){
+
+},{"./models/event":136}],122:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -40696,7 +40802,8 @@ class FilterComponent {
     }
 }
 exports.FilterComponent = FilterComponent;
-},{"./models/thread":143}],122:[function(require,module,exports){
+
+},{"./models/thread":144}],123:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 Matrix.org Foundation C.I.C.
@@ -40875,7 +40982,8 @@ exports.Filter = Filter;
 Filter.LAZY_LOADING_MESSAGES_FILTER = {
     lazy_load_members: true,
 };
-},{"./filter-component":121}],123:[function(require,module,exports){
+
+},{"./filter-component":122}],124:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -41810,9 +41918,10 @@ function retryNetworkOperation(maxAttempts, callback) {
     });
 }
 exports.retryNetworkOperation = retryNetworkOperation;
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./logger":126,"./realtime-callbacks":148,"./utils":159,"content-type":22}],124:[function(require,module,exports){
+},{"./logger":127,"./realtime-callbacks":149,"./utils":160,"content-type":23}],125:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2019 New Vector Ltd
@@ -41866,7 +41975,8 @@ function exists(indexedDB, dbName) {
     });
 }
 exports.exists = exists;
-},{}],125:[function(require,module,exports){
+
+},{}],126:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 OpenMarket Ltd
@@ -42423,7 +42533,8 @@ class InteractiveAuth {
     }
 }
 exports.InteractiveAuth = InteractiveAuth;
-},{"./logger":126,"./utils":159}],126:[function(require,module,exports){
+
+},{"./logger":127,"./utils":160}],127:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 André Jaenisch
@@ -42506,7 +42617,8 @@ function getPrefixedLogger(prefix) {
     }
     return prefixLogger;
 }
-},{"loglevel":31}],127:[function(require,module,exports){
+
+},{"loglevel":32}],128:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -42714,9 +42826,10 @@ exports.createClient = createClient;
   * <code>{statusCode: {Number}, headers: {Object}}</code>
   * @param {Object} body The parsed HTTP response body.
   */
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./@types/PushRules":69,"./@types/event":71,"./@types/partials":74,"./@types/requests":76,"./@types/search":77,"./autodiscovery":81,"./client":83,"./content-helpers":84,"./content-repo":85,"./crypto/CrossSigning":86,"./crypto/api":98,"./crypto/key_passphrase":103,"./crypto/olmlib":104,"./crypto/recoverykey":105,"./crypto/store/indexeddb-crypto-store":107,"./crypto/store/memory-crypto-store":109,"./crypto/verification/request/Channel":115,"./crypto/verification/request/VerificationRequest":118,"./errors":119,"./filter":122,"./http-api":123,"./interactive-auth":125,"./models/beacon":130,"./models/event":135,"./models/event-timeline":134,"./models/event-timeline-set":133,"./models/room":141,"./models/room-member":138,"./models/room-state":139,"./models/room-summary":140,"./models/user":145,"./scheduler":149,"./service-types":150,"./store/indexeddb":153,"./store/memory":154,"./sync-accumulator":156,"./timeline-window":158,"./webrtc/call":160}],128:[function(require,module,exports){
+},{"./@types/PushRules":70,"./@types/event":72,"./@types/partials":75,"./@types/requests":77,"./@types/search":78,"./autodiscovery":82,"./client":84,"./content-helpers":85,"./content-repo":86,"./crypto/CrossSigning":87,"./crypto/api":99,"./crypto/key_passphrase":104,"./crypto/olmlib":105,"./crypto/recoverykey":106,"./crypto/store/indexeddb-crypto-store":108,"./crypto/store/memory-crypto-store":110,"./crypto/verification/request/Channel":116,"./crypto/verification/request/VerificationRequest":119,"./errors":120,"./filter":123,"./http-api":124,"./interactive-auth":126,"./models/beacon":131,"./models/event":136,"./models/event-timeline":135,"./models/event-timeline-set":134,"./models/room":142,"./models/room-member":139,"./models/room-state":140,"./models/room-summary":141,"./models/user":146,"./scheduler":150,"./service-types":151,"./store/indexeddb":154,"./store/memory":155,"./sync-accumulator":157,"./timeline-window":159,"./webrtc/call":161}],129:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -42933,7 +43046,8 @@ class MSC3089Branch {
     }
 }
 exports.MSC3089Branch = MSC3089Branch;
-},{"../@types/event":71,"./event-timeline":134}],129:[function(require,module,exports){
+
+},{"../@types/event":72,"./event-timeline":135}],130:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -43452,7 +43566,8 @@ class MSC3089TreeSpace {
     }
 }
 exports.MSC3089TreeSpace = MSC3089TreeSpace;
-},{"../@types/event":71,"../crypto/algorithms/megolm":96,"../logger":126,"../utils":159,"./MSC3089Branch":128,"p-retry":55}],130:[function(require,module,exports){
+
+},{"../@types/event":72,"../crypto/algorithms/megolm":97,"../logger":127,"../utils":160,"./MSC3089Branch":129,"p-retry":56}],131:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2022 The Matrix.org Foundation C.I.C.
@@ -43612,7 +43727,8 @@ class Beacon extends typed_event_emitter_1.TypedEventEmitter {
     }
 }
 exports.Beacon = Beacon;
-},{"../@types/location":73,"../content-helpers":84,"../utils":159,"./typed-event-emitter":144}],131:[function(require,module,exports){
+
+},{"../@types/location":74,"../content-helpers":85,"../utils":160,"./typed-event-emitter":145}],132:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -43726,7 +43842,8 @@ class EventContext {
     }
 }
 exports.EventContext = EventContext;
-},{"./event-timeline":134}],132:[function(require,module,exports){
+
+},{"./event-timeline":135}],133:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2022 The Matrix.org Foundation C.I.C.
@@ -43765,7 +43882,8 @@ var EventStatus;
     /** The event was cancelled before it was successfully sent. */
     EventStatus["CANCELLED"] = "cancelled";
 })(EventStatus = exports.EventStatus || (exports.EventStatus = {}));
-},{}],133:[function(require,module,exports){
+
+},{}],134:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -44470,7 +44588,8 @@ exports.EventTimelineSet = EventTimelineSet;
  * @param {EventTimelineSet} timelineSet timelineSet room whose live timeline was reset
  * @param {boolean} resetAllTimelines True if all timelines were reset.
  */
-},{"../logger":126,"./event-timeline":134,"./relations-container":136,"./room":141,"./typed-event-emitter":144}],134:[function(require,module,exports){
+
+},{"../logger":127,"./event-timeline":135,"./relations-container":137,"./room":142,"./typed-event-emitter":145}],135:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -44874,7 +44993,8 @@ EventTimeline.BACKWARDS = Direction.Backward;
  * refers to the end of the timeline, or forwards in time.
  */
 EventTimeline.FORWARDS = Direction.Forward;
-},{"../@types/event":71,"../logger":126,"./room-state":139}],135:[function(require,module,exports){
+
+},{"../@types/event":72,"../logger":127,"./room-state":140}],136:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2022 The Matrix.org Foundation C.I.C.
@@ -46215,7 +46335,8 @@ const REDACT_KEEP_CONTENT_MAP = {
  *    The error that occurred during decryption, or `undefined` if no
  *    error occurred.
  */
-},{"../@types/event":71,"../ReEmitter":80,"../logger":126,"../utils":159,"./event-status":132,"./thread":143,"./typed-event-emitter":144,"matrix-events-sdk":47}],136:[function(require,module,exports){
+
+},{"../@types/event":72,"../ReEmitter":81,"../logger":127,"../utils":160,"./event-status":133,"./thread":144,"./typed-event-emitter":145,"matrix-events-sdk":48}],137:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2022 The Matrix.org Foundation C.I.C.
@@ -46344,7 +46465,8 @@ class RelationsContainer {
     }
 }
 exports.RelationsContainer = RelationsContainer;
-},{"./event":135,"./relations":137}],137:[function(require,module,exports){
+
+},{"./event":136,"./relations":138}],138:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2019, 2021 The Matrix.org Foundation C.I.C.
@@ -46706,7 +46828,8 @@ class Relations extends typed_event_emitter_1.TypedEventEmitter {
     }
 }
 exports.Relations = Relations;
-},{"../@types/event":71,"../logger":126,"./event":135,"./room":141,"./typed-event-emitter":144}],138:[function(require,module,exports){
+
+},{"../@types/event":72,"../logger":127,"./event":136,"./room":142,"./typed-event-emitter":145}],139:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -47110,7 +47233,8 @@ function calculateDisplayName(selfUserId, displayName, roomState, disambiguate) 
  *   var newNormPowerLevel = member.powerLevelNorm;
  * });
  */
-},{"../@types/event":71,"../content-repo":85,"../logger":126,"../utils":159,"./typed-event-emitter":144}],139:[function(require,module,exports){
+
+},{"../@types/event":72,"../content-repo":86,"../logger":127,"../utils":160,"./typed-event-emitter":145}],140:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -48015,7 +48139,8 @@ exports.RoomState = RoomState;
  *   // add event listeners on 'member'
  * });
  */
-},{"../@types/beacon":70,"../@types/event":71,"../@types/partials":74,"../ReEmitter":80,"../logger":126,"../utils":159,"./beacon":130,"./event":135,"./room-member":138,"./typed-event-emitter":144}],140:[function(require,module,exports){
+
+},{"../@types/beacon":71,"../@types/event":72,"../@types/partials":75,"../ReEmitter":81,"../logger":127,"../utils":160,"./beacon":131,"./event":136,"./room-member":139,"./typed-event-emitter":145}],141:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -48053,7 +48178,8 @@ class RoomSummary {
     }
 }
 exports.RoomSummary = RoomSummary;
-},{}],141:[function(require,module,exports){
+
+},{}],142:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -50848,7 +50974,8 @@ function memberNamesToRoomName(names, count = (names.length + 1)) {
  * @param {string} membership The new membership value
  * @param {string} prevMembership The previous membership value
  */
-},{"../@types/event":71,"../@types/read_receipts":75,"../ReEmitter":80,"../client":83,"../content-repo":85,"../filter":122,"../logger":126,"../utils":159,"./event":135,"./event-status":132,"./event-timeline":134,"./event-timeline-set":133,"./relations-container":136,"./room-member":138,"./room-summary":140,"./thread":143,"./typed-event-emitter":144}],142:[function(require,module,exports){
+
+},{"../@types/event":72,"../@types/read_receipts":76,"../ReEmitter":81,"../client":84,"../content-repo":86,"../filter":123,"../logger":127,"../utils":160,"./event":136,"./event-status":133,"./event-timeline":135,"./event-timeline-set":134,"./relations-container":137,"./room-member":139,"./room-summary":141,"./thread":144,"./typed-event-emitter":145}],143:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -50909,7 +51036,8 @@ class SearchResult {
     }
 }
 exports.SearchResult = SearchResult;
-},{"./event-context":131}],143:[function(require,module,exports){
+
+},{"./event-context":132}],144:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -51265,7 +51393,8 @@ var ThreadFilterType;
     ThreadFilterType[ThreadFilterType["My"] = 0] = "My";
     ThreadFilterType[ThreadFilterType["All"] = 1] = "All";
 })(ThreadFilterType = exports.ThreadFilterType || (exports.ThreadFilterType = {}));
-},{"../NamespacedValue":79,"../ReEmitter":80,"../logger":126,"../matrix":127,"./event":135,"./event-timeline":134,"./event-timeline-set":133,"./typed-event-emitter":144}],144:[function(require,module,exports){
+
+},{"../NamespacedValue":80,"../ReEmitter":81,"../logger":127,"../matrix":128,"./event":136,"./event-timeline":135,"./event-timeline-set":134,"./typed-event-emitter":145}],145:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
@@ -51341,7 +51470,8 @@ class TypedEventEmitter extends events_1.EventEmitter {
     }
 }
 exports.TypedEventEmitter = TypedEventEmitter;
-},{"events":23}],145:[function(require,module,exports){
+
+},{"events":24}],146:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -51577,7 +51707,8 @@ exports.User = User;
  *   var newUrl = user.avatarUrl;
  * });
  */
-},{"./typed-event-emitter":144}],146:[function(require,module,exports){
+
+},{"./typed-event-emitter":145}],147:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -52010,7 +52141,8 @@ PushProcessor.cachedGlobToRegex = {}; // $glob: RegExp
  * @property {boolean} tweaks.sound Whether this notification should produce a
  * noise.
  */
-},{"./@types/PushRules":69,"./@types/event":71,"./logger":126,"./utils":159}],147:[function(require,module,exports){
+
+},{"./@types/PushRules":70,"./@types/event":72,"./logger":127,"./utils":160}],148:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2018 New Vector Ltd
@@ -52052,7 +52184,8 @@ function randomStringFrom(len, chars) {
     }
     return ret;
 }
-},{}],148:[function(require,module,exports){
+
+},{}],149:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -52234,9 +52367,10 @@ function binarySearch(array, func) {
     // presumably, min==max now.
     return min;
 }
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./logger":126}],149:[function(require,module,exports){
+},{"./logger":127}],150:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -52561,7 +52695,8 @@ function debuglog(...args) {
  * @param {MatrixEvent} event The event to send.
  * @return {Promise} Resolved/rejected depending on the outcome of the request.
  */
-},{"./@types/event":71,"./logger":126,"./utils":159}],150:[function(require,module,exports){
+
+},{"./@types/event":72,"./logger":127,"./utils":160}],151:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2019 - 2021 The Matrix.org Foundation C.I.C.
@@ -52585,7 +52720,8 @@ var SERVICE_TYPES;
     SERVICE_TYPES["IS"] = "SERVICE_TYPE_IS";
     SERVICE_TYPES["IM"] = "SERVICE_TYPE_IM";
 })(SERVICE_TYPES = exports.SERVICE_TYPES || (exports.SERVICE_TYPES = {}));
-},{}],151:[function(require,module,exports){
+
+},{}],152:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -53122,7 +53258,8 @@ class LocalIndexedDBStoreBackend {
     }
 }
 exports.LocalIndexedDBStoreBackend = LocalIndexedDBStoreBackend;
-},{"../indexeddb-helpers":124,"../logger":126,"../sync-accumulator":156,"../utils":159}],152:[function(require,module,exports){
+
+},{"../indexeddb-helpers":125,"../logger":127,"../sync-accumulator":157,"../utils":160}],153:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -53289,7 +53426,8 @@ class RemoteIndexedDBStoreBackend {
     }
 }
 exports.RemoteIndexedDBStoreBackend = RemoteIndexedDBStoreBackend;
-},{"../logger":126,"../utils":159}],153:[function(require,module,exports){
+
+},{"../logger":127,"../utils":160}],154:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 Vector Creations Ltd
@@ -53626,7 +53764,8 @@ exports.IndexedDBStore = IndexedDBStore;
 function pendingEventsKey(roomId) {
     return `mx_pending_events_${roomId}`;
 }
-},{"../logger":126,"../models/event":135,"../models/typed-event-emitter":144,"../models/user":145,"./indexeddb-local-backend":151,"./indexeddb-remote-backend":152,"./memory":154}],154:[function(require,module,exports){
+
+},{"../logger":127,"../models/event":136,"../models/typed-event-emitter":145,"../models/user":146,"./indexeddb-local-backend":152,"./indexeddb-remote-backend":153,"./memory":155}],155:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -54019,7 +54158,8 @@ class MemoryStore {
     }
 }
 exports.MemoryStore = MemoryStore;
-},{"../models/room-state":139,"../models/user":145}],155:[function(require,module,exports){
+
+},{"../models/room-state":140,"../models/user":146}],156:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015 - 2021 The Matrix.org Foundation C.I.C.
@@ -54261,7 +54401,8 @@ class StubStore {
     }
 }
 exports.StubStore = StubStore;
-},{}],156:[function(require,module,exports){
+
+},{}],157:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2017 - 2021 The Matrix.org Foundation C.I.C.
@@ -54772,7 +54913,8 @@ function setState(eventMap, event) {
     }
     eventMap[event.type][event.state_key] = event;
 }
-},{"./@types/read_receipts":75,"./logger":126,"./utils":159}],157:[function(require,module,exports){
+
+},{"./@types/read_receipts":76,"./logger":127,"./utils":160}],158:[function(require,module,exports){
 (function (global){(function (){
 "use strict";
 /*
@@ -56368,9 +56510,10 @@ function createNewUser(client, userId) {
     ]);
     return user;
 }
+
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./@types/event":71,"./client":83,"./errors":119,"./filter":122,"./http-api":123,"./logger":126,"./models/beacon":130,"./models/event-timeline":134,"./models/room":141,"./models/room-member":138,"./models/room-state":139,"./models/user":145,"./pushprocessor":146,"./utils":159}],158:[function(require,module,exports){
+},{"./@types/event":72,"./client":84,"./errors":120,"./filter":123,"./http-api":124,"./logger":127,"./models/beacon":131,"./models/event-timeline":135,"./models/room":142,"./models/room-member":139,"./models/room-state":140,"./models/user":146,"./pushprocessor":147,"./utils":160}],159:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2016 - 2021 The Matrix.org Foundation C.I.C.
@@ -56827,7 +56970,8 @@ class TimelineIndex {
     }
 }
 exports.TimelineIndex = TimelineIndex;
-},{"./logger":126,"./models/event-timeline":134}],159:[function(require,module,exports){
+
+},{"./logger":127,"./models/event-timeline":135}],160:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015, 2016 OpenMarket Ltd
@@ -57532,7 +57676,8 @@ function sortEventsByLatestContentTimestamp(left, right) {
     return getContentTimestampWithFallback(right) - getContentTimestampWithFallback(left);
 }
 exports.sortEventsByLatestContentTimestamp = sortEventsByLatestContentTimestamp;
-},{"./@types/location":73,"p-retry":55,"unhomoglyph":68}],160:[function(require,module,exports){
+
+},{"./@types/location":74,"p-retry":56,"unhomoglyph":69}],161:[function(require,module,exports){
 (function (process){(function (){
 "use strict";
 /*
@@ -59545,9 +59690,10 @@ function createNewMatrixCall(client, roomId, options) {
     return call;
 }
 exports.createNewMatrixCall = createNewMatrixCall;
+
 }).call(this)}).call(this,require('_process'))
 
-},{"../@types/event":71,"../logger":126,"../models/typed-event-emitter":144,"../randomstring":147,"../utils":159,"./callEventTypes":162,"./callFeed":163,"_process":56}],161:[function(require,module,exports){
+},{"../@types/event":72,"../logger":127,"../models/typed-event-emitter":145,"../randomstring":148,"../utils":160,"./callEventTypes":163,"./callFeed":164,"_process":57}],162:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2020 The Matrix.org Foundation C.I.C.
@@ -59839,7 +59985,8 @@ class CallEventHandler {
     }
 }
 exports.CallEventHandler = CallEventHandler;
-},{"../@types/event":71,"../client":83,"../logger":126,"../models/event":135,"../models/room":141,"../sync":157,"./call":160}],162:[function(require,module,exports){
+
+},{"../@types/event":72,"../client":84,"../logger":127,"../models/event":136,"../models/room":142,"../sync":158,"./call":161}],163:[function(require,module,exports){
 "use strict";
 // allow non-camelcase as these are events type that go onto the wire
 /* eslint-disable camelcase */
@@ -59853,7 +60000,8 @@ var SDPStreamMetadataPurpose;
     SDPStreamMetadataPurpose["Screenshare"] = "m.screenshare";
 })(SDPStreamMetadataPurpose = exports.SDPStreamMetadataPurpose || (exports.SDPStreamMetadataPurpose = {}));
 /* eslint-enable camelcase */
-},{}],163:[function(require,module,exports){
+
+},{}],164:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 Šimon Brandner <simon.bra.ag@gmail.com>
@@ -60052,7 +60200,8 @@ class CallFeed extends typed_event_emitter_1.TypedEventEmitter {
     }
 }
 exports.CallFeed = CallFeed;
-},{"../models/typed-event-emitter":144}],164:[function(require,module,exports){
+
+},{"../models/typed-event-emitter":145}],165:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2015, 2016 OpenMarket Ltd
@@ -60335,5 +60484,6 @@ class MediaHandler {
     }
 }
 exports.MediaHandler = MediaHandler;
-},{"../logger":126,"./call":160}]},{},[82])
+
+},{"../logger":127,"./call":161}]},{},[83])
 //# sourceMappingURL=browser-matrix.js.map
