@@ -25,7 +25,7 @@ import { CryptoStore } from "./store/base";
 import { IVerificationChannel } from "./verification/request/Channel";
 import { TypedEventEmitter } from "../models/typed-event-emitter";
 declare const defaultVerificationMethods: {
-    [x: string]: typeof ReciprocateQRCode | typeof SASVerification | typeof IllegalMethod;
+    [x: string]: typeof SASVerification | typeof ReciprocateQRCode | typeof IllegalMethod;
     "m.qr_code.show.v1": typeof IllegalMethod;
     "m.qr_code.scan.v1": typeof IllegalMethod;
 };

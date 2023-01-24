@@ -11672,7 +11672,7 @@ module.exports={
   "𝜐": "u",
   "𝝊": "u",
   "𝞄": "u",
-  "����": "u",
+  "𝞾": "u",
   "ս": "u",
   "𐓶": "u",
   "𑣘": "u",
@@ -42690,6 +42690,7 @@ __exportStar(require("./store/memory"), exports);
 __exportStar(require("./store/indexeddb"), exports);
 __exportStar(require("./crypto/store/memory-crypto-store"), exports);
 __exportStar(require("./crypto/store/indexeddb-crypto-store"), exports);
+__exportStar(require("./crypto/RoomList"), exports);
 __exportStar(require("./content-repo"), exports);
 __exportStar(require("./@types/event"), exports);
 __exportStar(require("./@types/PushRules"), exports);
@@ -42829,7 +42830,7 @@ exports.createClient = createClient;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./@types/PushRules":70,"./@types/event":72,"./@types/partials":75,"./@types/requests":77,"./@types/search":78,"./autodiscovery":82,"./client":84,"./content-helpers":85,"./content-repo":86,"./crypto/CrossSigning":87,"./crypto/api":99,"./crypto/key_passphrase":104,"./crypto/olmlib":105,"./crypto/recoverykey":106,"./crypto/store/indexeddb-crypto-store":108,"./crypto/store/memory-crypto-store":110,"./crypto/verification/request/Channel":116,"./crypto/verification/request/VerificationRequest":119,"./errors":120,"./filter":123,"./http-api":124,"./interactive-auth":126,"./models/beacon":131,"./models/event":136,"./models/event-timeline":135,"./models/event-timeline-set":134,"./models/room":142,"./models/room-member":139,"./models/room-state":140,"./models/room-summary":141,"./models/user":146,"./scheduler":150,"./service-types":151,"./store/indexeddb":154,"./store/memory":155,"./sync-accumulator":157,"./timeline-window":159,"./webrtc/call":161}],129:[function(require,module,exports){
+},{"./@types/PushRules":70,"./@types/event":72,"./@types/partials":75,"./@types/requests":77,"./@types/search":78,"./autodiscovery":82,"./client":84,"./content-helpers":85,"./content-repo":86,"./crypto/CrossSigning":87,"./crypto/RoomList":92,"./crypto/api":99,"./crypto/key_passphrase":104,"./crypto/olmlib":105,"./crypto/recoverykey":106,"./crypto/store/indexeddb-crypto-store":108,"./crypto/store/memory-crypto-store":110,"./crypto/verification/request/Channel":116,"./crypto/verification/request/VerificationRequest":119,"./errors":120,"./filter":123,"./http-api":124,"./interactive-auth":126,"./models/beacon":131,"./models/event":136,"./models/event-timeline":135,"./models/event-timeline-set":134,"./models/room":142,"./models/room-member":139,"./models/room-state":140,"./models/room-summary":141,"./models/user":146,"./scheduler":150,"./service-types":151,"./store/indexeddb":154,"./store/memory":155,"./sync-accumulator":157,"./timeline-window":159,"./webrtc/call":161}],129:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.
