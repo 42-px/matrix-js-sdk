@@ -23,7 +23,7 @@ export * from "./store/memory";
 export * from "./store/indexeddb";
 export * from "./crypto/store/memory-crypto-store";
 export * from "./crypto/store/indexeddb-crypto-store";
-export * from './crypto/RoomList';
+export * from './crypto';
 export * from "./content-repo";
 export * from './@types/event';
 export * from './@types/PushRules';

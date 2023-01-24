@@ -42,4 +42,3 @@ export { PushRuleKind } from './@types/PushRules';
 export { ISendEventResponse } from './@types/requests';
 export { SearchOrderBy } from './@types/search';
 export { RoomSummary } from './models/room-summary';
-export { IRoomEncryption } from './crypto/RoomList';
