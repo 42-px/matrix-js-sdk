@@ -13271,7 +13271,7 @@ module.exports={
   "ഺ": "டி",
   "ണ": "ண",
   "௺": "நீ",
-  "௴": "���ீ",
+  "௴": "மீ",
   "௰": "ய",
   "ഴ": "ழ",
   "ௗ": "ள",
@@ -14299,7 +14299,7 @@ module.exports={
   "媵": "媵",
   "嬈": "嬈",
   "嬨": "嬨",
-  "嬾": "嬾",
+  "嬾": "��",
   "嬾": "嬾",
   "⼦": "子",
   "⼧": "宀",
@@ -42706,6 +42706,8 @@ __exportStar(require("./crypto/key_passphrase"), exports);
 __exportStar(require("./crypto/recoverykey"), exports);
 __exportStar(require("./crypto/verification/request/VerificationRequest"), exports);
 __exportStar(require("./crypto/verification/request/Channel"), exports);
+__exportStar(require("./crypto/deviceinfo"), exports);
+__exportStar(require("./crypto/RoomList"), exports);
 var call_1 = require("./webrtc/call");
 Object.defineProperty(exports, "createNewMatrixCall", { enumerable: true, get: function () { return call_1.createNewMatrixCall; } });
 // expose the underlying request object so different environments can use
@@ -42830,7 +42832,7 @@ exports.createClient = createClient;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./@types/PushRules":70,"./@types/event":72,"./@types/partials":75,"./@types/requests":77,"./@types/search":78,"./autodiscovery":82,"./client":84,"./content-helpers":85,"./content-repo":86,"./crypto":103,"./crypto/CrossSigning":87,"./crypto/api":99,"./crypto/key_passphrase":104,"./crypto/olmlib":105,"./crypto/recoverykey":106,"./crypto/store/indexeddb-crypto-store":108,"./crypto/store/memory-crypto-store":110,"./crypto/verification/request/Channel":116,"./crypto/verification/request/VerificationRequest":119,"./errors":120,"./filter":123,"./http-api":124,"./interactive-auth":126,"./models/beacon":131,"./models/event":136,"./models/event-timeline":135,"./models/event-timeline-set":134,"./models/room":142,"./models/room-member":139,"./models/room-state":140,"./models/room-summary":141,"./models/user":146,"./scheduler":150,"./service-types":151,"./store/indexeddb":154,"./store/memory":155,"./sync-accumulator":157,"./timeline-window":159,"./webrtc/call":161}],129:[function(require,module,exports){
+},{"./@types/PushRules":70,"./@types/event":72,"./@types/partials":75,"./@types/requests":77,"./@types/search":78,"./autodiscovery":82,"./client":84,"./content-helpers":85,"./content-repo":86,"./crypto":103,"./crypto/CrossSigning":87,"./crypto/RoomList":92,"./crypto/api":99,"./crypto/deviceinfo":102,"./crypto/key_passphrase":104,"./crypto/olmlib":105,"./crypto/recoverykey":106,"./crypto/store/indexeddb-crypto-store":108,"./crypto/store/memory-crypto-store":110,"./crypto/verification/request/Channel":116,"./crypto/verification/request/VerificationRequest":119,"./errors":120,"./filter":123,"./http-api":124,"./interactive-auth":126,"./models/beacon":131,"./models/event":136,"./models/event-timeline":135,"./models/event-timeline-set":134,"./models/room":142,"./models/room-member":139,"./models/room-state":140,"./models/room-summary":141,"./models/user":146,"./scheduler":150,"./service-types":151,"./store/indexeddb":154,"./store/memory":155,"./sync-accumulator":157,"./timeline-window":159,"./webrtc/call":161}],129:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.

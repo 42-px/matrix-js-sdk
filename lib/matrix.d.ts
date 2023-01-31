@@ -39,6 +39,8 @@ export * from './crypto/key_passphrase';
 export * from './crypto/recoverykey';
 export * from './crypto/verification/request/VerificationRequest';
 export * from './crypto/verification/request/Channel';
+export * from './crypto/deviceinfo';
+export * from './crypto/RoomList';
 export { createNewMatrixCall, } from "./webrtc/call";
 /**
  * The function used to perform HTTP requests. Only use this if you want to
