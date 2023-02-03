@@ -43,7 +43,6 @@ export * from "./store/memory";
 export * from "./store/indexeddb";
 export * from "./crypto/store/memory-crypto-store";
 export * from "./crypto/store/indexeddb-crypto-store";
-export * from './crypto';
 export * from "./content-repo";
 export * from './@types/event';
 export * from './@types/PushRules';
@@ -55,6 +54,7 @@ export * as ContentHelpers from "./content-helpers";
 export {
     createNewMatrixCall,
 } from "./webrtc/call";
+export * from './crypto';
 
 // expose the underlying request object so different environments can use
 // different request libs (e.g. request or browser-request)

@@ -23,7 +23,6 @@ export * from "./store/memory";
 export * from "./store/indexeddb";
 export * from "./crypto/store/memory-crypto-store";
 export * from "./crypto/store/indexeddb-crypto-store";
-export * from './crypto';
 export * from "./content-repo";
 export * from './@types/event';
 export * from './@types/PushRules';
@@ -33,6 +32,7 @@ export * from './@types/search';
 export * from './models/room-summary';
 export * as ContentHelpers from "./content-helpers";
 export { createNewMatrixCall, } from "./webrtc/call";
+export * from './crypto';
 /**
  * The function used to perform HTTP requests. Only use this if you want to
  * use a different HTTP library, e.g. Angular's <code>$http</code>. This should

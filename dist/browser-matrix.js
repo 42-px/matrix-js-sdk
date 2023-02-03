@@ -42688,7 +42688,6 @@ __exportStar(require("./store/memory"), exports);
 __exportStar(require("./store/indexeddb"), exports);
 __exportStar(require("./crypto/store/memory-crypto-store"), exports);
 __exportStar(require("./crypto/store/indexeddb-crypto-store"), exports);
-__exportStar(require("./crypto"), exports);
 __exportStar(require("./content-repo"), exports);
 __exportStar(require("./@types/event"), exports);
 __exportStar(require("./@types/PushRules"), exports);
@@ -42699,6 +42698,7 @@ __exportStar(require("./models/room-summary"), exports);
 exports.ContentHelpers = __importStar(require("./content-helpers"));
 var call_1 = require("./webrtc/call");
 Object.defineProperty(exports, "createNewMatrixCall", { enumerable: true, get: function () { return call_1.createNewMatrixCall; } });
+__exportStar(require("./crypto"), exports);
 // expose the underlying request object so different environments can use
 // different request libs (e.g. request or browser-request)
 let requestInstance;
