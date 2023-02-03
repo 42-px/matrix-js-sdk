@@ -1,6 +1,12 @@
 import { MatrixEvent } from '../models/event';
 import { MatrixCall } from './call';
 import { MatrixClient } from '../client';
+export declare enum CallEventHandlerEvent {
+    Incoming = "Call.incoming"
+}
+export declare type CallEventHandlerEventHandlerMap = {
+    [CallEventHandlerEvent.Incoming]: (call: MatrixCall) => void;
+};
 export declare class CallEventHandler {
     client: MatrixClient;
     calls: Map<string, MatrixCall>;

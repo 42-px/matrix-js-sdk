@@ -1,8 +1,7 @@
-/// <reference types="node" />
-import EventEmitter from "events";
 import { SDPStreamMetadataPurpose } from "./callEventTypes";
 import { MatrixClient } from "../client";
 import { RoomMember } from "../models/room-member";
+import { TypedEventEmitter } from "../models/typed-event-emitter";
 export declare const SPEAKING_THRESHOLD = -60;
 export interface ICallFeedOpts {
     client: MatrixClient;
@@ -10,7 +9,13 @@ export interface ICallFeedOpts {
     userId: string;
     stream: MediaStream;
     purpose: SDPStreamMetadataPurpose;
+    /**
+     * Whether or not the remote SDPStreamMetadata says audio is muted
+     */
     audioMuted: boolean;
+    /**
+     * Whether or not the remote SDPStreamMetadata says video is muted
+     */
     videoMuted: boolean;
 }
 export declare enum CallFeedEvent {
@@ -19,7 +24,13 @@ export declare enum CallFeedEvent {
     VolumeChanged = "volume_changed",
     Speaking = "speaking"
 }
-export declare class CallFeed extends EventEmitter {
+declare type EventHandlerMap = {
+    [CallFeedEvent.NewStream]: (stream: MediaStream) => void;
+    [CallFeedEvent.MuteStateChanged]: (audioMuted: boolean, videoMuted: boolean) => void;
+    [CallFeedEvent.VolumeChanged]: (volume: number) => void;
+    [CallFeedEvent.Speaking]: (speaking: boolean) => void;
+};
+export declare class CallFeed extends TypedEventEmitter<CallFeedEvent, EventHandlerMap> {
     stream: MediaStream;
     userId: string;
     purpose: SDPStreamMetadataPurpose;
@@ -88,4 +99,5 @@ export declare class CallFeed extends EventEmitter {
     private volumeLooper;
     dispose(): void;
 }
+export {};
 //# sourceMappingURL=callFeed.d.ts.map

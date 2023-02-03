@@ -1,24 +1,27 @@
-/// <reference types="node" />
 /**
  * @module models/room
  */
-import { EventEmitter } from "events";
-import { EventTimelineSet, DuplicateStrategy } from "./event-timeline-set";
+import { EventTimelineSet, DuplicateStrategy, IAddLiveEventOptions } from "./event-timeline-set";
 import { EventTimeline } from "./event-timeline";
-import { EventStatus, MatrixEvent } from "./event";
+import { MatrixEvent, MatrixEventEvent, MatrixEventHandlerMap } from "./event";
+import { EventStatus } from "./event-status";
 import { RoomMember } from "./room-member";
 import { IRoomSummary, RoomSummary } from "./room-summary";
+import { TypedReEmitter } from '../ReEmitter';
 import { EventType, RoomType } from "../@types/event";
 import { MatrixClient, PendingEventOrdering } from "../client";
 import { GuestAccess, HistoryVisibility, JoinRule, ResizeMethod } from "../@types/partials";
 import { Filter } from "../filter";
 import { RoomState } from "./room-state";
-import { Thread } from "./thread";
+import { Thread, ThreadEvent, EventHandlerMap as ThreadHandlerMap } from "./thread";
+import { TypedEventEmitter } from "./typed-event-emitter";
+import { ReceiptType } from "../@types/read_receipts";
+import { RelationsContainer } from "./relations-container";
+export declare const KNOWN_SAFE_ROOM_VERSION = "9";
 interface IOpts {
     storageToken?: string;
     pendingEventOrdering?: PendingEventOrdering;
     timelineSupport?: boolean;
-    unstableClientRelationAggregation?: boolean;
     lazyLoadMembers?: boolean;
 }
 export interface IRecommendedVersion {
@@ -29,8 +32,12 @@ export interface IRecommendedVersion {
 interface IReceipt {
     ts: number;
 }
+export interface IWrappedReceipt {
+    eventId: string;
+    data: IReceipt;
+}
 interface ICachedReceipt {
-    type: string;
+    type: ReceiptType;
     userId: string;
     data: IReceipt;
 }
@@ -38,19 +45,57 @@ export declare enum NotificationCountType {
     Highlight = "highlight",
     Total = "total"
 }
-export declare class Room extends EventEmitter {
+export interface ICreateFilterOpts {
+    prepopulateTimeline?: boolean;
+    useSyncEvents?: boolean;
+    pendingEvents?: boolean;
+}
+export declare enum RoomEvent {
+    MyMembership = "Room.myMembership",
+    Tags = "Room.tags",
+    AccountData = "Room.accountData",
+    Receipt = "Room.receipt",
+    Name = "Room.name",
+    Redaction = "Room.redaction",
+    RedactionCancelled = "Room.redactionCancelled",
+    LocalEchoUpdated = "Room.localEchoUpdated",
+    Timeline = "Room.timeline",
+    TimelineReset = "Room.timelineReset",
+    TimelineRefresh = "Room.TimelineRefresh",
+    OldStateUpdated = "Room.OldStateUpdated",
+    CurrentStateUpdated = "Room.CurrentStateUpdated",
+    HistoryImportedWithinTimeline = "Room.historyImportedWithinTimeline"
+}
+declare type EmittedEvents = RoomEvent | ThreadEvent.New | ThreadEvent.Update | ThreadEvent.NewReply | RoomEvent.Timeline | RoomEvent.TimelineReset | RoomEvent.TimelineRefresh | RoomEvent.HistoryImportedWithinTimeline | RoomEvent.OldStateUpdated | RoomEvent.CurrentStateUpdated | MatrixEventEvent.BeforeRedaction;
+export declare type RoomEventHandlerMap = {
+    [RoomEvent.MyMembership]: (room: Room, membership: string, prevMembership?: string) => void;
+    [RoomEvent.Tags]: (event: MatrixEvent, room: Room) => void;
+    [RoomEvent.AccountData]: (event: MatrixEvent, room: Room, lastEvent?: MatrixEvent) => void;
+    [RoomEvent.Receipt]: (event: MatrixEvent, room: Room) => void;
+    [RoomEvent.Name]: (room: Room) => void;
+    [RoomEvent.Redaction]: (event: MatrixEvent, room: Room) => void;
+    [RoomEvent.RedactionCancelled]: (event: MatrixEvent, room: Room) => void;
+    [RoomEvent.LocalEchoUpdated]: (event: MatrixEvent, room: Room, oldEventId?: string, oldStatus?: EventStatus) => void;
+    [RoomEvent.OldStateUpdated]: (room: Room, previousRoomState: RoomState, roomState: RoomState) => void;
+    [RoomEvent.CurrentStateUpdated]: (room: Room, previousRoomState: RoomState, roomState: RoomState) => void;
+    [RoomEvent.HistoryImportedWithinTimeline]: (markerEvent: MatrixEvent, room: Room) => void;
+    [RoomEvent.TimelineRefresh]: (room: Room, eventTimelineSet: EventTimelineSet) => void;
+    [ThreadEvent.New]: (thread: Thread, toStartOfTimeline: boolean) => void;
+} & ThreadHandlerMap & MatrixEventHandlerMap;
+export declare class Room extends TypedEventEmitter<EmittedEvents, RoomEventHandlerMap> {
     readonly roomId: string;
     readonly client: MatrixClient;
     readonly myUserId: string;
     private readonly opts;
-    private readonly reEmitter;
+    readonly reEmitter: TypedReEmitter<EmittedEvents, RoomEventHandlerMap>;
     private txnToEvent;
     private receipts;
     private receiptCacheByEventId;
-    private realReceipts;
     private notificationCounts;
     private readonly timelineSets;
+    readonly threadsTimelineSets: EventTimelineSet[];
     private readonly filteredTimelineSets;
+    private timelineNeedsRefresh;
     private readonly pendingEventList?;
     private blacklistUnverifiedDevices;
     private selfMembership;
@@ -58,19 +103,72 @@ export declare class Room extends EventEmitter {
     private getTypeWarning;
     private getVersionWarning;
     private membersPromise?;
+    /**
+     * The human-readable display name for this room.
+     */
     name: string;
+    /**
+     * The un-homoglyphed name for this room.
+     */
     normalizedName: string;
+    /**
+     * Dict of room tags; the keys are the tag name and the values
+     * are any metadata associated with the tag - e.g. { "fav" : { order: 1 } }
+     */
     tags: Record<string, Record<string, any>>;
+    /**
+     * accountData Dict of per-room account_data events; the keys are the
+     * event type and the values are the events.
+     */
     accountData: Record<string, MatrixEvent>;
+    /**
+     * The room summary.
+     */
     summary: RoomSummary;
+    /**
+     * A token which a data store can use to remember the state of the room.
+     */
     readonly storageToken?: string;
+    /**
+     * The live event timeline for this room, with the oldest event at index 0.
+     * Present for backwards compatibility - prefer getLiveTimeline().getEvents()
+     */
     timeline: MatrixEvent[];
+    /**
+     * oldState The state of the room at the time of the oldest
+     * event in the live timeline. Present for backwards compatibility -
+     * prefer getLiveTimeline().getState(EventTimeline.BACKWARDS).
+     */
     oldState: RoomState;
+    /**
+     * currentState The state of the room at the time of the
+     * newest event in the timeline. Present for backwards compatibility -
+     * prefer getLiveTimeline().getState(EventTimeline.FORWARDS).
+     */
     currentState: RoomState;
+    readonly relations: RelationsContainer;
     /**
      * @experimental
      */
-    threads: Map<string, Thread>;
+    private threads;
+    lastThread: Thread;
+    /**
+     * A mapping of eventId to all visibility changes to apply
+     * to the event, by chronological order, as per
+     * https://github.com/matrix-org/matrix-doc/pull/3531
+     *
+     * # Invariants
+     *
+     * - within each list, all events are classed by
+     *   chronological order;
+     * - all events are events such that
+     *  `asVisibilityEvent()` returns a non-null `IVisibilityChange`;
+     * - within each list with key `eventId`, all events
+     *   are in relation to `eventId`.
+     *
+     * @experimental
+     */
+    private visibilityEvents;
     /**
      * Construct a new Room.
      *
@@ -107,32 +205,10 @@ export declare class Room extends EventEmitter {
      * "chronological".
      * @param {boolean} [opts.timelineSupport = false] Set to true to enable improved
      * timeline support.
-     * @param {boolean} [opts.unstableClientRelationAggregation = false]
-     * Optional. Set to true to enable client-side aggregation of event relations
-     * via `EventTimelineSet#getRelationsForEvent`.
-     * This feature is currently unstable and the API may change without notice.
-     *
-     * @prop {string} roomId The ID of this room.
-     * @prop {string} name The human-readable display name for this room.
-     * @prop {string} normalizedName The un-homoglyphed name for this room.
-     * @prop {Array<MatrixEvent>} timeline The live event timeline for this room,
-     * with the oldest event at index 0. Present for backwards compatibility -
-     * prefer getLiveTimeline().getEvents().
-     * @prop {object} tags Dict of room tags; the keys are the tag name and the values
-     * are any metadata associated with the tag - e.g. { "fav" : { order: 1 } }
-     * @prop {object} accountData Dict of per-room account_data events; the keys are the
-     * event type and the values are the events.
-     * @prop {RoomState} oldState The state of the room at the time of the oldest
-     * event in the live timeline. Present for backwards compatibility -
-     * prefer getLiveTimeline().getState(EventTimeline.BACKWARDS).
-     * @prop {RoomState} currentState The state of the room at the time of the
-     * newest event in the timeline. Present for backwards compatibility -
-     * prefer getLiveTimeline().getState(EventTimeline.FORWARDS).
-     * @prop {RoomSummary} summary The room summary.
-     * @prop {*} storageToken A token which a data store can use to remember
-     * the state of the room.
      */
     constructor(roomId: string, client: MatrixClient, myUserId: string, opts?: IOpts);
+    private threadTimelineSetsPromise;
+    createThreadsTimelineSets(): Promise<[EventTimelineSet, EventTimelineSet]>;
     /**
      * Bulk decrypt critical events in a room
      *
@@ -151,6 +227,11 @@ export declare class Room extends EventEmitter {
      * @returns {Promise} Signals when all events have been decrypted
      */
     decryptAllEvents(): Promise<void>;
+    /**
+     * Gets the creator of the room
+     * @returns {string} The creator of the room, or null if it could not be determined
+     */
+    getCreator(): string | null;
     /**
      * Gets the version of the room
      * @returns {string} The version of the room, or null if it could not be determined
@@ -267,6 +348,20 @@ export declare class Room extends EventEmitter {
      */
     private cleanupAfterLeaving;
     /**
+     * Empty out the current live timeline and re-request it. This is used when
+     * historical messages are imported into the room via MSC2716 `/batch_send
+     * because the client may already have that section of the timeline loaded.
+     * We need to force the client to throw away their current timeline so that
+     * when they back paginate over the area again with the historical messages
+     * in between, it grabs the newly imported messages. We can listen for
+     * `UNSTABLE_MSC2716_MARKER`, in order to tell when historical messages are ready
+     * to be discovered in the room and the timeline needs a refresh. The SDK
+     * emits a `RoomEvent.HistoryImportedWithinTimeline` event when we detect a
+     * valid marker and can check the needs refresh status via
+     * `room.getTimelineNeedsRefresh()`.
+     */
+    refreshLiveTimeline(): Promise<void>;
+    /**
      * Reset the live timeline of all timelineSets, and start new ones.
      *
      * <p>This is used when /sync returns a 'limited' timeline.
@@ -277,7 +372,7 @@ export declare class Room extends EventEmitter {
      * timeline which would otherwise be unable to paginate forwards without this token).
      * Removing just the old live timeline whilst preserving previous ones is not supported.
      */
-    resetLiveTimeline(backPaginationToken: string, forwardPaginationToken: string): void;
+    resetLiveTimeline(backPaginationToken: string | null, forwardPaginationToken: string | null): void;
     /**
      * Fix up this.timeline, this.oldState and this.currentState
      *
@@ -319,9 +414,21 @@ export declare class Room extends EventEmitter {
      */
     addTimeline(): EventTimeline;
     /**
-     * Get an event which is stored in our unfiltered timeline set or in a thread
+     * Whether the timeline needs to be refreshed in order to pull in new
+     * historical messages that were imported.
+     * @param {Boolean} value The value to set
+     */
+    setTimelineNeedsRefresh(value: boolean): void;
+    /**
+     * Whether the timeline needs to be refreshed in order to pull in new
+     * historical messages that were imported.
+     * @return {Boolean} .
+     */
+    getTimelineNeedsRefresh(): boolean;
+    /**
+     * Get an event which is stored in our unfiltered timeline set, or in a thread
      *
-     * @param {string} eventId  event ID to look for
+     * @param {string} eventId event ID to look for
      * @return {?module:models/event.MatrixEvent} the given event, or undefined if unknown
      */
     findEventById(eventId: string): MatrixEvent | undefined;
@@ -374,6 +481,7 @@ export declare class Room extends EventEmitter {
      * The aliases returned by this function may not necessarily
      * still point to this room.
      * @return {array} The room's alias as an array of strings
+     * @deprecated this uses m.room.aliases events, replaced by Room::getAltAliases()
      */
     getAliases(): string[];
     /**
@@ -486,28 +594,43 @@ export declare class Room extends EventEmitter {
     /**
      * Add a timelineSet for this room with the given filter
      * @param {Filter} filter The filter to be applied to this timelineSet
+     * @param {Object=} opts Configuration options
+     * @param {*} opts.storageToken Optional.
      * @return {EventTimelineSet} The timelineSet
      */
-    getOrCreateFilteredTimelineSet(filter: Filter): EventTimelineSet;
+    getOrCreateFilteredTimelineSet(filter: Filter, { prepopulateTimeline, useSyncEvents, pendingEvents, }?: ICreateFilterOpts): EventTimelineSet;
+    private getThreadListFilter;
+    private createThreadTimelineSet;
+    threadsReady: boolean;
+    fetchRoomThreads(): Promise<void>;
+    private onThreadNewReply;
     /**
      * Forget the timelineSet for this room with the given filter
      *
      * @param {Filter} filter the filter whose timelineSet is to be forgotten
      */
     removeFilteredTimelineSet(filter: Filter): void;
-    findThreadForEvent(event: MatrixEvent): Thread;
+    eventShouldLiveIn(event: MatrixEvent, events?: MatrixEvent[], roots?: Set<string>): {
+        shouldLiveInRoom: boolean;
+        shouldLiveInThread: boolean;
+        threadId?: string;
+    };
+    findThreadForEvent(event?: MatrixEvent): Thread | null;
+    private addThreadedEvents;
     /**
-     * Add an event to a thread's timeline. Will fire "Thread.update"
+     * Adds events to a thread's timeline. Will fire "Thread.update"
      * @experimental
      */
-    addThreadedEvent(event: MatrixEvent): Promise<void>;
+    processThreadedEvents(events: MatrixEvent[], toStartOfTimeline: boolean): void;
+    createThread(threadId: string, rootEvent: MatrixEvent | undefined, events: MatrixEvent[], toStartOfTimeline: boolean): Thread;
+    private applyRedaction;
+    private processLiveEvent;
     /**
      * Add an event to the end of this room's live timelines. Will fire
      * "Room.timeline".
      *
      * @param {MatrixEvent} event Event to be added
-     * @param {string?} duplicateStrategy 'ignore' or 'replace'
-     * @param {boolean} fromCache whether the sync response came from cache
+     * @param {IAddLiveEventOptions} options addLiveEvent options
      * @fires module:client~MatrixClient#event:"Room.timeline"
      * @private
      */
@@ -555,6 +678,7 @@ export declare class Room extends EventEmitter {
      * @param {module:models/event.MatrixEvent} event the relation event that needs to be aggregated.
      */
     private aggregateNonLiveRelation;
+    getEventForTxnId(txnId: string): MatrixEvent;
     /**
      * Deal with the echo of a message we sent.
      *
@@ -569,7 +693,7 @@ export declare class Room extends EventEmitter {
      * @fires module:client~MatrixClient#event:"Room.localEchoUpdated"
      * @private
      */
-    private handleRemoteEcho;
+    handleRemoteEcho(remoteEvent: MatrixEvent, localEvent: MatrixEvent): void;
     /**
      * Update the status / event id on a pending event, to reflect its transmission
      * progress.
@@ -590,18 +714,22 @@ export declare class Room extends EventEmitter {
      * they will go to the end of the timeline.
      *
      * @param {MatrixEvent[]} events A list of events to add.
-     *
-     * @param {string} duplicateStrategy Optional. Applies to events in the
-     * timeline only. If this is 'replace' then if a duplicate is encountered, the
-     * event passed to this function will replace the existing event in the
-     * timeline. If this is not specified, or is 'ignore', then the event passed to
-     * this function will be ignored entirely, preserving the existing event in the
-     * timeline. Events are identical based on their event ID <b>only</b>.
-     *
-     * @param {boolean} fromCache whether the sync response came from cache
+     * @param {IAddLiveEventOptions} options addLiveEvent options
      * @throws If <code>duplicateStrategy</code> is not falsey, 'replace' or 'ignore'.
      */
+    addLiveEvents(events: MatrixEvent[], addLiveEventOptions?: IAddLiveEventOptions): void;
+    /**
+     * @deprecated In favor of the overload with `IAddLiveEventOptions`
+     */
     addLiveEvents(events: MatrixEvent[], duplicateStrategy?: DuplicateStrategy, fromCache?: boolean): void;
+    partitionThreadedEvents(events: MatrixEvent[]): [
+        timelineEvents: MatrixEvent[],
+        threadedEvents: MatrixEvent[]
+    ];
+    /**
+     * Given some events, find the IDs of all the thread roots that are referred to by them.
+     */
+    private findThreadRoots;
     /**
      * Adds/handles ephemeral events such as typing notifications and read receipts.
      * @param {MatrixEvent[]} events A list of events to process
@@ -634,6 +762,14 @@ export declare class Room extends EventEmitter {
      */
     getUsersReadUpTo(event: MatrixEvent): string[];
     /**
+     * Gets the latest receipt for a given user in the room
+     * @param userId The id of the user for which we want the receipt
+     * @param ignoreSynthesized Whether to ignore synthesized receipts or not
+     * @param receiptType Optional. The type of the receipt we want to get
+     * @returns the latest receipts of the chosen type for the chosen user
+     */
+    getReadReceiptForUserId(userId: string, ignoreSynthesized?: boolean, receiptType?: ReceiptType): IWrappedReceipt | null;
+    /**
      * Get the ID of the event that a given user has read up to, or null if we
      * have received no read receipts from them.
      * @param {String} userId The user ID to get read receipt event ID for
@@ -662,29 +798,23 @@ export declare class Room extends EventEmitter {
     /**
      * Add a receipt event to the room.
      * @param {MatrixEvent} event The m.receipt event.
-     * @param {Boolean} fake True if this event is implicit
+     * @param {Boolean} synthetic True if this event is implicit.
      */
-    addReceipt(event: MatrixEvent, fake?: boolean): void;
+    addReceipt(event: MatrixEvent, synthetic?: boolean): void;
     /**
      * Add a receipt event to the room.
      * @param {MatrixEvent} event The m.receipt event.
-     * @param {Object} receipts The object to add receipts to
+     * @param {Boolean} synthetic True if this event is implicit.
      */
     private addReceiptsToStructure;
-    /**
-     * Build and return a map of receipts by event ID
-     * @param {Object} receipts A map of receipts
-     * @return {Object} Map of receipts by event ID
-     */
-    private buildReceiptCache;
     /**
      * Add a temporary local-echo receipt to the room to reflect in the
      * client the fact that we've sent one.
      * @param {string} userId The user ID if the receipt sender
      * @param {MatrixEvent} e The event that is to be acknowledged
-     * @param {string} receiptType The type of receipt
+     * @param {ReceiptType} receiptType The type of receipt
      */
-    addLocalEchoReceipt(userId: string, e: MatrixEvent, receiptType: string): void;
+    addLocalEchoReceipt(userId: string, e: MatrixEvent, receiptType: ReceiptType): void;
     /**
      * Update the room-tag event for the room.  The previous one is overwritten.
      * @param {MatrixEvent} event the m.tag event
@@ -730,7 +860,7 @@ export declare class Room extends EventEmitter {
     getGuestAccess(): GuestAccess;
     /**
      * Returns the type of the room from the `m.room.create` event content or undefined if none is set
-     * @returns {?string} the type of the room. Currently only RoomType.Space is known.
+     * @returns {?string} the type of the room.
      */
     getType(): RoomType | string | undefined;
     /**
@@ -738,6 +868,16 @@ export declare class Room extends EventEmitter {
      * @returns {boolean} true if the room's type is RoomType.Space
      */
     isSpaceRoom(): boolean;
+    /**
+     * Returns whether the room is a call-room as defined by MSC3417.
+     * @returns {boolean} true if the room's type is RoomType.UnstableCall
+     */
+    isCallRoom(): boolean;
+    /**
+     * Returns whether the room is a video room.
+     * @returns {boolean} true if the room's type is RoomType.ElementVideo
+     */
+    isElementVideoRoom(): boolean;
     /**
      * This is an internal method. Calculates the name of the room from the current
      * room state.
@@ -748,6 +888,26 @@ export declare class Room extends EventEmitter {
      * @return {string} The calculated room name.
      */
     private calculateRoomName;
+    /**
+     * When we receive a new visibility change event:
+     *
+     * - store this visibility change alongside the timeline, in case we
+     *   later need to apply it to an event that we haven't received yet;
+     * - if we have already received the event whose visibility has changed,
+     *   patch it to reflect the visibility change and inform listeners.
+     */
+    private applyNewVisibilityEvent;
+    private redactVisibilityChangeEvent;
+    /**
+     * When we receive an event whose visibility has been altered by
+     * a (more recent) visibility change event, patch the event in
+     * place so that clients now not to display it.
+     *
+     * @param event Any matrix event. If this event has at least one a
+     * pending visibility change event, apply the latest visibility
+     * change event.
+     */
+    private applyPendingVisibilityEvents;
 }
 export {};
 /**

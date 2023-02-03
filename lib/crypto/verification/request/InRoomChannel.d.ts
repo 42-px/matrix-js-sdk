@@ -2,6 +2,7 @@ import { VerificationRequest } from "./VerificationRequest";
 import { IVerificationChannel } from "./Channel";
 import { MatrixClient } from "../../../client";
 import { MatrixEvent } from "../../../models/event";
+import { IRequestsMap } from "../..";
 /**
  * A key verification channel that sends verification events in the timeline of a room.
  * Uses the event id of the initial m.key.verification.request event as a transaction id.
@@ -99,13 +100,13 @@ export declare class InRoomChannel implements IVerificationChannel {
      */
     sendCompleted(type: string, content: Record<string, any>): Promise<void>;
 }
-export declare class InRoomRequests {
+export declare class InRoomRequests implements IRequestsMap {
     private requestsByRoomId;
     getRequest(event: MatrixEvent): VerificationRequest;
     getRequestByChannel(channel: InRoomChannel): VerificationRequest;
     private getRequestByTxnId;
     setRequest(event: MatrixEvent, request: VerificationRequest): void;
-    setRequestByChannel(channel: InRoomChannel, request: VerificationRequest): void;
+    setRequestByChannel(channel: IVerificationChannel, request: VerificationRequest): void;
     private doSetRequest;
     removeRequest(event: MatrixEvent): void;
     findRequestInProgress(roomId: string): VerificationRequest;

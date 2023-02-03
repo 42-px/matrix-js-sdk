@@ -3,7 +3,7 @@
  * do verification with this method).
  * @module crypto/verification/IllegalMethod
  */
-import { VerificationBase as Base } from "./Base";
+import { VerificationBase as Base, VerificationEvent, VerificationEventHandlerMap } from "./Base";
 import { IVerificationChannel } from "./request/Channel";
 import { MatrixClient } from "../../client";
 import { MatrixEvent } from "../../models/event";
@@ -12,7 +12,7 @@ import { VerificationRequest } from "./request/VerificationRequest";
  * @class crypto/verification/IllegalMethod/IllegalMethod
  * @extends {module:crypto/verification/Base}
  */
-export declare class IllegalMethod extends Base {
+export declare class IllegalMethod extends Base<VerificationEvent, VerificationEventHandlerMap> {
     static factory(channel: IVerificationChannel, baseApis: MatrixClient, userId: string, deviceId: string, startEvent: MatrixEvent, request: VerificationRequest): IllegalMethod;
     static get NAME(): string;
     protected doVerification: () => Promise<void>;

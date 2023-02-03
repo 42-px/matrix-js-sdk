@@ -1,7 +1,7 @@
-/// <reference types="node" />
-import { ICryptoCallbacks, MatrixClient, MatrixEvent } from '../matrix';
+import { ClientEvent, ICryptoCallbacks, MatrixEvent } from '../matrix';
+import { ClientEventHandlerMap, MatrixClient } from "../client";
 import { IAddSecretStorageKeyOpts, ISecretStorageKeyInfo } from './api';
-import { EventEmitter } from 'stream';
+import { TypedEventEmitter } from '../models/typed-event-emitter';
 export declare const SECRET_STORAGE_ALGORITHM_V1_AES = "m.secret_storage.v1.aes-hmac-sha2";
 export declare type SecretStorageKeyTuple = [keyId: string, keyInfo: ISecretStorageKeyInfo];
 export declare type SecretStorageKeyObject = {
@@ -13,8 +13,10 @@ export interface ISecretRequest {
     promise: Promise<string>;
     cancel: (reason: string) => void;
 }
-export interface IAccountDataClient extends EventEmitter {
-    getAccountDataFromServer: (eventType: string) => Promise<Record<string, any>>;
+export interface IAccountDataClient extends TypedEventEmitter<ClientEvent.AccountData, ClientEventHandlerMap> {
+    getAccountDataFromServer: <T extends {
+        [k: string]: any;
+    }>(eventType: string) => Promise<T>;
     getAccountData: (eventType: string) => MatrixEvent;
     setAccountData: (eventType: string, content: any) => Promise<{}>;
 }
@@ -28,7 +30,7 @@ export declare class SecretStorage {
     private readonly baseApis?;
     private requests;
     constructor(accountDataAdapter: IAccountDataClient, cryptoCallbacks: ICryptoCallbacks, baseApis?: MatrixClient);
-    getDefaultKeyId(): Promise<string>;
+    getDefaultKeyId(): Promise<string | null>;
     setDefaultKeyId(keyId: string): Promise<void>;
     /**
      * Add a key for encrypting secrets.
@@ -92,13 +94,12 @@ export declare class SecretStorage {
      * Check if a secret is stored on the server.
      *
      * @param {string} name the name of the secret
-     * @param {boolean} checkKey check if the secret is encrypted by a trusted key
      *
      * @return {object?} map of key name to key info the secret is encrypted
      *     with, or null if it is not present or not encrypted with a trusted
      *     key
      */
-    isStored(name: string, checkKey: boolean): Promise<Record<string, ISecretStorageKeyInfo>>;
+    isStored(name: string): Promise<Record<string, ISecretStorageKeyInfo> | null>;
     /**
      * Request a secret from another device
      *

@@ -98,7 +98,7 @@ export interface IPusher {
         brand?: string;
     };
     device_display_name: string;
-    kind: string;
+    kind: "http" | string;
     lang: string;
     profile_tag?: string;
     pushkey: string;

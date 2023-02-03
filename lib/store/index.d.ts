@@ -1,16 +1,15 @@
 import { EventType } from "../@types/event";
-import { Group } from "../models/group";
 import { Room } from "../models/room";
 import { User } from "../models/user";
 import { IEvent, MatrixEvent } from "../models/event";
 import { Filter } from "../filter";
 import { RoomSummary } from "../models/room-summary";
-import { IMinimalEvent, IGroups, IRooms, ISyncResponse } from "../sync-accumulator";
+import { IMinimalEvent, IRooms, ISyncResponse } from "../sync-accumulator";
 import { IStartClientOpts } from "../client";
+import { IStateEventWithRoomId } from "../@types/search";
 export interface ISavedSync {
     nextBatch: string;
     roomsData: IRooms;
-    groupsData: IGroups;
     accountData: IMinimalEvent[];
 }
 /**
@@ -19,7 +18,8 @@ export interface ISavedSync {
  */
 export interface IStore {
     readonly accountData: Record<string, MatrixEvent>;
-    /** @return {Promise<bool>} whether or not the database was newly created in this session. */
+    on?: (event: string, handler: (...args: any[]) => void) => void;
+    /** @return {Promise<boolean>} whether or not the database was newly created in this session. */
     isNewlyCreated(): Promise<boolean>;
     /**
      * Get the sync token.
@@ -30,31 +30,12 @@ export interface IStore {
      * Set the sync token.
      * @param {string} token
      */
-    setSyncToken(token: string): any;
-    /**
-     * No-op.
-     * @param {Group} group
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    storeGroup(group: Group): any;
-    /**
-     * No-op.
-     * @param {string} groupId
-     * @return {null}
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    getGroup(groupId: string): Group | null;
-    /**
-     * No-op.
-     * @return {Array} An empty array.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    getGroups(): Group[];
+    setSyncToken(token: string): void;
     /**
      * No-op.
      * @param {Room} room
      */
-    storeRoom(room: Room): any;
+    storeRoom(room: Room): void;
     /**
      * No-op.
      * @param {string} roomId
@@ -70,7 +51,7 @@ export interface IStore {
      * Permanently delete a room.
      * @param {string} roomId
      */
-    removeRoom(roomId: string): any;
+    removeRoom(roomId: string): void;
     /**
      * No-op.
      * @return {Array} An empty array.
@@ -80,7 +61,7 @@ export interface IStore {
      * No-op.
      * @param {User} user
      */
-    storeUser(user: User): any;
+    storeUser(user: User): void;
     /**
      * No-op.
      * @param {string} userId
@@ -95,7 +76,7 @@ export interface IStore {
     /**
      * No-op.
      * @param {Room} room
-     * @param {integer} limit
+     * @param {number} limit
      * @return {Array}
      */
     scrollback(room: Room, limit: number): MatrixEvent[];
@@ -106,12 +87,12 @@ export interface IStore {
      * @param {string} token The token associated with these events.
      * @param {boolean} toStart True if these are paginated results.
      */
-    storeEvents(room: Room, events: MatrixEvent[], token: string, toStart: boolean): any;
+    storeEvents(room: Room, events: MatrixEvent[], token: string, toStart: boolean): void;
     /**
      * Store a filter.
      * @param {Filter} filter
      */
-    storeFilter(filter: Filter): any;
+    storeFilter(filter: Filter): void;
     /**
      * Retrieve a filter.
      * @param {string} userId
@@ -130,12 +111,12 @@ export interface IStore {
      * @param {string} filterName
      * @param {string} filterId
      */
-    setFilterIdByName(filterName: string, filterId: string): any;
+    setFilterIdByName(filterName: string, filterId: string): void;
     /**
      * Store user-scoped account data events
      * @param {Array<MatrixEvent>} events The events to store.
      */
-    storeAccountDataEvents(events: MatrixEvent[]): any;
+    storeAccountDataEvents(events: MatrixEvent[]): void;
     /**
      * Get account data event by event type
      * @param {string} eventType The event type being queried
@@ -180,10 +161,12 @@ export interface IStore {
      * @return {Promise} An immediately resolved promise.
      */
     deleteAllData(): Promise<void>;
-    getOutOfBandMembers(roomId: string): Promise<IEvent[] | null>;
-    setOutOfBandMembers(roomId: string, membershipEvents: IEvent[]): Promise<void>;
+    getOutOfBandMembers(roomId: string): Promise<IStateEventWithRoomId[] | null>;
+    setOutOfBandMembers(roomId: string, membershipEvents: IStateEventWithRoomId[]): Promise<void>;
     clearOutOfBandMembers(roomId: string): Promise<void>;
     getClientOptions(): Promise<IStartClientOpts>;
     storeClientOptions(options: IStartClientOpts): Promise<void>;
+    getPendingEvents(roomId: string): Promise<Partial<IEvent>[]>;
+    setPendingEvents(roomId: string, events: Partial<IEvent>[]): Promise<void>;
 }
 //# sourceMappingURL=index.d.ts.map

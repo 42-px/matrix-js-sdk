@@ -1,9 +1,10 @@
-import type { PkSigning } from "@matrix-org/olm";
 import { Logger } from "loglevel";
+import type { PkSigning } from "@matrix-org/olm";
 import { OlmDevice } from "./OlmDevice";
 import { DeviceInfo } from "./deviceinfo";
 import { IOneTimeKey } from "./dehydration";
 import { MatrixClient } from "../client";
+import { ISignatures } from "../@types/signed";
 declare enum Algorithm {
     Olm = "m.olm.v1.curve25519-aes-sha2",
     Megolm = "m.megolm.v1.aes-sha2",
@@ -41,7 +42,11 @@ export interface IOlmSessionResult {
  * Returns a promise which resolves (to undefined) when the payload
  *    has been encrypted into `resultsObject`
  */
-export declare function encryptMessageForDevice(resultsObject: Record<string, string>, ourUserId: string, ourDeviceId: string, olmDevice: OlmDevice, recipientUserId: string, recipientDevice: DeviceInfo, payloadFields: Record<string, any>): Promise<void>;
+export declare function encryptMessageForDevice(resultsObject: Record<string, string>, ourUserId: string, ourDeviceId: string | undefined, olmDevice: OlmDevice, recipientUserId: string, recipientDevice: DeviceInfo, payloadFields: Record<string, any>): Promise<void>;
+interface IExistingOlmSession {
+    device: DeviceInfo;
+    sessionId?: string;
+}
 /**
  * Get the existing olm sessions for the given devices, and the devices that
  * don't have olm sessions.
@@ -58,7 +63,7 @@ export declare function encryptMessageForDevice(resultsObject: Record<string, st
  *    don't have established olm sessions.  The second element of the array is
  *    a map from userId to deviceId to {@link module:crypto~OlmSessionResult}
  */
-export declare function getExistingOlmSessions(olmDevice: OlmDevice, baseApis: MatrixClient, devicesByUser: Record<string, DeviceInfo[]>): Promise<{}[]>;
+export declare function getExistingOlmSessions(olmDevice: OlmDevice, baseApis: MatrixClient, devicesByUser: Record<string, DeviceInfo[]>): Promise<[Record<string, DeviceInfo[]>, Record<string, Record<string, IExistingOlmSession>>]>;
 /**
  * Try to make sure we have established olm sessions for the given devices.
  *
@@ -87,7 +92,7 @@ export declare function getExistingOlmSessions(olmDevice: OlmDevice, baseApis: M
 export declare function ensureOlmSessionsForDevices(olmDevice: OlmDevice, baseApis: MatrixClient, devicesByUser: Record<string, DeviceInfo[]>, force?: boolean, otkTimeout?: number, failedServers?: string[], log?: Logger): Promise<Record<string, Record<string, IOlmSessionResult>>>;
 export interface IObject {
     unsigned?: object;
-    signatures?: object;
+    signatures?: ISignatures;
 }
 /**
  * Verify the signature on an object

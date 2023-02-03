@@ -1,6 +1,7 @@
 /**
  * @module filter
  */
+import { EventType, RelationType } from "./@types/event";
 import { FilterComponent, IFilterComponent } from "./filter-component";
 import { MatrixEvent } from "./models/event";
 export interface IFilterDefinition {
@@ -13,6 +14,11 @@ export interface IFilterDefinition {
 export interface IRoomEventFilter extends IFilterComponent {
     lazy_load_members?: boolean;
     include_redundant_members?: boolean;
+    types?: Array<EventType | string>;
+    related_by_senders?: Array<RelationType | string>;
+    related_by_rel_types?: string[];
+    "io.element.relation_senders"?: Array<RelationType | string>;
+    "io.element.relation_types"?: string[];
 }
 interface IStateFilter extends IRoomEventFilter {
 }

@@ -1,35 +1,19 @@
-/// <reference types="node" />
 /**
  * This is an internal module. See {@link MatrixEvent} and {@link RoomEvent} for
  * the public classes.
  * @module models/event
  */
-import { EventEmitter } from 'events';
+import { ExtensibleEvent, Optional } from "matrix-events-sdk";
 import { VerificationRequest } from "../crypto/verification/request/VerificationRequest";
 import { EventType, MsgType, RelationType } from "../@types/event";
 import { Crypto } from "../crypto";
 import { RoomMember } from "./room-member";
-import { Thread } from "./thread";
+import { Thread, ThreadEvent, EventHandlerMap as ThreadEventHandlerMap } from "./thread";
 import { IActionsObject } from '../pushprocessor';
-/**
- * Enum for event statuses.
- * @readonly
- * @enum {string}
- */
-export declare enum EventStatus {
-    /** The event was not sent and will no longer be retried. */
-    NOT_SENT = "not_sent",
-    /** The message is being encrypted */
-    ENCRYPTING = "encrypting",
-    /** The event is in the process of being sent. */
-    SENDING = "sending",
-    /** The event is in a queue waiting to be sent. */
-    QUEUED = "queued",
-    /** The event has been sent to the server, but we have not yet received the echo. */
-    SENT = "sent",
-    /** The event was cancelled before it was successfully sent. */
-    CANCELLED = "cancelled"
-}
+import { MatrixError } from "../http-api";
+import { TypedEventEmitter } from "./typed-event-emitter";
+import { EventStatus } from "./event-status";
+export { EventStatus } from "./event-status";
 export interface IContent {
     [key: string]: any;
     msgtype?: MsgType | string;
@@ -46,6 +30,12 @@ export interface IUnsigned {
     redacted_because?: IEvent;
     transaction_id?: string;
     invite_room_state?: StrippedState[];
+    "m.relations"?: Record<RelationType | string, any>;
+}
+export interface IThreadBundledRelationship {
+    latest_event: IEvent;
+    count: number;
+    current_user_participated?: boolean;
 }
 export interface IEvent {
     event_id: string;
@@ -59,11 +49,20 @@ export interface IEvent {
     membership?: string;
     unsigned: IUnsigned;
     redacts?: string;
+    /**
+     * @deprecated
+     */
     user_id?: string;
+    /**
+     * @deprecated
+     */
     prev_content?: IContent;
+    /**
+     * @deprecated
+     */
     age?: number;
 }
-interface IAggregatedRelation {
+export interface IAggregatedRelation {
     origin_server_ts: number;
     event_id?: string;
     sender?: string;
@@ -72,11 +71,37 @@ interface IAggregatedRelation {
     key?: string;
 }
 export interface IEventRelation {
-    rel_type: RelationType | string;
-    event_id: string;
+    rel_type?: RelationType | string;
+    event_id?: string;
+    is_falling_back?: boolean;
+    "m.in_reply_to"?: {
+        event_id: string;
+    };
     key?: string;
 }
+/**
+ * When an event is a visibility change event, as per MSC3531,
+ * the visibility change implied by the event.
+ */
+export interface IVisibilityChange {
+    /**
+     * If `true`, the target event should be made visible.
+     * Otherwise, it should be hidden.
+     */
+    visible: boolean;
+    /**
+     * The event id affected.
+     */
+    eventId: string;
+    /**
+     * Optionally, a human-readable reason explaining why
+     * the event was hidden. Ignored if the event was made
+     * visible.
+     */
+    reason: string | null;
+}
 export interface IClearEvent {
+    room_id?: string;
     type: string;
     content: Omit<IContent, "membership" | "avatar_url" | "displayname" | "m.relates_to">;
     unsigned?: IUnsigned;
@@ -89,13 +114,56 @@ export interface IDecryptOptions {
     emit?: boolean;
     isRetry?: boolean;
 }
-export declare class MatrixEvent extends EventEmitter {
+/**
+ * Message hiding, as specified by https://github.com/matrix-org/matrix-doc/pull/3531.
+ */
+export declare type MessageVisibility = IMessageVisibilityHidden | IMessageVisibilityVisible;
+/**
+ * Variant of `MessageVisibility` for the case in which the message should be displayed.
+ */
+export interface IMessageVisibilityVisible {
+    readonly visible: true;
+}
+/**
+ * Variant of `MessageVisibility` for the case in which the message should be hidden.
+ */
+export interface IMessageVisibilityHidden {
+    readonly visible: false;
+    /**
+     * Optionally, a human-readable reason to show to the user indicating why the
+     * message has been hidden (e.g. "Message Pending Moderation").
+     */
+    readonly reason: string | null;
+}
+export declare enum MatrixEventEvent {
+    Decrypted = "Event.decrypted",
+    BeforeRedaction = "Event.beforeRedaction",
+    VisibilityChange = "Event.visibilityChange",
+    LocalEventIdReplaced = "Event.localEventIdReplaced",
+    Status = "Event.status",
+    Replaced = "Event.replaced",
+    RelationsCreated = "Event.relationsCreated"
+}
+declare type EmittedEvents = MatrixEventEvent | ThreadEvent.Update;
+export declare type MatrixEventHandlerMap = {
+    [MatrixEventEvent.Decrypted]: (event: MatrixEvent, err?: Error) => void;
+    [MatrixEventEvent.BeforeRedaction]: (event: MatrixEvent, redactionEvent: MatrixEvent) => void;
+    [MatrixEventEvent.VisibilityChange]: (event: MatrixEvent, visible: boolean) => void;
+    [MatrixEventEvent.LocalEventIdReplaced]: (event: MatrixEvent) => void;
+    [MatrixEventEvent.Status]: (event: MatrixEvent, status: EventStatus) => void;
+    [MatrixEventEvent.Replaced]: (event: MatrixEvent) => void;
+    [MatrixEventEvent.RelationsCreated]: (relationType: string, eventType: string) => void;
+} & ThreadEventHandlerMap;
+export declare class MatrixEvent extends TypedEventEmitter<EmittedEvents, MatrixEventHandlerMap> {
     event: Partial<IEvent>;
     private pushActions;
     private _replacingEvent;
     private _localRedactionEvent;
     private _isCancelled;
     private clearEvent?;
+    private visibility;
+    private _hasCachedExtEv;
+    private _cachedExtEv;
     private senderCurve25519Key;
     private claimedEd25519Key;
     private forwardingCurve25519KeyChain;
@@ -108,13 +176,14 @@ export declare class MatrixEvent extends EventEmitter {
      * A reference to the thread this event belongs to
      */
     private thread;
-    private readonly localTimestamp;
+    private threadId;
+    localTimestamp: number;
     sender: RoomMember;
     target: RoomMember;
     status: EventStatus;
-    error: any;
+    error: MatrixError;
     forwardLooking: boolean;
-    verificationRequest: any;
+    verificationRequest: VerificationRequest;
     private readonly reEmitter;
     /**
      * Construct a Matrix Event object
@@ -140,6 +209,15 @@ export declare class MatrixEvent extends EventEmitter {
      * Default: true. <strong>This property is experimental and may change.</strong>
      */
     constructor(event?: Partial<IEvent>);
+    /**
+     * Unstable getter to try and get an extensible event. Note that this might
+     * return a falsy value if the event could not be parsed as an extensible
+     * event.
+     *
+     * @deprecated Use stable functions where possible.
+     */
+    get unstableExtensibleEvent(): Optional<ExtensibleEvent>;
+    private invalidateExtensibleEvent;
     /**
      * Gets the event as though it would appear unencrypted. If the event is already not
      * encrypted, it is simply returned as-is.
@@ -173,10 +251,10 @@ export declare class MatrixEvent extends EventEmitter {
     /**
      * Get the room_id for this event. This will return <code>undefined</code>
      * for <code>m.presence</code> events.
-     * @return {string} The room ID, e.g. <code>!cURbafjkfsMDVwdRDQ:matrix.org
+     * @return {string?} The room ID, e.g. <code>!cURbafjkfsMDVwdRDQ:matrix.org
      * </code>
      */
-    getRoomId(): string;
+    getRoomId(): string | undefined;
     /**
      * Get the timestamp of this event.
      * @return {Number} The event timestamp, e.g. <code>1433502692297</code>
@@ -201,7 +279,7 @@ export declare class MatrixEvent extends EventEmitter {
      *
      * @return {Object} The event content JSON, or an empty object.
      */
-    getContent<T = IContent>(): T;
+    getContent<T extends IContent = IContent>(): T;
     /**
      * Get the (possibly encrypted) event content JSON that will be sent to the
      * homeserver.
@@ -213,17 +291,13 @@ export declare class MatrixEvent extends EventEmitter {
      * @experimental
      * Get the event ID of the thread head
      */
-    get threadRootId(): string;
-    /**
-     * @experimental
-     */
-    get isThreadRelation(): boolean;
+    get threadRootId(): string | undefined;
     /**
      * @experimental
      */
     get isThreadRoot(): boolean;
-    get parentEventId(): string;
     get replyEventId(): string;
+    get relationEventId(): string | undefined;
     /**
      * Get the previous event content JSON. This will only return something for
      * state events which exist in the timeline.
@@ -244,9 +318,10 @@ export declare class MatrixEvent extends EventEmitter {
      * Get the age of this event. This represents the age of the event when the
      * event arrived at the device, and not the age of the event when this
      * function was called.
-     * @return {Number} The age of this event in milliseconds.
+     * Can only be returned once the server has echo'ed back
+     * @return {Number|undefined} The age of this event in milliseconds.
      */
-    getAge(): number;
+    getAge(): number | undefined;
     /**
      * Get the age of the event when this function was called.
      * This is the 'age' field adjusted according to how long this client has
@@ -425,8 +500,28 @@ export declare class MatrixEvent extends EventEmitter {
      */
     isKeySourceUntrusted(): boolean;
     getUnsigned(): IUnsigned;
+    setUnsigned(unsigned: IUnsigned): void;
     unmarkLocallyRedacted(): boolean;
     markLocallyRedacted(redactionEvent: MatrixEvent): void;
+    /**
+     * Change the visibility of an event, as per https://github.com/matrix-org/matrix-doc/pull/3531 .
+     *
+     * @fires module:models/event.MatrixEvent#"Event.visibilityChange" if `visibilityEvent`
+     *   caused a change in the actual visibility of this event, either by making it
+     *   visible (if it was hidden), by making it hidden (if it was visible) or by
+     *   changing the reason (if it was hidden).
+     * @param visibilityChange event holding a hide/unhide payload, or nothing
+     *   if the event is being reset to its original visibility (presumably
+     *   by a visibility event being redacted).
+     */
+    applyVisibilityEvent(visibilityChange?: IVisibilityChange): void;
+    /**
+     * Return instructions to display or hide the message.
+     *
+     * @returns Instructions determining whether the message
+     * should be displayed.
+     */
+    messageVisibility(): MessageVisibility;
     /**
      * Update the content of an event in the same way it would be by the server
      * if it were redacted before it was sent to us
@@ -447,6 +542,22 @@ export declare class MatrixEvent extends EventEmitter {
      * @return {boolean} True if this event is a redaction
      */
     isRedaction(): boolean;
+    /**
+     * Return the visibility change caused by this event,
+     * as per https://github.com/matrix-org/matrix-doc/pull/3531.
+     *
+     * @returns If the event is a well-formed visibility change event,
+     * an instance of `IVisibilityChange`, otherwise `null`.
+     */
+    asVisibilityChange(): IVisibilityChange | null;
+    /**
+     * Check if this event alters the visibility of another event,
+     * as per https://github.com/matrix-org/matrix-doc/pull/3531.
+     *
+     * @returns {boolean} True if this event alters the visibility
+     * of another event.
+     */
+    isVisibilityEvent(): boolean;
     /**
      * Get the (decrypted, if necessary) redaction event JSON
      * if event was redacted
@@ -487,7 +598,7 @@ export declare class MatrixEvent extends EventEmitter {
     replaceLocalEventId(eventId: string): void;
     /**
      * Get whether the event is a relation event, and of a given type if
-     * `relType` is passed in.
+     * `relType` is passed in. State events cannot be relation events
      *
      * @param {string?} relType if given, checks that the relation is of the
      * given type
@@ -516,7 +627,7 @@ export declare class MatrixEvent extends EventEmitter {
      * @return {EventStatus}
      */
     getAssociatedStatus(): EventStatus | undefined;
-    getServerAggregatedRelation(relType: RelationType): IAggregatedRelation;
+    getServerAggregatedRelation<T>(relType: RelationType | string): T | undefined;
     /**
      * Returns the event ID of the event replacing the content of this event, if any.
      *
@@ -623,9 +734,9 @@ export declare class MatrixEvent extends EventEmitter {
     /**
      * @experimental
      */
-    getThread(): Thread;
+    getThread(): Thread | undefined;
+    setThreadId(threadId: string): void;
 }
-export {};
 /**
  * Fires when an event is decrypted
  *

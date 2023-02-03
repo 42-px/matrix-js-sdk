@@ -61,14 +61,8 @@ export declare enum EventType {
 export declare enum RelationType {
     Annotation = "m.annotation",
     Replace = "m.replace",
-    /**
-     * Note, "io.element.thread" is hardcoded
-     * Should be replaced with "m.thread" once MSC3440 lands
-     * Can not use `UnstableValue` as TypeScript does not
-     * allow computed values in enums
-     * https://github.com/microsoft/TypeScript/issues/27976
-     */
-    Thread = "io.element.thread"
+    Reference = "m.reference",
+    Thread = "m.thread"
 }
 export declare enum MsgType {
     Text = "m.text",
@@ -78,11 +72,14 @@ export declare enum MsgType {
     File = "m.file",
     Audio = "m.audio",
     Location = "m.location",
-    Video = "m.video"
+    Video = "m.video",
+    KeyVerificationRequest = "m.key.verification.request"
 }
 export declare const RoomCreateTypeField = "type";
 export declare enum RoomType {
-    Space = "m.space"
+    Space = "m.space",
+    UnstableCall = "org.matrix.msc3417.call",
+    ElementVideo = "io.element.video"
 }
 /**
  * Identifier for an [MSC3088](https://github.com/matrix-org/matrix-doc/pull/3088)
@@ -115,6 +112,13 @@ export declare const UNSTABLE_MSC3089_LEAF: UnstableValue<"m.leaf", "org.matrix.
  */
 export declare const UNSTABLE_MSC3089_BRANCH: UnstableValue<"m.branch", "org.matrix.msc3089.branch">;
 /**
+ * Marker event type to point back at imported historical content in a room. See
+ * [MSC2716](https://github.com/matrix-org/matrix-spec-proposals/pull/2716).
+ * Note that this reference is UNSTABLE and subject to breaking changes,
+ * including its eventual removal.
+ */
+export declare const UNSTABLE_MSC2716_MARKER: UnstableValue<"m.room.marker", "org.matrix.msc2716.marker">;
+/**
  * Functional members type for declaring a purpose of room members (e.g. helpful bots).
  * Note that this reference is UNSTABLE and subject to breaking changes, including its
  * eventual removal.
@@ -133,6 +137,13 @@ export declare const UNSTABLE_MSC3089_BRANCH: UnstableValue<"m.branch", "org.mat
  * }
  */
 export declare const UNSTABLE_ELEMENT_FUNCTIONAL_USERS: UnstableValue<"io.element.functional_members", "io.element.functional_members">;
+/**
+ * A type of message that affects visibility of a message,
+ * as per https://github.com/matrix-org/matrix-doc/pull/3531
+ *
+ * @experimental
+ */
+export declare const EVENT_VISIBILITY_CHANGE_TYPE: UnstableValue<"m.visibility", "org.matrix.msc3531.visibility">;
 export interface IEncryptedFile {
     url: string;
     mimetype?: string;

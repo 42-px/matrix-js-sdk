@@ -1,5 +1,5 @@
 import { ISyncResponse } from "../sync-accumulator";
-import { IEvent, IStartClientOpts } from "..";
+import { IStartClientOpts, IStateEventWithRoomId } from "..";
 import { ISavedSync } from "./index";
 import { IIndexedDBBackend, UserTuple } from "./indexeddb-backend";
 export declare class LocalIndexedDBStoreBackend implements IIndexedDBBackend {
@@ -10,6 +10,8 @@ export declare class LocalIndexedDBStoreBackend implements IIndexedDBBackend {
     private db;
     private disconnected;
     private _isNewlyCreated;
+    private isPersisting;
+    private pendingUserPresenceData;
     /**
      * Does the actual reading from and writing to the indexeddb
      *
@@ -42,7 +44,7 @@ export declare class LocalIndexedDBStoreBackend implements IIndexedDBBackend {
      * @returns {Promise<event[]>} the events, potentially an empty array if OOB loading didn't yield any new members
      * @returns {null} in case the members for this room haven't been stored yet
      */
-    getOutOfBandMembers(roomId: string): Promise<IEvent[] | null>;
+    getOutOfBandMembers(roomId: string): Promise<IStateEventWithRoomId[] | null>;
     /**
      * Stores the out-of-band membership events for this room. Note that
      * it still makes sense to store an empty array as the OOB status for the room is
@@ -50,7 +52,7 @@ export declare class LocalIndexedDBStoreBackend implements IIndexedDBBackend {
      * @param {string} roomId
      * @param {event[]} membershipEvents the membership events to store
      */
-    setOutOfBandMembers(roomId: string, membershipEvents: IEvent[]): Promise<void>;
+    setOutOfBandMembers(roomId: string, membershipEvents: IStateEventWithRoomId[]): Promise<void>;
     clearOutOfBandMembers(roomId: string): Promise<void>;
     /**
      * Clear the entire database. This should be used when logging out of a client
@@ -75,7 +77,6 @@ export declare class LocalIndexedDBStoreBackend implements IIndexedDBBackend {
      * Persist rooms /sync data along with the next batch token.
      * @param {string} nextBatch The next_batch /sync value.
      * @param {Object} roomsData The 'rooms' /sync data from a SyncAccumulator
-     * @param {Object} groupsData The 'groups' /sync data from a SyncAccumulator
      * @return {Promise} Resolves if the data was persisted.
      */
     private persistSyncData;

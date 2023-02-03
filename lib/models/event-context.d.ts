@@ -3,6 +3,7 @@ import { MatrixEvent } from "./event";
  * @module models/event-context
  */
 export declare class EventContext {
+    readonly ourEvent: MatrixEvent;
     private timeline;
     private ourEventIndex;
     private paginateTokens;

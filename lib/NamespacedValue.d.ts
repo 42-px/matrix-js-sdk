@@ -12,6 +12,11 @@ export declare class NamespacedValue<S extends string, U extends string> {
     findIn<T>(obj: any): T;
     includedIn(arr: any[]): boolean;
 }
+export declare class ServerControlledNamespacedValue<S extends string, U extends string> extends NamespacedValue<S, U> {
+    private preferUnstable;
+    setPreferUnstable(preferUnstable: boolean): void;
+    get name(): U | S;
+}
 /**
  * Represents a namespaced value which prioritizes the unstable value over the stable
  * value.

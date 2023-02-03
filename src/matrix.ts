@@ -54,6 +54,7 @@ export * as ContentHelpers from "./content-helpers";
 export {
     createNewMatrixCall,
 } from "./webrtc/call";
+export * from './crypto';
 
 // expose the underlying request object so different environments can use
 // different request libs (e.g. request or browser-request)

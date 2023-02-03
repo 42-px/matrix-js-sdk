@@ -1,5 +1,5 @@
-import { CryptoStore, IProblem, ISessionInfo } from "./store/base";
 import { Logger } from "loglevel";
+import { CryptoStore, IProblem, ISessionInfo } from "./store/base";
 import { IOlmDevice, IOutboundGroupSessionKey } from "./algorithms/megolm";
 import { IMegolmSessionData } from "./index";
 /**
@@ -38,12 +38,16 @@ export interface InboundGroupSessionData {
     untrusted?: boolean;
     sharedHistory?: boolean;
 }
-interface IDecryptedGroupMessage {
+export interface IDecryptedGroupMessage {
     result: string;
     keysClaimed: Record<string, string>;
     senderKey: string;
     forwardingCurve25519KeyChain: string[];
     untrusted: boolean;
+}
+export interface IInboundSession {
+    payload: string;
+    session_id: string;
 }
 export interface IExportedDevice {
     pickleKey: string;
@@ -222,6 +226,7 @@ export declare class OlmDevice {
      */
     generateFallbackKey(): Promise<void>;
     getFallbackKey(): Promise<Record<string, Record<string, string>>>;
+    forgetOldFallbackKey(): Promise<void>;
     /**
      * Generate a new outbound session
      *
@@ -245,10 +250,7 @@ export declare class OlmDevice {
      * @raises {Error} if the received message was not valid (for instance, it
      *     didn't use a valid one-time key).
      */
-    createInboundSession(theirDeviceIdentityKey: string, messageType: number, ciphertext: string): Promise<{
-        payload: string;
-        session_id: string;
-    }>;
+    createInboundSession(theirDeviceIdentityKey: string, messageType: number, ciphertext: string): Promise<IInboundSession>;
     /**
      * Get a list of known session IDs for the given device
      *

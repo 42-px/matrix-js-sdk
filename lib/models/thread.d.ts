@@ -1,51 +1,80 @@
-/// <reference types="node" />
-import { EventEmitter } from "events";
-import { MatrixClient } from "../matrix";
+import { Optional } from "matrix-events-sdk";
+import { MatrixClient, RoomEvent } from "../matrix";
+import { IRelationsRequestOpts } from "../@types/requests";
 import { MatrixEvent } from "./event";
+import { EventTimeline } from "./event-timeline";
+import { EventTimelineSet, EventTimelineSetHandlerMap } from './event-timeline-set';
 import { Room } from './room';
+import { TypedEventEmitter } from "./typed-event-emitter";
+import { RoomState } from "./room-state";
+import { ServerControlledNamespacedValue } from "../NamespacedValue";
 export declare enum ThreadEvent {
     New = "Thread.new",
-    Ready = "Thread.ready",
-    Update = "Thread.update"
+    Update = "Thread.update",
+    NewReply = "Thread.newReply",
+    ViewThread = "Thread.viewThread"
+}
+declare type EmittedEvents = Exclude<ThreadEvent, ThreadEvent.New> | RoomEvent.Timeline | RoomEvent.TimelineReset;
+export declare type EventHandlerMap = {
+    [ThreadEvent.Update]: (thread: Thread) => void;
+    [ThreadEvent.NewReply]: (thread: Thread, event: MatrixEvent) => void;
+    [ThreadEvent.ViewThread]: () => void;
+} & EventTimelineSetHandlerMap;
+interface IThreadOpts {
+    initialEvents?: MatrixEvent[];
+    room: Room;
+    client: MatrixClient;
 }
 /**
  * @experimental
  */
-export declare class Thread extends EventEmitter {
-    readonly room: Room;
-    readonly client: MatrixClient;
-    /**
-     * A reference to the event ID at the top of the thread
-     */
-    private root;
+export declare class Thread extends TypedEventEmitter<EmittedEvents, EventHandlerMap> {
+    readonly id: string;
+    rootEvent: MatrixEvent | undefined;
+    static hasServerSideSupport: boolean;
     /**
      * A reference to all the events ID at the bottom of the threads
      */
-    readonly timelineSet: any;
-    constructor(events: MatrixEvent[], room: Room, client: MatrixClient);
+    readonly timelineSet: EventTimelineSet;
+    private _currentUserParticipated;
+    private reEmitter;
+    private lastEvent;
+    private replyCount;
+    readonly room: Room;
+    readonly client: MatrixClient;
+    initialEventsFetched: boolean;
+    constructor(id: string, rootEvent: MatrixEvent | undefined, opts: IThreadOpts);
+    private fetchRootEvent;
+    static setServerSideSupport(hasServerSideSupport: boolean, useStable: boolean): void;
+    private onBeforeRedaction;
+    private onRedaction;
+    private onEcho;
+    get roomState(): RoomState;
+    private addEventToTimeline;
+    addEvents(events: MatrixEvent[], toStartOfTimeline: boolean): void;
     /**
      * Add an event to the thread and updates
      * the tail/root references if needed
      * Will fire "Thread.update"
      * @param event The event to add
+     * @param {boolean} toStartOfTimeline whether the event is being added
+     * to the start (and not the end) of the timeline.
+     * @param {boolean} emit whether to emit the Update event if the thread was updated or not.
      */
-    addEvent(event: MatrixEvent, toStartOfTimeline?: boolean): Promise<void>;
+    addEvent(event: MatrixEvent, toStartOfTimeline: boolean, emit?: boolean): void;
+    private getRootEventBundledRelationship;
+    private initialiseThread;
+    private fetchEditsWhereNeeded;
+    fetchInitialEvents(): Promise<void>;
+    private setEventMetadata;
     /**
      * Finds an event by ID in the current thread
      */
-    findEventById(eventId: string): any;
+    findEventById(eventId: string): MatrixEvent;
     /**
-     * Determines thread's ready status
+     * Return last reply to the thread, if known.
      */
-    get ready(): boolean;
-    /**
-     * The thread ID, which is the same as the root event ID
-     */
-    get id(): string;
-    /**
-     * The thread root event
-     */
-    get rootEvent(): MatrixEvent;
+    lastReply(matches?: (ev: MatrixEvent) => boolean): Optional<MatrixEvent>;
     get roomId(): string;
     /**
      * The number of messages in the thread
@@ -54,20 +83,26 @@ export declare class Thread extends EventEmitter {
      */
     get length(): number;
     /**
-     * A set of mxid participating to the thread
+     * A getter for the last event added to the thread, if known.
      */
-    get participants(): Set<string>;
-    /**
-     * A getter for the last event added to the thread
-     */
-    get replyToEvent(): MatrixEvent;
+    get replyToEvent(): Optional<MatrixEvent>;
     get events(): MatrixEvent[];
-    merge(thread: Thread): void;
     has(eventId: string): boolean;
-    on(event: ThreadEvent, listener: (...args: any[]) => void): this;
-    once(event: ThreadEvent, listener: (...args: any[]) => void): this;
-    off(event: ThreadEvent, listener: (...args: any[]) => void): this;
-    addListener(event: ThreadEvent, listener: (...args: any[]) => void): this;
-    removeListener(event: ThreadEvent, listener: (...args: any[]) => void): this;
+    get hasCurrentUserParticipated(): boolean;
+    get liveTimeline(): EventTimeline;
+    fetchEvents(opts?: IRelationsRequestOpts): Promise<{
+        originalEvent: MatrixEvent;
+        events: MatrixEvent[];
+        nextBatch?: string;
+        prevBatch?: string;
+    }>;
 }
+export declare const FILTER_RELATED_BY_SENDERS: ServerControlledNamespacedValue<"related_by_senders", "io.element.relation_senders">;
+export declare const FILTER_RELATED_BY_REL_TYPES: ServerControlledNamespacedValue<"related_by_rel_types", "io.element.relation_types">;
+export declare const THREAD_RELATION_TYPE: ServerControlledNamespacedValue<"m.thread", "io.element.thread">;
+export declare enum ThreadFilterType {
+    "My" = 0,
+    "All" = 1
+}
+export {};
 //# sourceMappingURL=thread.d.ts.map

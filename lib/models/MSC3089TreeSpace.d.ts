@@ -4,6 +4,7 @@ import { Room } from "./room";
 import { IContent } from "./event";
 import { MSC3089Branch } from "./MSC3089Branch";
 import { ISendEventResponse } from "../@types/requests";
+import { FileType } from "../http-api";
 /**
  * The recommended defaults for a tree space's power levels. Note that this
  * is UNSTABLE and subject to breaking changes without notice.
@@ -108,9 +109,9 @@ export declare class MSC3089TreeSpace {
      * Gets a subdirectory of a given ID under this tree space. Note that this will not recurse
      * into children and instead only look one level deep.
      * @param {string} roomId The room ID (directory ID) to find.
-     * @returns {MSC3089TreeSpace} The directory, or falsy if not found.
+     * @returns {MSC3089TreeSpace | undefined} The directory, or undefined if not found.
      */
-    getDirectory(roomId: string): MSC3089TreeSpace;
+    getDirectory(roomId: string): MSC3089TreeSpace | undefined;
     /**
      * Deletes the tree, kicking all members and deleting **all subdirectories**.
      * @returns {Promise<void>} Resolves when complete.
@@ -135,19 +136,20 @@ export declare class MSC3089TreeSpace {
     setOrder(index: number): Promise<void>;
     /**
      * Creates (uploads) a new file to this tree. The file must have already been encrypted for the room.
+     * The file contents are in a type that is compatible with MatrixClient.uploadContent().
      * @param {string} name The name of the file.
-     * @param {ArrayBuffer} encryptedContents The encrypted contents.
+     * @param {File | String | Buffer | ReadStream | Blob} encryptedContents The encrypted contents.
      * @param {Partial<IEncryptedFile>} info The encrypted file information.
      * @param {IContent} additionalContent Optional event content fields to include in the message.
      * @returns {Promise<ISendEventResponse>} Resolves to the file event's sent response.
      */
-    createFile(name: string, encryptedContents: ArrayBuffer, info: Partial<IEncryptedFile>, additionalContent?: IContent): Promise<ISendEventResponse>;
+    createFile(name: string, encryptedContents: FileType, info: Partial<IEncryptedFile>, additionalContent?: IContent): Promise<ISendEventResponse>;
     /**
      * Retrieves a file from the tree.
      * @param {string} fileEventId The event ID of the file.
-     * @returns {MSC3089Branch} The file, or falsy if not found.
+     * @returns {MSC3089Branch | null} The file, or null if not found.
      */
-    getFile(fileEventId: string): MSC3089Branch;
+    getFile(fileEventId: string): MSC3089Branch | null;
     /**
      * Gets an array of all known files for the tree.
      * @returns {MSC3089Branch[]} The known files. May be empty, but not null.

@@ -1,9 +1,8 @@
-/// <reference types="node" />
-import { EventEmitter } from 'events';
 import { MatrixEvent } from '../models/event';
 import { RoomMember } from '../models/room-member';
 import { MCallAnswer, MCallHangupReject } from './callEventTypes';
 import { CallFeed } from './callFeed';
+import { TypedEventEmitter } from "../models/typed-event-emitter";
 /**
  * Fires whenever an error occurs when call.js encounters an issue with setting up the call.
  * <p>
@@ -141,6 +140,19 @@ export declare class CallError extends Error {
     code: string;
     constructor(code: CallErrorCode, msg: string, err: Error);
 }
+export declare type CallEventHandlerMap = {
+    [CallEvent.DataChannel]: (channel: RTCDataChannel) => void;
+    [CallEvent.FeedsChanged]: (feeds: CallFeed[]) => void;
+    [CallEvent.Replaced]: (newCall: MatrixCall) => void;
+    [CallEvent.Error]: (error: CallError) => void;
+    [CallEvent.RemoteHoldUnhold]: (onHold: boolean) => void;
+    [CallEvent.LocalHoldUnhold]: (onHold: boolean) => void;
+    [CallEvent.LengthChanged]: (length: number) => void;
+    [CallEvent.State]: (state: CallState, oldState?: CallState) => void;
+    [CallEvent.Hangup]: () => void;
+    [CallEvent.AssertedIdentityChanged]: () => void;
+    [CallEvent.HoldUnhold]: (onHold: boolean) => void;
+};
 /**
  * Construct a new Matrix Call.
  * @constructor
@@ -152,7 +164,7 @@ export declare class CallError extends Error {
  * @param {Array<Object>} opts.turnServers Optional. A list of TURN servers.
  * @param {MatrixClient} opts.client The Matrix Client instance to send events to.
  */
-export declare class MatrixCall extends EventEmitter {
+export declare class MatrixCall extends TypedEventEmitter<CallEvent, CallEventHandlerMap> {
     roomId: string;
     callId: string;
     state: CallState;
@@ -336,6 +348,11 @@ export declare class MatrixCall extends EventEmitter {
      */
     private setScreensharingEnabledWithoutMetadataSupport;
     /**
+     * Replaces/adds the tracks from the passed stream to the localUsermediaStream
+     * @param {MediaStream} stream to use a replacement for the local usermedia stream
+     */
+    updateLocalUsermediaStream(stream: MediaStream, forceAudio?: boolean, forceVideo?: boolean): Promise<void>;
+    /**
      * Set whether our outbound video should be muted or not.
      * @param {boolean} muted True to mute the outbound video.
      * @returns the new mute state
@@ -466,6 +483,7 @@ export declare class MatrixCall extends EventEmitter {
     private addIceCandidates;
     get hasPeerConnection(): boolean;
 }
+export declare function supportsMatrixCall(): boolean;
 /**
  * DEPRECATED
  * Use client.createCall()
@@ -479,6 +497,6 @@ export declare class MatrixCall extends EventEmitter {
  * since it's only possible to set this option on outbound calls.
  * @return {MatrixCall} the call or null if the browser doesn't support calling.
  */
-export declare function createNewMatrixCall(client: any, roomId: string, options?: CallOpts): MatrixCall;
+export declare function createNewMatrixCall(client: any, roomId: string, options?: CallOpts): MatrixCall | null;
 export {};
 //# sourceMappingURL=call.d.ts.map

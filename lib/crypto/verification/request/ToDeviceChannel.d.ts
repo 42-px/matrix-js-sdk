@@ -2,7 +2,8 @@ import { VerificationRequest } from "./VerificationRequest";
 import { MatrixEvent } from "../../../models/event";
 import { IVerificationChannel } from "./Channel";
 import { MatrixClient } from "../../../client";
-declare type Request = VerificationRequest<ToDeviceChannel>;
+import { IRequestsMap } from '../..';
+export declare type Request = VerificationRequest<ToDeviceChannel>;
 /**
  * A key verification channel that sends verification events over to_device messages.
  * Generates its own transaction ids.
@@ -90,7 +91,7 @@ export declare class ToDeviceChannel implements IVerificationChannel {
      */
     static makeTransactionId(): string;
 }
-export declare class ToDeviceRequests {
+export declare class ToDeviceRequests implements IRequestsMap {
     private requestsByUserId;
     getRequest(event: MatrixEvent): Request;
     getRequestByChannel(channel: ToDeviceChannel): Request;
@@ -102,5 +103,4 @@ export declare class ToDeviceRequests {
     findRequestInProgress(userId: string, devices: string[]): Request;
     getRequestsInProgress(userId: string): Request[];
 }
-export {};
 //# sourceMappingURL=ToDeviceChannel.d.ts.map

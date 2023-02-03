@@ -25,7 +25,7 @@ declare type DecryptionClassParams = Omit<IParams, "deviceId" | "config">;
  * @type {Object.<string, function(new: module:crypto/algorithms/base.DecryptionAlgorithm)>}
  */
 export declare const DECRYPTION_CLASSES: Record<string, new (params: DecryptionClassParams) => DecryptionAlgorithm>;
-interface IParams {
+export interface IParams {
     userId: string;
     deviceId: string;
     crypto: Crypto;
@@ -129,7 +129,7 @@ export declare abstract class DecryptionAlgorithm {
      *
      * @param {module:models/event.MatrixEvent} params event key event
      */
-    onRoomKeyEvent(params: MatrixEvent): void;
+    onRoomKeyEvent(params: MatrixEvent): Promise<void>;
     /**
      * Import a room key
      *

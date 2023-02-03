@@ -1,10 +1,17 @@
-/**
- * @module models/event-timeline
- */
-import { RoomState } from "./room-state";
+import { RoomState, IMarkerFoundOptions } from "./room-state";
 import { EventTimelineSet } from "./event-timeline-set";
 import { MatrixEvent } from "./event";
 import { Filter } from "../filter";
+export interface IInitialiseStateOptions extends Pick<IMarkerFoundOptions, 'timelineWasEmpty'> {
+}
+export interface IAddEventOptions extends Pick<IMarkerFoundOptions, 'timelineWasEmpty'> {
+    /** Whether to insert the new event at the start of the timeline where the
+     * oldest events are (timeline is in chronological order, oldest to most
+     * recent) */
+    toStartOfTimeline: boolean;
+    /** The state events to reconcile metadata from */
+    roomState?: RoomState;
+}
 export declare enum Direction {
     Backward = "b",
     Forward = "f"
@@ -15,12 +22,12 @@ export declare class EventTimeline {
      * Symbolic constant for methods which take a 'direction' argument:
      * refers to the start of the timeline, or backwards in time.
      */
-    static BACKWARDS: Direction;
+    static readonly BACKWARDS = Direction.Backward;
     /**
      * Symbolic constant for methods which take a 'direction' argument:
      * refers to the end of the timeline, or forwards in time.
      */
-    static FORWARDS: Direction;
+    static readonly FORWARDS = Direction.Forward;
     /**
      * Static helper method to set sender and target properties
      *
@@ -68,7 +75,7 @@ export declare class EventTimeline {
      * state with.
      * @throws {Error} if an attempt is made to call this after addEvent is called.
      */
-    initialiseState(stateEvents: MatrixEvent[]): void;
+    initialiseState(stateEvents: MatrixEvent[], { timelineWasEmpty }?: IInitialiseStateOptions): void;
     /**
      * Forks the (live) timeline, taking ownership of the existing directional state of this timeline.
      * All attached listeners will keep receiving state updates from the new live timeline state.
@@ -181,9 +188,13 @@ export declare class EventTimeline {
      * Add a new event to the timeline, and update the state
      *
      * @param {MatrixEvent} event   new event
-     * @param {boolean}  atStart     true to insert new event at the start
+     * @param {IAddEventOptions} options addEvent options
      */
-    addEvent(event: MatrixEvent, atStart: boolean, stateContext?: RoomState): void;
+    addEvent(event: MatrixEvent, { toStartOfTimeline, roomState, timelineWasEmpty, }: IAddEventOptions): void;
+    /**
+     * @deprecated In favor of the overload with `IAddEventOptions`
+     */
+    addEvent(event: MatrixEvent, toStartOfTimeline: boolean, roomState?: RoomState): void;
     /**
      * Remove an event from the timeline
      *

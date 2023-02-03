@@ -1,5 +1,4 @@
-import { MatrixClient } from "./client";
-import { ICreateClientOpts } from "./client";
+import { MatrixClient, ICreateClientOpts } from "./client";
 import { DeviceTrustLevel } from "./crypto/CrossSigning";
 import { ISecretStorageKeyInfo } from "./crypto/api";
 export * from "./client";
@@ -7,9 +6,9 @@ export * from "./http-api";
 export * from "./autodiscovery";
 export * from "./sync-accumulator";
 export * from "./errors";
+export * from "./models/beacon";
 export * from "./models/event";
 export * from "./models/room";
-export * from "./models/group";
 export * from "./models/event-timeline";
 export * from "./models/event-timeline-set";
 export * from "./models/room-member";
@@ -22,12 +21,18 @@ export * from "./interactive-auth";
 export * from "./service-types";
 export * from "./store/memory";
 export * from "./store/indexeddb";
-export * from "./store/session/webstorage";
 export * from "./crypto/store/memory-crypto-store";
 export * from "./crypto/store/indexeddb-crypto-store";
 export * from "./content-repo";
+export * from './@types/event';
+export * from './@types/PushRules';
+export * from './@types/partials';
+export * from './@types/requests';
+export * from './@types/search';
+export * from './models/room-summary';
 export * as ContentHelpers from "./content-helpers";
 export { createNewMatrixCall, } from "./webrtc/call";
+export * from './crypto';
 /**
  * The function used to perform HTTP requests. Only use this if you want to
  * use a different HTTP library, e.g. Angular's <code>$http</code>. This should
@@ -63,7 +68,7 @@ export interface ICryptoCallbacks {
     }, name: string) => Promise<[string, Uint8Array] | null>;
     cacheSecretStorageKey?: (keyId: string, keyInfo: ISecretStorageKeyInfo, key: Uint8Array) => void;
     onSecretRequested?: (userId: string, deviceId: string, requestId: string, secretName: string, deviceTrust: DeviceTrustLevel) => Promise<string>;
-    getDehydrationKey?: (keyInfo: ISecretStorageKeyInfo, checkFunc: (Uint8Array: any) => void) => Promise<Uint8Array>;
+    getDehydrationKey?: (keyInfo: ISecretStorageKeyInfo, checkFunc: (key: Uint8Array) => void) => Promise<Uint8Array>;
     getBackupKey?: () => Promise<Uint8Array>;
 }
 /**

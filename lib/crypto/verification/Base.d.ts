@@ -1,21 +1,26 @@
-/// <reference types="node" />
 /**
  * Base class for verification methods.
  * @module crypto/verification/Base
  */
 import { MatrixEvent } from '../../models/event';
-import { EventEmitter } from 'events';
 import { DeviceInfo } from '../deviceinfo';
 import { KeysDuringVerification } from "../CrossSigning";
 import { IVerificationChannel } from "./request/Channel";
 import { MatrixClient } from "../../client";
 import { VerificationRequest } from "./request/VerificationRequest";
+import { ListenerMap, TypedEventEmitter } from "../../models/typed-event-emitter";
 export declare class SwitchStartEventError extends Error {
     readonly startEvent: MatrixEvent;
     constructor(startEvent: MatrixEvent);
 }
 export declare type KeyVerifier = (keyId: string, device: DeviceInfo, keyInfo: string) => void;
-export declare class VerificationBase extends EventEmitter {
+export declare enum VerificationEvent {
+    Cancel = "cancel"
+}
+export declare type VerificationEventHandlerMap = {
+    [VerificationEvent.Cancel]: (e: Error | MatrixEvent) => void;
+};
+export declare class VerificationBase<Events extends string, Arguments extends ListenerMap<Events | VerificationEvent>> extends TypedEventEmitter<Events | VerificationEvent, Arguments, VerificationEventHandlerMap> {
     readonly channel: IVerificationChannel;
     readonly baseApis: MatrixClient;
     readonly userId: string;

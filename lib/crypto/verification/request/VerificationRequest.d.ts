@@ -1,11 +1,10 @@
-/// <reference types="node" />
-import { EventEmitter } from 'events';
 import { QRCodeData } from "../QRCode";
 import { IVerificationChannel } from "./Channel";
 import { MatrixClient } from "../../../client";
 import { MatrixEvent } from "../../../models/event";
 import { VerificationBase } from "../Base";
 import { VerificationMethod } from "../../index";
+import { TypedEventEmitter } from "../../../models/typed-event-emitter";
 export declare const EVENT_PREFIX = "m.key.verification.";
 export declare const REQUEST_TYPE: string;
 export declare const START_TYPE: string;
@@ -30,13 +29,19 @@ interface ITargetDevice {
     userId?: string;
     deviceId?: string;
 }
+export declare enum VerificationRequestEvent {
+    Change = "change"
+}
+declare type EventHandlerMap = {
+    [VerificationRequestEvent.Change]: () => void;
+};
 /**
  * State machine for verification requests.
  * Things that differ based on what channel is used to
  * send and receive verification events are put in `InRoomChannel` or `ToDeviceChannel`.
  * @event "change" whenever the state of the request object has changed.
  */
-export declare class VerificationRequest<C extends IVerificationChannel = IVerificationChannel> extends EventEmitter {
+export declare class VerificationRequest<C extends IVerificationChannel = IVerificationChannel> extends TypedEventEmitter<VerificationRequestEvent, EventHandlerMap> {
     readonly channel: C;
     private readonly verificationMethods;
     private readonly client;
@@ -53,7 +58,7 @@ export declare class VerificationRequest<C extends IVerificationChannel = IVerif
     private requestReceivedAt;
     private commonMethods;
     private _phase;
-    private _cancellingUserId;
+    _cancellingUserId: string;
     private _verifier;
     constructor(channel: C, verificationMethods: Map<VerificationMethod, typeof VerificationBase>, client: MatrixClient);
     /**
@@ -91,7 +96,7 @@ export declare class VerificationRequest<C extends IVerificationChannel = IVerif
     /** current phase of the request. Some properties might only be defined in a current phase. */
     get phase(): Phase;
     /** The verifier to do the actual verification, once the method has been established. Only defined when the `phase` is PHASE_STARTED. */
-    get verifier(): VerificationBase;
+    get verifier(): VerificationBase<any, any>;
     get canAccept(): boolean;
     get accepting(): boolean;
     get declining(): boolean;
@@ -137,7 +142,7 @@ export declare class VerificationRequest<C extends IVerificationChannel = IVerif
      * @returns {{userId: *, deviceId: *}} The device information
      */
     get targetDevice(): ITargetDevice;
-    beginKeyVerification(method: VerificationMethod, targetDevice?: ITargetDevice): VerificationBase;
+    beginKeyVerification(method: VerificationMethod, targetDevice?: ITargetDevice): VerificationBase<any, any>;
     /**
      * sends the initial .request event.
      * @returns {Promise} resolves when the event has been sent.

@@ -3,7 +3,6 @@
  * @module store/memory
  */
 import { EventType } from "../@types/event";
-import { Group } from "../models/group";
 import { Room } from "../models/room";
 import { User } from "../models/user";
 import { IEvent, MatrixEvent } from "../models/event";
@@ -11,6 +10,7 @@ import { Filter } from "../filter";
 import { ISavedSync, IStore } from "./index";
 import { RoomSummary } from "../models/room-summary";
 import { ISyncResponse } from "../sync-accumulator";
+import { IStateEventWithRoomId } from "../@types/search";
 export interface IOpts {
     localStorage?: Storage;
 }
@@ -18,18 +18,18 @@ export interface IOpts {
  * Construct a new in-memory data store for the Matrix Client.
  * @constructor
  * @param {Object=} opts Config options
- * @param {LocalStorage} opts.localStorage The local storage instance to persist
+ * @param {Storage} opts.localStorage The local storage instance to persist
  * some forms of data such as tokens. Rooms will NOT be stored.
  */
 export declare class MemoryStore implements IStore {
     private rooms;
-    private groups;
     private users;
     private syncToken;
     private filters;
     accountData: Record<string, MatrixEvent>;
-    private readonly localStorage;
+    protected readonly localStorage: Storage;
     private oobMembers;
+    private pendingEvents;
     private clientOptions;
     constructor(opts?: IOpts);
     /**
@@ -44,25 +44,6 @@ export declare class MemoryStore implements IStore {
      * @param {string} token The token to stream from.
      */
     setSyncToken(token: string): void;
-    /**
-     * Store the given room.
-     * @param {Group} group The group to be stored
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    storeGroup(group: Group): void;
-    /**
-     * Retrieve a group by its group ID.
-     * @param {string} groupId The group ID.
-     * @return {Group} The group or null.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    getGroup(groupId: string): Group | null;
-    /**
-     * Retrieve all known groups.
-     * @return {Group[]} A list of groups, which may be empty.
-     * @deprecated groups/communities never made it to the spec and support for them is being discontinued.
-     */
-    getGroups(): Group[];
     /**
      * Store the given room.
      * @param {Room} room The room to be stored. All properties must be stored.
@@ -116,7 +97,7 @@ export declare class MemoryStore implements IStore {
     /**
      * Retrieve scrollback for this room.
      * @param {Room} room The matrix room
-     * @param {integer} limit The max number of old events to retrieve.
+     * @param {number} limit The max number of old events to retrieve.
      * @return {Array<Object>} An array of objects which will be at most 'limit'
      * length and at least 0. The objects are the raw event JSON.
      */
@@ -213,7 +194,7 @@ export declare class MemoryStore implements IStore {
      * @returns {event[]} the events, potentially an empty array if OOB loading didn't yield any new members
      * @returns {null} in case the members for this room haven't been stored yet
      */
-    getOutOfBandMembers(roomId: string): Promise<IEvent[] | null>;
+    getOutOfBandMembers(roomId: string): Promise<IStateEventWithRoomId[] | null>;
     /**
      * Stores the out-of-band membership events for this room. Note that
      * it still makes sense to store an empty array as the OOB status for the room is
@@ -222,9 +203,11 @@ export declare class MemoryStore implements IStore {
      * @param {event[]} membershipEvents the membership events to store
      * @returns {Promise} when all members have been stored
      */
-    setOutOfBandMembers(roomId: string, membershipEvents: IEvent[]): Promise<void>;
+    setOutOfBandMembers(roomId: string, membershipEvents: IStateEventWithRoomId[]): Promise<void>;
     clearOutOfBandMembers(roomId: string): Promise<void>;
     getClientOptions(): Promise<object>;
     storeClientOptions(options: object): Promise<void>;
+    getPendingEvents(roomId: string): Promise<Partial<IEvent>[]>;
+    setPendingEvents(roomId: string, events: Partial<IEvent>[]): Promise<void>;
 }
 //# sourceMappingURL=memory.d.ts.map

@@ -1,5 +1,4 @@
 import { MatrixClient } from "./client";
-import { MatrixError } from "./http-api";
 interface IFlow {
     stages: AuthType[];
 }
@@ -7,6 +6,7 @@ export interface IInputs {
     emailAddress?: string;
     phoneCountry?: string;
     phoneNumber?: string;
+    registrationToken?: string;
 }
 export interface IStageStatus {
     emailSid?: string;
@@ -15,11 +15,19 @@ export interface IStageStatus {
 }
 export interface IAuthData {
     session?: string;
+    type?: string;
     completed?: string[];
     flows?: IFlow[];
+    available_flows?: IFlow[];
+    stages?: string[];
+    required_stages?: AuthType[];
     params?: Record<string, Record<string, any>>;
+    data?: Record<string, string>;
     errcode?: string;
-    error?: MatrixError;
+    error?: string;
+    user_id?: string;
+    device_id?: string;
+    access_token?: string;
 }
 export declare enum AuthType {
     Password = "m.login.password",
@@ -29,16 +37,20 @@ export declare enum AuthType {
     Msisdn = "m.login.msisdn",
     Sso = "m.login.sso",
     SsoUnstable = "org.matrix.login.sso",
-    Dummy = "m.login.dummy"
+    Dummy = "m.login.dummy",
+    RegistrationToken = "m.login.registration_token",
+    UnstableRegistrationToken = "org.matrix.msc3231.login.registration_token"
 }
 export interface IAuthDict {
     type?: string;
+    session?: string;
     user?: string;
     identifier?: any;
     password?: string;
     response?: string;
     threepid_creds?: any;
     threepidCreds?: any;
+    token?: string;
 }
 interface IOpts {
     matrixClient: MatrixClient;
@@ -146,6 +158,7 @@ export declare class InteractiveAuth {
     private attemptAuthDeferred;
     private chosenFlow;
     private currentStage;
+    private emailAttempt;
     private submitPromise;
     constructor(opts: IOpts);
     /**
@@ -212,6 +225,10 @@ export declare class InteractiveAuth {
      * @param {string} sid The sid for the email validation session
      */
     setEmailSid(sid: string): void;
+    /**
+     * Requests a new email token and sets the email sid for the validation session
+     */
+    requestEmailToken: () => Promise<void>;
     /**
      * Fire off a request, and either resolve the promise, or call
      * startAuthStage.

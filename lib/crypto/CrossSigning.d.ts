@@ -1,9 +1,7 @@
-/// <reference types="node" />
 /**
  * Cross signing methods
  * @module crypto/CrossSigning
  */
-import { EventEmitter } from 'events';
 import { PkSigning } from "@matrix-org/olm";
 import { DeviceInfo } from "./deviceinfo";
 import { SecretStorage } from "./SecretStorage";
@@ -21,7 +19,7 @@ export interface ICrossSigningInfo {
     firstUse: boolean;
     crossSigningVerifiedBefore: boolean;
 }
-export declare class CrossSigningInfo extends EventEmitter {
+export declare class CrossSigningInfo {
     readonly userId: string;
     private callbacks;
     private cacheCallbacks;

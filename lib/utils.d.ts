@@ -1,12 +1,14 @@
 /// <reference types="node" />
-import type NodeCrypto from "crypto";
+import type * as NodeCrypto from "crypto";
+import { MatrixEvent } from ".";
 /**
  * Encode a dictionary of query parameters.
+ * Omits any undefined/null values.
  * @param {Object} params A dict of key/values to encode e.g.
  * {"foo": "bar", "baz": "taz"}
  * @return {string} The encoded string e.g. foo=bar&baz=taz
  */
-export declare function encodeParams(params: Record<string, string>): string;
+export declare function encodeParams(params: Record<string, string | number | boolean>): string;
 export declare type QueryDict = Record<string, string | string[]>;
 /**
  * Decode a query string in `application/x-www-form-urlencoded` format.
@@ -37,7 +39,7 @@ export declare function encodeUri(pathTemplate: string, variables: Record<string
  * @param {boolean} reverse True to search in reverse order.
  * @return {boolean} True if an element was removed.
  */
-export declare function removeElement<T>(array: T[], fn: (t: T, i?: number, a?: T[]) => boolean, reverse?: boolean): any;
+export declare function removeElement<T>(array: T[], fn: (t: T, i?: number, a?: T[]) => boolean, reverse?: boolean): boolean;
 /**
  * Checks if the given thing is a function.
  * @param {*} value The thing to check.
@@ -83,20 +85,6 @@ export declare function deepCompare(x: any, y: any): boolean;
  * @returns {Array} The entries, sorted by key.
  */
 export declare function deepSortedObjectEntries(obj: any): [string, any][];
-/**
- * Copy properties from one object to another.
- *
- * All enumerable properties, included inherited ones, are copied.
- *
- * This is approximately equivalent to ES6's Object.assign, except
- * that the latter doesn't copy inherited properties.
- *
- * @param {Object} target  The object that will receive new properties
- * @param {...Object} source  Objects from which to copy properties
- *
- * @return {Object} target
- */
-export declare function extend(...restParams: any[]): any;
 /**
  * Inherit the prototype methods from one constructor into another. This is a
  * port of the Node.js implementation with an Object.create polyfill.
@@ -144,12 +132,12 @@ export declare function ensureNoTrailingSlash(url: string): string;
 export declare function sleep<T>(ms: number, value?: T): Promise<T>;
 export declare function isNullOrUndefined(val: any): boolean;
 export interface IDeferred<T> {
-    resolve: (value: T) => void;
+    resolve: (value: T | Promise<T>) => void;
     reject: (reason?: any) => void;
     promise: Promise<T>;
 }
 export declare function defer<T = void>(): IDeferred<T>;
-export declare function promiseMapSeries<T>(promises: T[], fn: (t: T) => void): Promise<void>;
+export declare function promiseMapSeries<T>(promises: Array<T | Promise<T>>, fn: (t: T) => Promise<unknown> | void): Promise<void>;
 export declare function promiseTry<T>(fn: () => T | Promise<T>): Promise<T>;
 export declare function chunkPromises<T>(fns: (() => Promise<T>)[], chunkSize: number): Promise<T[]>;
 /**
@@ -249,4 +237,9 @@ export declare function compare(a: string, b: string): number;
  * @returns the target object
  */
 export declare function recursivelyAssign(target: Object, source: Object, ignoreNullish?: boolean): any;
+/**
+ * Sort events by their content m.ts property
+ * Latest timestamp first
+ */
+export declare function sortEventsByLatestContentTimestamp(left: MatrixEvent, right: MatrixEvent): number;
 //# sourceMappingURL=utils.d.ts.map
