@@ -3910,7 +3910,6 @@ var $concat = bind.call(Function.call, Array.prototype.concat);
 var $spliceApply = bind.call(Function.apply, Array.prototype.splice);
 var $replace = bind.call(Function.call, String.prototype.replace);
 var $strSlice = bind.call(Function.call, String.prototype.slice);
-var $exec = bind.call(Function.call, RegExp.prototype.exec);
 
 /* adapted from https://github.com/lodash/lodash/blob/4.17.15/dist/lodash.js#L6735-L6744 */
 var rePropName = /[^%.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|%$))/g;
@@ -3966,9 +3965,6 @@ module.exports = function GetIntrinsic(name, allowMissing) {
 		throw new $TypeError('"allowMissing" argument must be a boolean');
 	}
 
-	if ($exec(/^%?[^%]*%?$/g, name) === null) {
-		throw new $SyntaxError('`%` may not be present anywhere but at the beginning and end of the intrinsic name');
-	}
 	var parts = stringToPath(name);
 	var intrinsicBaseName = parts.length > 0 ? parts[0] : '';
 
@@ -7014,9 +7010,8 @@ function addNumericSeparator(num, str) {
     return $replace.call(str, sepRegex, '$&_');
 }
 
-var utilInspect = require('./util.inspect');
-var inspectCustom = utilInspect.custom;
-var inspectSymbol = isSymbol(inspectCustom) ? inspectCustom : null;
+var inspectCustom = require('./util.inspect').custom;
+var inspectSymbol = inspectCustom && isSymbol(inspectCustom) ? inspectCustom : null;
 
 module.exports = function inspect_(obj, options, depth, seen) {
     var opts = options || {};
@@ -7106,7 +7101,7 @@ module.exports = function inspect_(obj, options, depth, seen) {
         return inspect_(value, opts, depth + 1, seen);
     }
 
-    if (typeof obj === 'function' && !isRegExp(obj)) { // in older engines, regexes are callable
+    if (typeof obj === 'function') {
         var name = nameOf(obj);
         var keys = arrObjKeys(obj, inspect);
         return '[Function' + (name ? ': ' + name : ' (anonymous)') + ']' + (keys.length > 0 ? ' { ' + $join.call(keys, ', ') + ' }' : '');
@@ -7136,15 +7131,15 @@ module.exports = function inspect_(obj, options, depth, seen) {
     }
     if (isError(obj)) {
         var parts = arrObjKeys(obj, inspect);
-        if (!('cause' in Error.prototype) && 'cause' in obj && !isEnumerable.call(obj, 'cause')) {
+        if ('cause' in obj && !isEnumerable.call(obj, 'cause')) {
             return '{ [' + String(obj) + '] ' + $join.call($concat.call('[cause]: ' + inspect(obj.cause), parts), ', ') + ' }';
         }
         if (parts.length === 0) { return '[' + String(obj) + ']'; }
         return '{ [' + String(obj) + '] ' + $join.call(parts, ', ') + ' }';
     }
     if (typeof obj === 'object' && customInspect) {
-        if (inspectSymbol && typeof obj[inspectSymbol] === 'function' && utilInspect) {
-            return utilInspect(obj, { depth: maxDepth - depth });
+        if (inspectSymbol && typeof obj[inspectSymbol] === 'function') {
+            return obj[inspectSymbol]();
         } else if (customInspect !== 'symbol' && typeof obj.inspect === 'function') {
             return obj.inspect();
         }
@@ -8101,7 +8096,6 @@ var stringify = function stringify(
     object,
     prefix,
     generateArrayPrefix,
-    commaRoundTrip,
     strictNullHandling,
     skipNulls,
     encoder,
@@ -8166,7 +8160,7 @@ var stringify = function stringify(
                 for (var i = 0; i < valuesArray.length; ++i) {
                     valuesJoined += (i === 0 ? '' : ',') + formatter(encoder(valuesArray[i], defaults.encoder, charset, 'value', format));
                 }
-                return [formatter(keyValue) + (commaRoundTrip && isArray(obj) && valuesArray.length === 1 ? '[]' : '') + '=' + valuesJoined];
+                return [formatter(keyValue) + '=' + valuesJoined];
             }
             return [formatter(keyValue) + '=' + formatter(encoder(obj, defaults.encoder, charset, 'value', format))];
         }
@@ -8190,8 +8184,6 @@ var stringify = function stringify(
         objKeys = sort ? keys.sort(sort) : keys;
     }
 
-    var adjustedPrefix = commaRoundTrip && isArray(obj) && obj.length === 1 ? prefix + '[]' : prefix;
-
     for (var j = 0; j < objKeys.length; ++j) {
         var key = objKeys[j];
         var value = typeof key === 'object' && typeof key.value !== 'undefined' ? key.value : obj[key];
@@ -8201,8 +8193,8 @@ var stringify = function stringify(
         }
 
         var keyPrefix = isArray(obj)
-            ? typeof generateArrayPrefix === 'function' ? generateArrayPrefix(adjustedPrefix, key) : adjustedPrefix
-            : adjustedPrefix + (allowDots ? '.' + key : '[' + key + ']');
+            ? typeof generateArrayPrefix === 'function' ? generateArrayPrefix(prefix, key) : prefix
+            : prefix + (allowDots ? '.' + key : '[' + key + ']');
 
         sideChannel.set(object, step);
         var valueSideChannel = getSideChannel();
@@ -8211,7 +8203,6 @@ var stringify = function stringify(
             value,
             keyPrefix,
             generateArrayPrefix,
-            commaRoundTrip,
             strictNullHandling,
             skipNulls,
             encoder,
@@ -8308,10 +8299,6 @@ module.exports = function (object, opts) {
     }
 
     var generateArrayPrefix = arrayPrefixGenerators[arrayFormat];
-    if (opts && 'commaRoundTrip' in opts && typeof opts.commaRoundTrip !== 'boolean') {
-        throw new TypeError('`commaRoundTrip` must be a boolean, or absent');
-    }
-    var commaRoundTrip = generateArrayPrefix === 'comma' && opts && opts.commaRoundTrip;
 
     if (!objKeys) {
         objKeys = Object.keys(obj);
@@ -8332,7 +8319,6 @@ module.exports = function (object, opts) {
             obj[key],
             key,
             generateArrayPrefix,
-            commaRoundTrip,
             options.strictNullHandling,
             options.skipNulls,
             options.encode ? options.encoder : null,
@@ -14299,7 +14285,7 @@ module.exports={
   "媵": "媵",
   "嬈": "嬈",
   "嬨": "嬨",
-  "嬾": "��",
+  "嬾": "嬾",
   "嬾": "嬾",
   "⼦": "子",
   "⼧": "宀",
@@ -31601,6 +31587,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -31648,6 +31637,15 @@ const room_member_1 = require("../models/room-member");
 const event_1 = require("../models/event");
 const client_1 = require("../client");
 const typed_event_emitter_1 = require("../models/typed-event-emitter");
+__exportStar(require("./CrossSigning"), exports);
+__exportStar(require("./api"), exports);
+__exportStar(require("./olmlib"), exports);
+__exportStar(require("./key_passphrase"), exports);
+__exportStar(require("./recoverykey"), exports);
+__exportStar(require("./verification/request/VerificationRequest"), exports);
+__exportStar(require("./verification/request/Channel"), exports);
+__exportStar(require("./deviceinfo"), exports);
+__exportStar(require("./RoomList"), exports);
 const DeviceVerification = deviceinfo_1.DeviceInfo.DeviceVerification;
 const defaultVerificationMethods = {
     [QRCode_1.ReciprocateQRCode.NAME]: QRCode_1.ReciprocateQRCode,
@@ -34763,7 +34761,7 @@ class IncomingRoomKeyRequestCancellation {
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer)
 
-},{"../ReEmitter":81,"../client":84,"../errors":120,"../logger":127,"../models/event":136,"../models/room":142,"../models/room-member":139,"../models/typed-event-emitter":145,"./CrossSigning":87,"./DeviceList":88,"./EncryptionSetup":89,"./OlmDevice":90,"./OutgoingRoomKeyRequestManager":91,"./SecretStorage":93,"./aes":94,"./algorithms":96,"./backup":100,"./dehydration":101,"./deviceinfo":102,"./key_passphrase":104,"./olmlib":105,"./recoverykey":106,"./store/indexeddb-crypto-store":108,"./verification/IllegalMethod":113,"./verification/QRCode":114,"./verification/SAS":115,"./verification/request/InRoomChannel":117,"./verification/request/ToDeviceChannel":118,"./verification/request/VerificationRequest":119,"another-json":14,"buffer":20}],104:[function(require,module,exports){
+},{"../ReEmitter":81,"../client":84,"../errors":120,"../logger":127,"../models/event":136,"../models/room":142,"../models/room-member":139,"../models/typed-event-emitter":145,"./CrossSigning":87,"./DeviceList":88,"./EncryptionSetup":89,"./OlmDevice":90,"./OutgoingRoomKeyRequestManager":91,"./RoomList":92,"./SecretStorage":93,"./aes":94,"./algorithms":96,"./api":99,"./backup":100,"./dehydration":101,"./deviceinfo":102,"./key_passphrase":104,"./olmlib":105,"./recoverykey":106,"./store/indexeddb-crypto-store":108,"./verification/IllegalMethod":113,"./verification/QRCode":114,"./verification/SAS":115,"./verification/request/Channel":116,"./verification/request/InRoomChannel":117,"./verification/request/ToDeviceChannel":118,"./verification/request/VerificationRequest":119,"another-json":14,"buffer":20}],104:[function(require,module,exports){
 (function (global,Buffer){(function (){
 "use strict";
 /*
@@ -42699,15 +42697,6 @@ __exportStar(require("./@types/requests"), exports);
 __exportStar(require("./@types/search"), exports);
 __exportStar(require("./models/room-summary"), exports);
 exports.ContentHelpers = __importStar(require("./content-helpers"));
-__exportStar(require("./crypto/CrossSigning"), exports);
-__exportStar(require("./crypto/api"), exports);
-__exportStar(require("./crypto/olmlib"), exports);
-__exportStar(require("./crypto/key_passphrase"), exports);
-__exportStar(require("./crypto/recoverykey"), exports);
-__exportStar(require("./crypto/verification/request/VerificationRequest"), exports);
-__exportStar(require("./crypto/verification/request/Channel"), exports);
-__exportStar(require("./crypto/deviceinfo"), exports);
-__exportStar(require("./crypto/RoomList"), exports);
 var call_1 = require("./webrtc/call");
 Object.defineProperty(exports, "createNewMatrixCall", { enumerable: true, get: function () { return call_1.createNewMatrixCall; } });
 // expose the underlying request object so different environments can use
@@ -42832,7 +42821,7 @@ exports.createClient = createClient;
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./@types/PushRules":70,"./@types/event":72,"./@types/partials":75,"./@types/requests":77,"./@types/search":78,"./autodiscovery":82,"./client":84,"./content-helpers":85,"./content-repo":86,"./crypto":103,"./crypto/CrossSigning":87,"./crypto/RoomList":92,"./crypto/api":99,"./crypto/deviceinfo":102,"./crypto/key_passphrase":104,"./crypto/olmlib":105,"./crypto/recoverykey":106,"./crypto/store/indexeddb-crypto-store":108,"./crypto/store/memory-crypto-store":110,"./crypto/verification/request/Channel":116,"./crypto/verification/request/VerificationRequest":119,"./errors":120,"./filter":123,"./http-api":124,"./interactive-auth":126,"./models/beacon":131,"./models/event":136,"./models/event-timeline":135,"./models/event-timeline-set":134,"./models/room":142,"./models/room-member":139,"./models/room-state":140,"./models/room-summary":141,"./models/user":146,"./scheduler":150,"./service-types":151,"./store/indexeddb":154,"./store/memory":155,"./sync-accumulator":157,"./timeline-window":159,"./webrtc/call":161}],129:[function(require,module,exports){
+},{"./@types/PushRules":70,"./@types/event":72,"./@types/partials":75,"./@types/requests":77,"./@types/search":78,"./autodiscovery":82,"./client":84,"./content-helpers":85,"./content-repo":86,"./crypto":103,"./crypto/store/indexeddb-crypto-store":108,"./crypto/store/memory-crypto-store":110,"./errors":120,"./filter":123,"./http-api":124,"./interactive-auth":126,"./models/beacon":131,"./models/event":136,"./models/event-timeline":135,"./models/event-timeline-set":134,"./models/room":142,"./models/room-member":139,"./models/room-state":140,"./models/room-summary":141,"./models/user":146,"./scheduler":150,"./service-types":151,"./store/indexeddb":154,"./store/memory":155,"./sync-accumulator":157,"./timeline-window":159,"./webrtc/call":161}],129:[function(require,module,exports){
 "use strict";
 /*
 Copyright 2021 The Matrix.org Foundation C.I.C.

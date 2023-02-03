@@ -24,6 +24,15 @@ import { ISyncStateData } from "../sync";
 import { CryptoStore } from "./store/base";
 import { IVerificationChannel } from "./verification/request/Channel";
 import { TypedEventEmitter } from "../models/typed-event-emitter";
+export * from './CrossSigning';
+export * from './api';
+export * from './olmlib';
+export * from './key_passphrase';
+export * from './recoverykey';
+export * from './verification/request/VerificationRequest';
+export * from './verification/request/Channel';
+export * from './deviceinfo';
+export * from './RoomList';
 declare const defaultVerificationMethods: {
     [x: string]: typeof SASVerification | typeof ReciprocateQRCode | typeof IllegalMethod;
     "m.qr_code.show.v1": typeof IllegalMethod;
@@ -977,7 +986,6 @@ declare class IncomingRoomKeyRequestCancellation {
     readonly requestId: string;
     constructor(event: MatrixEvent);
 }
-export {};
 /**
  * The result of a (successful) call to decryptEvent.
  *
